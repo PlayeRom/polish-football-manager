@@ -1,6 +1,6 @@
-# Polish Football Manager 2002
+# Manager of the Polish League 2002
 
-## Berinning
+## Beginning
 
 In 2002, when I was learing C/C++ programming, I created football manager game for DOS (in Borland C++ compiler).
 
