@@ -11,3 +11,8 @@ You can find this original DOS version (sources and binaries) in *dos-original* 
 17 years later, when I found my old sources files in backup stored in CD-ROM, I decided to porting this game to Linux console with refactoring the code. In this repo you will find results of my porting.
 
 At the moment, the game is in Polish language only.
+
+## Images
+
+![Tactics](https://github.com/PlayeRom/polish-football-manager/blob/master/linux-port/img/tactics.png)
+
