@@ -1,0 +1,82 @@
+Wiadomosci dla managera, zapisane w pliku News.cfg:
+
+1. PREZES: Panie %ls, witam pana w nowym miejscu pracy i mam nadzieję iż spełni pan nasze oczekiwania.
+2. %ls: chcę przypomieć iż za tydzień kończy mi się kontrakt.
+3. %ls odchodzi z klubu na mocy wygaśnięcia kontraktu.
+4. LEKARZ: %ls całkowicie wyleczył kontuzję, zaczął trenować i może grać.
+5. LEKARZ: %ls częściowo wyleczył kontuzję i może grać, ale jeszcze nie trenuje.
+6. LEKARZ: %ls doznał kontuzji. Za około %d dni będzie do dyspozycji.
+7. ASYSTENT: Radzę panu ustalić kilka meczy kontrolnych. Pozwoli to panu lepiej przygotować się do rozgrywek ligowych.
+8. Zarząd: Jesteśmy bardzo zadowoleni z ostatniego występu naszych graczy. Oby tak dalej.
+9. FAN: Jestem waszym wielkim fanem i bardzo się cieszę z ostatniej wygranej. %ls jesteś wielki!
+10. FAN: %ls na prezydenta!
+11. FAN: Dobra robota - %ls. To było wspaniałe zwycięstwo!
+12. FAN: Dzień dobry panu. Mam 8 lat i jestem bardzo zadowolony, że mój ulubiony klub wygrał. Dziękuję panu.
+13. KIBIC: Wszyscy cieszymy się z wygranej, ale czy pozostałe mecze będą równie udane?
+14. ANONIM: Jeszcze jeden taki mecz... no!
+15. ANONIM: %ls, idź do domu i się nie pokazuj!
+16. ANONIM: %ls, wiemy gdzie mieszkasz! Jeszcze jedna porażka...
+17. KIBIC: Człowieku! To była żenada! Zrób coś bo będzie po tobie!
+18. Zarząd: Jesteśmy bardzo rozczarowani z ostatniego występu. Mamy nadzieję, iż takich meczy będzie jak najmniej.
+19. ANONIM: %ls, ty idioto! Przynosisz wstyd temu klubowi!
+20. ASYSTENT: Byliśmy osłabieni w ataku, więc moim zdaniem gra z kontry przyniosłaby lepsze rezultaty.
+21. ASYSTENT: Byliśmy osłabieni w drugiej linii, więc gra długimi podaniami przyniosłaby lepsze rezultaty.
+22. ASYSTENT: Mieliśmy osłabienie w obronie, więc gdyby częściej stosować pułapki ofsajdowe, może nie byłoby tak źle.
+23. ASYSTENT: Mieliśmy przewagę w obronie, więc moim zdaniem pułapki ofsajdowe były zbędnym ryzykiem.
+24. ASYSTENT: Mieliśmy przewagę w drugiej linii, więc gra krótkimi podaniami byłaby efektywniejsza.
+25. ASYSTENT: Mieliśmy przewagę w ataku, więc moim zdaniem gra z kontry była błędem.
+26. ASYSTENT: Myślę, że ostatni mecz można było wygrać stosując pressing.
+27. ASYSTENT: Stosowanie pressingu w ostatnim meczu, było błędem. Nasi gracze szybko opadli z sił.
+28. ASYSTENT: Myślę, że twarda gra przyniosłaby nam lepszy rezultat.
+29. ASYSTENT: Gratuluję zwycięstwa. Dobrał pan właściwą taktykę.
+30. ASYSTENT: Gratuluję wygranej. Nie mam zastrzeżeń co do zastosowanej taktyki.
+31. Zarząd: Jesteśmy bardzo zadowoleni z pańskiej pracy. Mamy nadzieję, iż utrzyma pan dobrą passę.
+32. Zarząd: Nie jest źle, ale mogłoby być lepiej. Mamy nadzieję, iż tak będzie.
+33. Zarząd: Jesteśmy zaniepokojeni pańskimi poczynaniami. Mamy nadzieję, iż poprawi pan obecną sytuację.
+34. Zarząd: Jesteśmy bardzo rozczarowani pańskimi poczynaniami. Jeśli nie poprawi pan sytuacji, będziemy musieli pana zwolnić.
+35. Zarząd: Finanse klubu są katastrofalne!
+36. Zarząd: Finanse klubu są bardzo niestabilne!
+37. Zarząd: Finanse klubu są niestabilne.
+38. Zarząd: Finanse klubu mogłyby być lepsze.
+39. Zarząd: Finanse klubu są dostateczne.
+40. Zarząd: Finanse klubu są wystarczające.
+41. Zarząd: Finanse klubu są dobre.
+42. Zarząd: Finanse klubu są bardzo dobre.
+43. Zarząd: Wiążemy z panem wielkie nadzieje i oczekujemy sukcesów. Oby współpraca między nami była jak najlepsza.
+44. PZPN: W związku z zamieszkami w ostatnim meczu, klub %ls zostaje ukarany kwotą: 300000.00 zł.
+45. Mirosław Jabłoński (Amica Wronki) zostaje ogłoszony managerem miesiąca.
+46. Marek Motyka (Garbarnia Szczakowianka) zostaje ogłoszony managerem miesiąca.
+47. Jan Zurek (GKS Katowice) zostaje ogłoszony managerem miesiąca.
+48. Waldemar Fornalik (Górnik Zabrze) zostaje ogłoszony managerem miesiąca.
+49. Bogusław Kaczmarek (Groclin Dyskobolia) zostaje ogłoszony managerem miesiąca.
+50. Janusz Batugowski (KSZO Ostrowiec) zostaje ogłoszony managerem miesiąca.
+51. Bogusław Baniak (Lech Poznań) zostaje ogłoszony managerem miesiąca.
+52. Dragomir Okuka (Legia Warszawa) zostaje ogłoszony managerem miesiąca.
+53. Ryszard Wieczorek (Odra Wodzisław) zostaje ogłoszony managerem miesiąca.
+54. Janusz Białek (Polonia Warszawa) zostaje ogłoszony managerem miesiąca.
+55. Albin Mikulski (Pogoń Szczecin) zostaje ogłoszony managerem miesiąca.
+56. Orest Lenczyk (Ruch Chorzów) zostaje ogłoszony managerem miesiąca.
+57. Franciszek Smuda (Widzew Łódź) zostaje ogłoszony managerem miesiąca.
+58. Henryk Kasperczak (Wisła Kraków) zostaje ogłoszony managerem miesiąca.
+59. Mieczysław Broniszewski (Wisła Płock) zostaje ogłoszony managerem miesiąca.
+60. Adam Nawałka (Zagłębie Lubin) zostaje ogłoszony managerem miesiąca.
+61. %ls (Amica Wronki) zostaje ogłoszony managerem miesiąca.
+62. %ls (Garbarnia Szczakowianka) zostaje ogłoszony managerem miesiąca.
+63. %ls (GKS Katowice) zostaje ogłoszony managerem miesiąca.
+64. %ls (Górnik Zabrze) zostaje ogłoszony managerem miesiąca.
+65. %ls (Groclin Dyskobolia) zostaje ogłoszony managerem miesiąca.
+66. %ls (KSZO Ostrowiec) zostaje ogłoszony managerem miesiąca.
+67. %ls (Lech Poznań) zostaje ogłoszony managerem miesiąca.
+68. %ls (Legia Warszawa) zostaje ogłoszony managerem miesiąca.
+69. %ls (Odra Wodzisław) zostaje ogłoszony managerem miesiąca.
+70. %ls (Polonia Warszawa) zostaje ogłoszony managerem miesiąca.
+71. %ls (Pogoń Szczecin) zostaje ogłoszony managerem miesiąca.
+72. %ls (Ruch Chorzów) zostaje ogłoszony managerem miesiąca.
+73. %ls (Widzew Łódź) zostaje ogłoszony managerem miesiąca.
+74. %ls (Wisła Kraków) zostaje ogłoszony managerem miesiąca.
+75. %ls (Wisła Płock) zostaje ogłoszony managerem miesiąca.
+76. %ls (Zagłębie Lubin) zostaje ogłoszony managerem miesiąca.
+77. PREZES: Wraz z zarządem oświadczamy, iż został pan zwolniony ze stanowiska managera klubu %ls.
+78. %ls MISTRZEM POLSKI!!
+79. PREZES: Wraz z zarządem składamy panu gratulacje i podziękowanie za wielkie osiągnięcia jakie pan dokonał.
+

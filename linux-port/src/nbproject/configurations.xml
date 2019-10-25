@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="100">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+      <itemPath>BoxDrawingChars.h</itemPath>
+      <itemPath>Colors.h</itemPath>
+      <itemPath>ConioColors.h</itemPath>
+      <itemPath>Footballers.h</itemPath>
+      <itemPath>Input.h</itemPath>
+      <itemPath>Logger.h</itemPath>
+      <itemPath>Manager.h</itemPath>
+      <itemPath>Match.h</itemPath>
+      <itemPath>News.h</itemPath>
+      <itemPath>PlayerClub.h</itemPath>
+      <itemPath>Rounds.h</itemPath>
+      <itemPath>Structs.h</itemPath>
+      <itemPath>Table.h</itemPath>
+      <itemPath>Tactic.h</itemPath>
+      <itemPath>TeamComposition.h</itemPath>
+      <itemPath>TeamInstructions.h</itemPath>
+      <itemPath>conio.h</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ResourceFiles"
+                   displayName="Resource Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <itemPath>Colors.cpp</itemPath>
+      <itemPath>Footballers.cpp</itemPath>
+      <itemPath>Input.cpp</itemPath>
+      <itemPath>Logger.cpp</itemPath>
+      <itemPath>Manager.cpp</itemPath>
+      <itemPath>Match.cpp</itemPath>
+      <itemPath>News.cpp</itemPath>
+      <itemPath>PlayerClub.cpp</itemPath>
+      <itemPath>Rounds.cpp</itemPath>
+      <itemPath>Table.cpp</itemPath>
+      <itemPath>Tactic.cpp</itemPath>
+      <itemPath>TeamComposition.cpp</itemPath>
+      <itemPath>TeamInstructions.cpp</itemPath>
+      <itemPath>main.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="TestFiles"
+                   displayName="Test Files"
+                   projectFiles="false"
+                   kind="TEST_LOGICAL_FOLDER">
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <standard>10</standard>
+        </cTool>
+        <ccTool>
+          <standard>8</standard>
+        </ccTool>
+        <linkerTool>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/managerligipolskiej2002</output>
+        </linkerTool>
+      </compileType>
+      <packaging>
+        <packType>Tar</packType>
+        <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/package/managerligipolskiej2002.tar</output>
+        <packFileList>
+          <packFileListElem type="File"
+                            to="${PACKAGE_TOP_DIR}bin/${OUTPUT_BASENAME}"
+                            from="${OUTPUT_PATH}"
+                            perm="755"
+                            owner="root"
+                            group="bin"/>
+        </packFileList>
+      </packaging>
+      <item path="BoxDrawingChars.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Colors.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Colors.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ConioColors.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Footballers.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Footballers.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Input.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Input.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Logger.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Logger.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Manager.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Manager.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Match.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Match.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="News.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="News.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PlayerClub.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="PlayerClub.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Rounds.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Rounds.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Structs.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Table.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Table.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Tactic.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Tactic.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="TeamComposition.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="TeamComposition.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="TeamInstructions.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="TeamInstructions.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="conio.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="main.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <compilerSet>GNU|GNU</compilerSet>
+        <dependencyChecking>true</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <developmentMode>5</developmentMode>
+        </cTool>
+        <ccTool>
+          <developmentMode>5</developmentMode>
+          <standard>8</standard>
+        </ccTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <asmTool>
+          <developmentMode>5</developmentMode>
+        </asmTool>
+        <linkerTool>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/managerligipolskiej2002</output>
+        </linkerTool>
+      </compileType>
+      <packaging>
+        <packType>Tar</packType>
+        <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/package/managerligipolskiej2002.tar</output>
+        <packFileList>
+          <packFileListElem type="File"
+                            to="${PACKAGE_TOP_DIR}bin/${OUTPUT_BASENAME}"
+                            from="${OUTPUT_PATH}"
+                            perm="755"
+                            owner="root"
+                            group="bin"/>
+        </packFileList>
+      </packaging>
+      <item path="BoxDrawingChars.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Colors.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Colors.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ConioColors.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Footballers.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Footballers.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Input.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Input.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Logger.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Logger.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Manager.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Manager.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Match.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Match.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="News.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="News.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PlayerClub.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="PlayerClub.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Rounds.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Rounds.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Structs.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Table.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Table.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="Tactic.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="Tactic.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="TeamComposition.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="TeamComposition.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="TeamInstructions.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="TeamInstructions.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="conio.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="main.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>

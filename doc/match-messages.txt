@@ -1,0 +1,91 @@
+Komunikaty dla meczu wraz z numerem ID zapisane w pliku Mecz.cfg:
+
+1. %ls rozpoczyna mecz.
+2. %ls rozpoczyna drugą połowę.
+3. Koniec pierwszej połowy.
+4. Koniec meczu.
+5. %ls dokonuje zmiany...
+6. %ls wchodzi za %ls.
+7. %ls zmienia %ls.
+8. %ls podaje do %ls.
+9. %ls podaje na lewe skrzydło do %ls.
+10. %ls podaje na prawe skrzydło do %ls.
+11. %ls podaje do przodu.
+12. %ls szybko podaje do przodu.
+13. Ale %ls wślizgiem przechwytuje podanie, niwecząc szybki kontratak.
+14. Lecz %ls przechwytuje podanie.
+15. Lecz podanie było niedokładne...
+16. %ls zgarnia zgubioną piłkę.
+17. Lecz %ls pressingiem wymusza błąd na %ls...
+18. %ls łatwo zdobywa piłkę.
+19. Ale to był faul!
+20. %ls otrzymuje żółtą kartkę!
+21. Arbiter słownie upomina %ls.
+22. %ls wznawia grę.
+23. Ale piłka wyszła poza boisko...
+24. %ls wznawia z autu.
+25. %ls wyrzuca z autu.
+26. %ls biegnie do przodu...
+27. %ls strzela z dystansu...
+28. %ls oddaje strzał z dużej odległości...
+29. %ls biegnie wzdłuż bocznej linii boiska.
+30. %ls mija %ls i biegnie dalej...
+31. Dośrodkowanie w pole karne...
+32. Miękka wrzutka w pole karne...
+33. Lecz %ls wślizgiem powala %ls.
+34. Ale gubi piłkę, która wychodzi na aut.
+35. Lecz %ls czystym wślizgiem odbiera mu piłkę.
+36. %ls wykonuje długie podanie do przodu.
+37. %ls przyjmuje piłkę w polu karnym...
+38. %ls na spalonym!
+39. %ls ruszył za wcześnie. Spalony.
+40. Chorągiewka w górze! %ls na spalonym.
+41. %ls wznawia grę.
+42. Nieudana pułapka ofsajdowa! %ls sam na sam z bramkarzem!!
+43. %ls strzela...
+44. %ls wykopuje piłę.
+45. %ls usuwa niebezpieczeństwo wybijając piłkę.
+46. %ls przechwytuje piłkę i wykonuje dalekie podanie.
+47. %ls usuwa zagrożenie wybijając daleko piłkę.
+48. %ls spokojnie łapie górną piłkę.
+49. Bramkarz wykopuje piłkę.
+50. %ls wślizgiem atakuje %ls...
+51. Ale to był faul! Sędzia dyktuje rzut karny!!
+52. Faul! Sędzia wskazuje na 11 metr!!
+53. %ls wykonuje karnego...
+54. %ls uderza z 11 metra...
+55. %ls pada na murawę, ale sędzia nie dał się nabrać.
+56. Będzie rzut rożny.
+57. %ls strzela bez namysłu...
+58. Podanie na drugi słupek, tam jest %ls.
+59. %ls strzela z pierwszej piłki...
+60. %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+61. I skutecznie odbiera mu piłkę.
+62. %ls próbuje odzyskać piłkę...
+63. Sędzia jeszcze ustawia mur.
+64. %ls uderza z wolnego...
+65. %ls rzuca się w lewo...
+66. %ls rzuca się w prawo...
+67. I łapie piłkę! Dobra obrona.
+68. Dobrze ustawiony %ls, bez trudu łapie piłkę.
+69. %ls spokojnie łapie piłkę.
+70. %ls z trudem broni, ale nie zdołał złapać piłki...
+71. Piłka uderza w słupek!!
+72. Piłka uderza w poprzeczkę!!
+73. Piłka uderza w któregoś z obrońców!
+74. GOOOL dla %ls!!!
+75. %ls trafił!!
+76. Piłka w bramce. Strzelił %ls!!
+77. Ale gola nie uznano!! Wcześniej był gwizdek sędziego!
+78. %ls dośrodkowuje z rożnego...
+79. %ls walnął nad poprzeczką!
+80. Ale strzelił fatalnie!
+81. %ls minimalnie chybił!
+82. Poszło w trybuny! Fatalny strzał.
+83. %ls doznaje kontuzji!
+84. %ls kontuzjowany!
+85. %ls będzie uderzał z wolnego.
+86. Na chwilę przenosimy się na trybuny...
+87. Tam trwają starcia pseudo kibiców z policją!
+88. No cóż, przykry to widok...
+89. Ale wracamy do meczu.
