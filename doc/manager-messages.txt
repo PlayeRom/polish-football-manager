@@ -1,4 +1,4 @@
-Wiadomosci dla managera, zapisane w pliku News.cfg:
+Wiadomosci dla managera, zapisane w pliku data/msg-manager.cfg:
 
 1. PREZES: Panie %ls, witam pana w nowym miejscu pracy i mam nadzieję iż spełni pan nasze oczekiwania.
 2. %ls: chcę przypomieć iż za tydzień kończy mi się kontrakt.

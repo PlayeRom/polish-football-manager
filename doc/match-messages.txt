@@ -1,4 +1,4 @@
-Komunikaty dla meczu wraz z numerem ID zapisane w pliku Mecz.cfg:
+Komunikaty dla meczu wraz z numerem ID zapisane w pliku data/msg-match.cfg:
 
 1. %ls rozpoczyna mecz.
 2. %ls rozpoczyna drugą połowę.
