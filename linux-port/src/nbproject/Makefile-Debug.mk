@@ -39,6 +39,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/Footballers.o \
 	${OBJECTDIR}/Input.o \
 	${OBJECTDIR}/Logger.o \
+	${OBJECTDIR}/MainMenu.o \
 	${OBJECTDIR}/Manager.o \
 	${OBJECTDIR}/Match.o \
 	${OBJECTDIR}/News.o \
@@ -94,6 +95,11 @@ ${OBJECTDIR}/Logger.o: Logger.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Logger.o Logger.cpp
+
+${OBJECTDIR}/MainMenu.o: MainMenu.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/MainMenu.o MainMenu.cpp
 
 ${OBJECTDIR}/Manager.o: Manager.cpp
 	${MKDIR} -p ${OBJECTDIR}

@@ -7,7 +7,7 @@
 #include "Colors.h"
 #include "Structs.h"
 
-// ID taktyk
+// Tactic IDs
 #define T4_4_2      1
 #define T4_4_2_DEF  2
 #define T4_4_2_ATT  3
@@ -26,8 +26,6 @@
 class Tactic {
 public:
     Tactic(const Colors *pColors);
-    Tactic(const Tactic& orig);
-    virtual ~Tactic();
 
     void drawTeamSetting(int setting, bool isPlayerTeam = true) const;
     void drawChart(int setting, int who, const std::vector<SFootballer> &footballers, bool isRival = false);

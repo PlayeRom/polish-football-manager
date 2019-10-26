@@ -1,21 +1,14 @@
 
 #include <stdio.h>
 #include <iostream>
-#include <string>
 #include <cstdlib>
 #include <ctype.h>
 #include <cwchar>
 #include <algorithm>
-#include <thread>
 #include <iomanip>
-#include <sstream>
-#include <cstring>
-#include <vector>
 
 #include "ConioColors.h"
 #include "Match.h"
-#include "Structs.h"
-#include "Colors.h"
 #include "BoxDrawingChars.h"
 #include "TeamComposition.h"
 
@@ -100,7 +93,15 @@ bool Match::runMecz() {
     int sumaB = 0, sumaO = 0, sumaP = 0, sumaN = 0; // sumy B, O, P, N duzyny gracza
     int sumaB2 = 0, sumaO2 = 0, sumaP2 = 0, sumaN2 = 0; // sumy B, O, P, N duzyny rywala
     int sumaBx = 0, sumaOx = 0, sumaPx = 0, sumaNx = 0;
+
+    // gdzie jest pilka/akcja:
+    // 1 - srodek pola,
+    // 2 - skrzydlowy przy pilce,
+    // 3 - pole karne,
+    // 4, 6 - sytuacja podbramkowa,
+    // 5 - krytczna podbramkowa, rzut karny, napastnik sam na sam z bramkarzem
     int gdzie = 1;
+
     int i = 0, los = 0, co = 0, x1 = 0, x2 = 0, x3 = 0, pos1 = 0, pos2 = 0, pos = 0;
     int pam; // pamieta numer zawodnika, ktorego trzeba przeniesc do nastepnych wiadomosci, np. "%s strzela!", pam = x, "%s strzelił"
     int q = 0, str[8] = {0, 0, 0, 0, 0, 0, 0, 0}, str2[8] = {0, 0, 0, 0, 0, 0, 0, 0}, dystans = 0;
@@ -113,8 +114,6 @@ bool Match::runMecz() {
 
     time_t tmptime = time(NULL);
     struct tm t = *localtime(&tmptime);
-
-    srand(time(NULL));
 
     walkower = pFootballers->getSizePlayerTeam();
 
@@ -1694,7 +1693,7 @@ bool Match::runMecz() {
                 }//faul napastnika
             }//gdzie=3,blokada=1,pole karne
             //*********************** obron B ***********************************
-            else if (gdzie == 4 || gdzie == 6 || gdzie == 5) { //obrona B
+            else if (gdzie == 4 || gdzie == 5 || gdzie == 6) { //obrona B
                 if (co == 24) { // udana
                     wiado[0] = (rand() % 2) == 0 ? 65 : 66;
                     wiado[1] = 67;
@@ -2467,7 +2466,6 @@ bool Match::runMecz() {
                     L"2. Średnio" << endl <<
                     L"3. Wolno" << endl <<
                     L"4. Bardzo wolno" << endl;
-                //scanf("%d", &czas);
                 czas = pInput->getNumber();
                 if (czas < 0 || czas > 4) {
                     czas = 2;
@@ -3772,7 +3770,7 @@ void Match::drawBoard(
     pColors->textbackground(BLACK);
     pColors->textcolor(WHITE);
     wcout << endl;
-    if (gdzie == 1) {
+    if (gdzie == 1) { // srodek pola
         wcout << L"                 ^";
     }
     else {

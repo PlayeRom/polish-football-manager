@@ -11,10 +11,6 @@ News::News()
     init();
 }
 
-News::News(const News& orig)
-{
-}
-
 News::~News()
 {
     delete pEmptyNews;

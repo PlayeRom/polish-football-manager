@@ -11,14 +11,6 @@ Tactic::Tactic(const Colors *pColors)
     this->pColors = pColors;
 }
 
-Tactic::Tactic(const Tactic& orig)
-{
-}
-
-Tactic::~Tactic()
-{
-}
-
 /**
  *
  * @param setting Ustawienie zespołu

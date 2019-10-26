@@ -10,6 +10,7 @@
       <itemPath>Footballers.h</itemPath>
       <itemPath>Input.h</itemPath>
       <itemPath>Logger.h</itemPath>
+      <itemPath>MainMenu.h</itemPath>
       <itemPath>Manager.h</itemPath>
       <itemPath>Match.h</itemPath>
       <itemPath>News.h</itemPath>
@@ -33,6 +34,7 @@
       <itemPath>Footballers.cpp</itemPath>
       <itemPath>Input.cpp</itemPath>
       <itemPath>Logger.cpp</itemPath>
+      <itemPath>MainMenu.cpp</itemPath>
       <itemPath>Manager.cpp</itemPath>
       <itemPath>Match.cpp</itemPath>
       <itemPath>News.cpp</itemPath>
@@ -85,6 +87,12 @@
                             perm="755"
                             owner="root"
                             group="bin"/>
+          <packFileListElem type="File"
+                            to="${PACKAGE_TOP_DIR}bin/${OUTPUT_BASENAME}"
+                            from="${OUTPUT_PATH}"
+                            perm="755"
+                            owner="root"
+                            group="bin"/>
         </packFileList>
       </packaging>
       <item path="BoxDrawingChars.h" ex="false" tool="3" flavor2="0">
@@ -106,6 +114,10 @@
       <item path="Logger.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="Logger.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="MainMenu.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="MainMenu.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="Manager.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -184,6 +196,12 @@
                             perm="755"
                             owner="root"
                             group="bin"/>
+          <packFileListElem type="File"
+                            to="${PACKAGE_TOP_DIR}bin/${OUTPUT_BASENAME}"
+                            from="${OUTPUT_PATH}"
+                            perm="755"
+                            owner="root"
+                            group="bin"/>
         </packFileList>
       </packaging>
       <item path="BoxDrawingChars.h" ex="false" tool="3" flavor2="0">
@@ -205,6 +223,10 @@
       <item path="Logger.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="Logger.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="MainMenu.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="MainMenu.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="Manager.cpp" ex="false" tool="1" flavor2="0">
       </item>
