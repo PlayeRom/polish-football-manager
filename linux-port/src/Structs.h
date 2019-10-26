@@ -58,7 +58,9 @@
 #define INSTR_ATTIT_ATTACK      3 // nastawienie atak
 
 struct SClub {
-    wchar_t managerName[MAX_USER_NAME], managerSurname[MAX_USER_SURNAME], nick[MAX_USER_NICK]; // imię, nazwisko i ksywa gracza
+    wchar_t managerName[MAX_USER_NAME];
+    wchar_t managerSurname[MAX_USER_SURNAME];
+    wchar_t nick[MAX_USER_NICK];
     int isNick; // 1 - user podał nick, 0 - nie podał nicka
     int roundNumber;
     int isMatch; // 0 - nie ma meczu, wtedy "C = Kontynuj", 1 - jest mecz "C = Mecz"
@@ -215,7 +217,7 @@ struct SNews {
     wchar_t message[MAX_NEWS_LENGTH]; // tresc wiadomosci
     int num; // numer wiadomosci
     SNews() : num(0) {
-        memset(&message, 0, MAX_NEWS_LENGTH * sizeof(wchar_t));
+        memset(message, 0, MAX_NEWS_LENGTH * sizeof(wchar_t));
     }
 };
 

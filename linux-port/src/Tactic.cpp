@@ -24,7 +24,7 @@ Tactic::~Tactic()
  * @param setting Ustawienie zespołu
  * @param isPlayerTeam  true - rysujemy dla zespołu gracza, false - rysujemy dla rywala
  */
-void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/)
+void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
 {
     const wstring *settings = getTeamSettings();
 

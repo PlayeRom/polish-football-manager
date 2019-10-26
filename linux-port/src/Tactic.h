@@ -29,10 +29,10 @@ public:
     Tactic(const Tactic& orig);
     virtual ~Tactic();
 
-    void drawTeamSetting(int setting, bool isPlayerTeam = true);
+    void drawTeamSetting(int setting, bool isPlayerTeam = true) const;
     void drawChart(int setting, int who, const std::vector<SFootballer> &footballers, bool isRival = false);
 
-    const std::wstring* getTeamSettings() {
+    const std::wstring* getTeamSettings() const {
         static std::wstring settings[15] = {
             L"4-4-2",
             L"4-4-2 Obrona",

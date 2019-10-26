@@ -12,6 +12,7 @@
 #include "Rounds.h"
 #include "PlayerClub.h"
 #include "TeamInstructions.h"
+#include "Tactic.h"
 #include "Logger.h"
 
 class Match {
@@ -42,6 +43,7 @@ private:
     Table *pTable;
     Rounds *pRounds;
     const TeamInstructions *pTeamInstruction;
+    const Tactic *pTactic;
     vector<SNews> matchMsgs;
     Logger *pLogger;
 
@@ -50,6 +52,19 @@ private:
     int PnaP;
     int AnaO;
 
+    int howManyPlayerChanges; // how many footballer changes the player made
+    bool isPlayerChanges; // gracz lub przeciwnik dokonał zmiany
+    int whoPlayerChanges; // kto robi zmiane, 0 - nikt, 1 - gracz, 2 - rywal
+
+    wchar_t tmpMessage[MAX_NEWS_LENGTH];
+    wstring msgFootballers[20]; // footabllers names for match messages
+    wstring msgPlayerSurnames[16];
+    wstring msgRivalSurnames[16];
+    int wiado[10];
+    int msgWhoBall[10]; // dla wiadomosci, kto przy piłce 1 - gracz, 2 - rywal
+
+    void prepareFootballers();
+    void prepareFootballersSurnames(const SClub &clubRef);
     void drawTeam(int usta, int tryb, int kto);
     int whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef);
     void loadMatchMessages();
@@ -72,7 +87,10 @@ private:
     void drawOnaA(bool isHome, int OnaA);
     void drawAnaO(bool isHome, int AnaO);
     void drawWhoScored(int mingol1[], int mingol2[], wstring dlagol1[], wstring dlagol2[]);
-    void saveMatchMessageToFile(int bkgcolor, int minuta, const wstring message, const wstring param1, wstring param2);
+    void saveMatchMessageToFile(int bkgcolor, int minuta, const wchar_t *message);
+
+    void playerTactics();
+    void rivalTactics();
 };
 
 #endif /* MATCH_H */

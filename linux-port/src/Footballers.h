@@ -46,9 +46,9 @@ public:
     void sortPlayersTeam();
 
 private:
-    std::vector<SFootballer> playerTeam; // zawodnicy w klubie którym zarzadza gracz, plik Gra_mana.cfg
-    std::vector<SFootballer> rivals; // zawodnicy rywala, plik Rywal.cfg
-    std::vector<SFootballer> transfers; // zawdnicy na liscie transferowej, plik Trans.cfg
+    std::vector<SFootballer> playerTeam; // zawodnicy w klubie którym zarzadza gracz, plik save/footballers_manager.cfg
+    std::vector<SFootballer> rivals; // zawodnicy rywala, plik save/footballers_rival.cfg
+    std::vector<SFootballer> transfers; // zawdnicy na liscie transferowej, plik save/footballers_transfer.cfg
 };
 
 #endif /* FOOTBALLERS_H */
