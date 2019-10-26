@@ -14,5 +14,14 @@ At the moment, the game is in Polish language only.
 
 ## Images
 
+Determining tactics:
+
 ![Tactics](https://github.com/PlayeRom/polish-football-manager/blob/master/linux-port/img/tactics.png)
 
+League table:
+
+![Table](https://github.com/PlayeRom/polish-football-manager/blob/master/linux-port/img/table.png)
+
+End match:
+
+![End match](https://github.com/PlayeRom/polish-football-manager/blob/master/linux-port/img/end-match.png)
