@@ -11,6 +11,8 @@
 #include "PlayerClub.h"
 #include "News.h"
 #include "TeamInstructions.h"
+#include "TeamComposition.h"
+#include "Tactic.h"
 #include "Match.h"
 #include "Logger.h"
 
@@ -41,6 +43,8 @@ private:
     Rounds *pRounds;
     News *pNews;
     TeamInstructions *pTeamInstr;
+    Tactic *pTactic;
+    TeamComposition *pTeamComposition;
     Match *pMatch;
     Logger *pLogger;
 
@@ -62,6 +66,30 @@ private:
     void menuItemContinueProcessing(SClub &clubRef);
     void menuItemContinueMatch(SClub &clubRef);
     void menuItemContinueUnemployed(const SClub &clubRef);
+
+    void menuItemTactics();
+    void menuItemTeamComposition();
+    void menuItemTeamCompositionFootballerDetails();
+
+    void menuItemTrenning();
+    void menuItemTrenningWeekDay(wchar_t trenningMenu, int *ilex);
+    void menuItemTrenningIndividual();
+
+    void menuItemLastMatch();
+    void menuItemRival();
+    void menuItemCalendar();
+    void menuItemCalendarControlMatch();
+    void menuItemTable();
+    void menuItemTransfersList();
+    void menuItemTransfersListBuyFootballer(int mode);
+    void menuItemTransfersListFilters();
+
+    void menuItemFinance();
+    void menuItemManagement();
+    void menuItemManagerStats();
+    void menuItemNewsOld();
+    void menuItemNews();
+    void menuItemOptions();
 
     wstring getSortTitle(int sort);
     wstring getTrenningDayName(int dayNumber);

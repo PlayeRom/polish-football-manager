@@ -9,8 +9,6 @@
 class TeamComposition {
 public:
     TeamComposition(const Colors *pColors);
-    TeamComposition(const TeamComposition& orig);
-    virtual ~TeamComposition();
 
     void draw(const std::vector<SFootballer> &footballers, int setting, int mode, int clubNumber, bool isTrenning = false, int sort = 0);
 
@@ -27,4 +25,3 @@ private:
 };
 
 #endif /* TEAMCOMPOSITION_H */
-
