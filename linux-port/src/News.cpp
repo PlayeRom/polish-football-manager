@@ -45,6 +45,11 @@ const SNews& News::getManagerNewsByNumber(int number) const
     return *pEmptyNews;
 }
 
+const SNews& News::getManagerNewsByIndex(int msgIndex) const
+{
+    return getManagerNewsByNumber(messages[msgIndex].messageId);
+}
+
 bool News::loadManagerMessages()
 {
     FILE *f = fopen(FILE_SAVE_MANAGER_NEWS, "r");
@@ -82,7 +87,29 @@ void News::clearManagerMessages()
     fileOutput.close();
 }
 
-void News::addManagerMessage(const SNews &news, const SClub& club, const wstring& message, int number /*= 0*/)
+/**
+ * @param clubRef
+ * @param isCout TRUE - display on screen.
+ * @return void
+ */
+void News::addDisplayManagerMessages(const SClub &clubRef, bool isCout)
+{
+    for (int i = 0; i < messages.size(); i++) {
+        wcout << endl << endl;
+        const SNews& news = getManagerNewsByIndex(i);
+        if (news.num > 0) {
+            if (isCout) {
+                coutManagerMessage(news, i);
+            }
+            addManagerMessage(news, clubRef, i);
+        }
+    }
+    saveManagerMessages();
+
+    messages.clear();
+}
+
+void News::addManagerMessage(const SNews &news, const SClub& club, int index)
 {
     wchar_t tmpBuffer[MAX_NEWS_LENGTH] = {0};
     wstring line;
@@ -90,8 +117,46 @@ void News::addManagerMessage(const SNews &news, const SClub& club, const wstring
     swprintf(tmpBuffer, MAX_NEWS_LENGTH, L"%02d.%02d.%d - ", club.day, club.month, club.year);
     line = tmpBuffer;
 
-    swprintf(tmpBuffer, MAX_NEWS_LENGTH, news.message, message.c_str(), number);
+    swprintf(
+        tmpBuffer,
+        MAX_NEWS_LENGTH,
+        news.message,
+        messages[index].strForMsg.c_str(),
+        messages[index].numberForMsg
+    );
     line += tmpBuffer;
 
     managerMessages.push_back(line);
+}
+
+void News::coutManagerMessage(const SNews &news, int index)
+{
+    wprintf(news.message, messages[index].strForMsg.c_str(), messages[index].numberForMsg);
+}
+
+void News::setTmpMsgData(int msgId)
+{
+    STmpMessage msg;
+    msg.messageId = msgId;
+
+    messages.push_back(msg);
+}
+
+void News::setTmpMsgData(int msgId, wstring strForMsg)
+{
+    STmpMessage msg;
+    msg.messageId = msgId;
+    msg.strForMsg = strForMsg;
+
+    messages.push_back(msg);
+}
+
+void News::setTmpMsgData(int msgId, wstring strForMsg, int noForMsg)
+{
+    STmpMessage msg;
+    msg.messageId = msgId;
+    msg.strForMsg = strForMsg;
+    msg.numberForMsg = noForMsg;
+
+    messages.push_back(msg);
 }

@@ -59,7 +59,7 @@ private:
     float filterMaxPrice;
 
     void info();
-    wchar_t displayMainMenu(const int message[5], const wstring *pTactics);
+    wchar_t displayMainMenu(const wstring *pTactics);
     void swapFootballers();
 
     void menuItemContinue();

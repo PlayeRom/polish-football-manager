@@ -171,10 +171,11 @@ bool MainMenu::newGame()
     pRounds->initial();
     pRounds->save();
 
-    pNews->messages[0] = 1; // PREZES: Panie %ls, witam pana w nowym miejscu pracy i mam nadzieję iż spełni pan nasze oczekiwania.
-    pNews->messages[1] = 1;
-    pNews->stringForMessage[0] = pClub->get().managerSurname;
-    pNews->messages[2] = 7; // ASYSTENT: Radzę panu ustalić kilka meczy kontrolnych. Pozwoli to panu lepiej przygotować się do rozgrywek ligowych.
+    // PREZES: Panie %ls, witam pana w nowym miejscu pracy i mam nadzieję iż spełni pan nasze oczekiwania.
+    pNews->setTmpMsgData(1, pClub->get().managerSurname);
+
+    // ASYSTENT: Radzę panu ustalić kilka meczy kontrolnych. Pozwoli to panu lepiej przygotować się do rozgrywek ligowych.
+    pNews->setTmpMsgData(7);
 
     pNews->clearManagerMessages();
 

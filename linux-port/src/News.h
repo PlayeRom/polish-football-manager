@@ -6,8 +6,6 @@
 #include <string>
 #include "Structs.h"
 
-#define MAX_MESSAGES 10
-
 using namespace std;
 
 class News {
@@ -21,27 +19,36 @@ public:
     bool loadManagerMessages();
     void saveManagerMessages();
     void clearManagerMessages();
-    void addManagerMessage(wstring messageLine) { managerMessages.push_back(messageLine); };
-    void addManagerMessage(const SNews &news, const SClub& club, const wstring& message, int number = 0);
+    void addDisplayManagerMessages(const SClub &clubRef, bool isCout);
 
     const wstring& getManagerMessage(int index) const { return managerMessages[index]; }
     const size_t getSizeManagerMessages() const { return managerMessages.size(); }
 
-    /**
-     *  wiadomosc
-     * 0 - czy w ogole masz wiadomość (1 - tak, 0 - nie)
-     * 1-9 - przechowuje ID wiadomosci
-     * Maksymalnie mozesz otrzymac 9 wiadomosci jednoczesnie
-     */
-    int messages[MAX_MESSAGES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    wstring stringForMessage[4]; // string for message
-    int numbersForMessage[MAX_MESSAGES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    void setTmpMsgData(int msgId);
+    void setTmpMsgData(int msgId, wstring strForMsg);
+    void setTmpMsgData(int msgId, wstring strForMsg, int noForMsg);
+
+    bool isMessage() const { return messages.size() > 0; }
 
 private:
     vector<SNews> allManagerMessages; // all manager messages, loaded once during boot app
     vector<wstring> managerMessages; // manager messages incoming duriong the game
     const SNews *pEmptyNews;
+
+    struct STmpMessage {
+        int messageId;
+        wstring strForMsg;
+        int numberForMsg;
+
+        STmpMessage(): messageId(0), strForMsg(L""), numberForMsg(0) {}
+    };
+
+    vector<STmpMessage> messages;
+
+    void addManagerMessage(wstring messageLine) { managerMessages.push_back(messageLine); };
+    void addManagerMessage(const SNews &news, const SClub& club, int index);
+    void coutManagerMessage(const SNews &news, int index);
+    const SNews& getManagerNewsByIndex(int msgIndex) const;
 };
 
 #endif /* NEWS_H */
-

@@ -72,7 +72,7 @@ void Manager::runManager()
         setRivalForPlayer();
 
         info();
-        mainMenu = displayMainMenu(pNews->messages, pTactic->getTeamSettings());
+        mainMenu = displayMainMenu(pTactic->getTeamSettings());
         pColors->textcolor(GREEN);
         switch (mainMenu) {
             case 'C': { // continue / match
@@ -181,13 +181,9 @@ void Manager::info()
         clubRef.month,
         clubRef.year
     );
-    /*wcout << L" Data: " << dniT[clubRef.weekNumber - 1] << L" " <<
-            std::setfill(L'0') << std::setw(2) << clubRef.day << L"." <<
-            std::setfill(L'0') << std::setw(2) << clubRef.month << L"." <<
-            clubRef.year << L" r.";*/
 }
 
-wchar_t Manager::displayMainMenu(const int message[5], const wstring *pTactics)
+wchar_t Manager::displayMainMenu(const wstring *pTactics)
 {
     const SClub &clubRef = pClub->get();
     int tablePos = pTable->getPositionInTable(clubRef.clubId);
@@ -217,7 +213,7 @@ wchar_t Manager::displayMainMenu(const int message[5], const wstring *pTactics)
     wcout << endl << L" F Finanse: " << std::fixed << std::setprecision(2) << clubRef.finances[11] << L" zł.";
     wcout << endl << L" D Zarząd klubu";
     wcout << endl << L" M Manager";
-    if (message[0] == 1) {
+    if (pNews->isMessage()) {
         wcout << L"\033[5m"; // <- miganie, nie dziala na gnome
         pColors->textcolor(LIGHTRED);
 
@@ -304,17 +300,8 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
 
     pFootballers->changeTransferList();
 
-    if (pNews->messages[0] == 1) { //czy wogóle jest jakaś wiadomość
-        for (int i = 1; i < 10; i++) {
-            const SNews& news = pNews->getManagerNewsByNumber(pNews->messages[i]);
-            if (news.num > 0) {
-                pNews->addManagerMessage(news, clubRef, pNews->stringForMessage[i - 1].c_str());
-            }
-        }
-
-        pNews->saveManagerMessages();
-
-        memset(pNews->messages, 0, MAX_MESSAGES * sizeof(int));
+    if (pNews->isMessage()) { //czy wogóle jest jakaś wiadomość
+        pNews->addDisplayManagerMessages(clubRef, false);
     }
 
     bool isProcessing = true;
@@ -377,79 +364,73 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
         //****************************** co miesiąc ****************
         if (clubRef.day == 1) {
             isProcessing = false;
-            int numer1 = 0;
-            pNews->messages[0] = 1;
-            int tablePosRandom = (rand() % 2) + 1; //random(2)+1;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0 && numer1 == 0) {
-                    int tablePos = pTable->getPositionInTable(clubRef.clubId);
+            int tablePosRandom = (rand() % 2) + 1;
+            int tablePos = pTable->getPositionInTable(clubRef.clubId);
 
-                    if (tablePos == 0) {
-                        pNews->messages[i] = 43;
-                        numer1 = 1;
-                    }
-                    else if (tablePos < 4) {
-                        pNews->messages[i] = 31;
-                        numer1 = 1;
-                    }
-                    else if (tablePos > 3 && tablePos < 10) {
-                        pNews->messages[i] = 32;
-                        numer1 = 1;
-                    }
-                    else if (tablePos > 9 && tablePos < 14) {
-                        pNews->messages[i] = 33;
-                        numer1 = 1;
-                    }
-                    else if (tablePos > 13) {
-                        pNews->messages[i] = 34;
-                        numer1 = 1;
-                    }
+            if (tablePos == 0) {
+                // Zarząd: Wiążemy z panem wielkie nadzieje i oczekujemy sukcesów. Oby współpraca między nami była jak najlepsza.
+                pNews->setTmpMsgData(43);
+            }
+            else if (tablePos < 4) {
+                // Zarząd: Jesteśmy bardzo zadowoleni z pańskiej pracy. Mamy nadzieję, iż utrzyma pan dobrą passę.
+                pNews->setTmpMsgData(31);
+            }
+            else if (tablePos > 3 && tablePos < 10) {
+                pNews->setTmpMsgData(32);
+            }
+            else if (tablePos > 9 && tablePos < 14) {
+                pNews->setTmpMsgData(33);
+            }
+            else if (tablePos > 13) {
+                pNews->setTmpMsgData(34);
+            }
 
-                    if (clubRef.finances[12] <= 500000 && clubRef.finances[11] <= 0) {
-                        pNews->messages[i + 1] = 35;
-                    }
-                    else if (clubRef.finances[12] <= 500000 && clubRef.finances[11] > 0) {
-                        pNews->messages[i + 1] = 36;
-                    }
-                    else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] <= 0) {
-                        pNews->messages[i + 1] = 37;
-                    }
-                    else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] > 0) {
-                        pNews->messages[i + 1] = 38;
-                    }
-                    else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] <= 0) {
-                        pNews->messages[i + 1] = 39;
-                    }
-                    else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] > 0) {
-                        pNews->messages[i + 1] = 40;
-                    }
-                    else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] <= 0) {
-                        pNews->messages[i + 1] = 41;
-                    }
-                    else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] > 0) {
-                        pNews->messages[i + 1] = 42;
-                    }
-                    //***** manager miesiąca *****
-                    if (clubRef.month == 4 ||
-                        clubRef.month == 5 ||
-                        clubRef.month == 6 ||
-                        clubRef.month == 7 ||
-                        clubRef.month == 9 ||
-                        clubRef.month == 10 ||
-                        clubRef.month == 11 ||
-                        clubRef.month == 12
-                    ) {
-                        int clubId = pTable->getClubNumberInPosition(tablePosRandom);
-                        if (clubId == clubRef.clubId) {
-                            pNews->messages[i + 2] = clubId + 60;
-                            pNews->stringForMessage[i + 1] = clubRef.managerSurname;
-                            clubRef.managerStats[2]++;
-                            clubRef.managerStats[3] += (clubRef.managerStats[2] * 10);
-                        }
-                        else {
-                            pNews->messages[i + 2] = clubId + 44;
-                        }
-                    }
+            if (clubRef.finances[12] <= 500000 && clubRef.finances[11] <= 0) {
+                pNews->setTmpMsgData(35);
+            }
+            else if (clubRef.finances[12] <= 500000 && clubRef.finances[11] > 0) {
+                pNews->setTmpMsgData(36);
+            }
+            else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] <= 0) {
+                pNews->setTmpMsgData(37);
+            }
+            else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] > 0) {
+                pNews->setTmpMsgData(38);
+            }
+            else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] <= 0) {
+                pNews->setTmpMsgData(39);
+            }
+            else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] > 0) {
+                pNews->setTmpMsgData(40);
+            }
+            else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] <= 0) {
+                pNews->setTmpMsgData(41);
+            }
+            else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] > 0) {
+                pNews->setTmpMsgData(42);
+            }
+
+            //***** manager of month *****
+            if (clubRef.month == 4 ||
+                clubRef.month == 5 ||
+                clubRef.month == 6 ||
+                clubRef.month == 7 ||
+                clubRef.month == 9 ||
+                clubRef.month == 10 ||
+                clubRef.month == 11 ||
+                clubRef.month == 12
+            ) {
+                int clubId = pTable->getClubNumberInPosition(tablePosRandom);
+                if (clubId == clubRef.clubId) {
+                    // player got award "manager of month"
+                    // %ls (<club name>) zostaje ogłoszony managerem miesiąca.
+                    pNews->setTmpMsgData(clubId + 60, clubRef.managerSurname);
+                    clubRef.managerStats[2]++;
+                    clubRef.managerStats[3] += (clubRef.managerStats[2] * 10);
+                }
+                else {
+                    // another manager got award "manager of month"
+                    pNews->setTmpMsgData(clubId + 44);
                 }
             }
         }
@@ -660,19 +641,14 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             if (footballer.data[19] == 1) {
                 footballer.data[19] = 0;
                 isProcessing = false;
-                pNews->messages[0] = 1;
-                for (int i = 1; i < MAX_MESSAGES; i++) {
-                    if (pNews->messages[i] == 0) {
-                        pNews->messages[i] = 6; // LEKARZ: %ls doznał kontuzji. Za około %d dni będzie do dyspozycji.
-                        pNews->stringForMessage[i - 1] = footballer.surname;
-                        pNews->numbersForMessage[i - 1] = (rand() % 83) + 8; // za ile dni wyleczy kontuzje
-                        footballer.data[15] = pNews->numbersForMessage[i - 1];
-                        footballer.data[9]--; //spadek formy
-                        if (footballer.data[9] < 1) {
-                            footballer.data[9] = 1;
-                        }
-                        break;
-                    }
+                // LEKARZ: %ls doznał kontuzji. Za około %d dni będzie do dyspozycji.
+                int injuryDays = (rand() % 83) + 8; // in how many days heals injuries
+                pNews->setTmpMsgData(6, footballer.surname, injuryDays);
+
+                footballer.data[15] = injuryDays;
+                footballer.data[9]--; //spadek formy
+                if (footballer.data[9] < 1) {
+                    footballer.data[9] = 1;
                 }
             }
 
@@ -695,20 +671,9 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                         footballer.data[1] = footballer.data[2];
                     }
 
-                    pNews->messages[0] = 1;
-                    for (int i = 1; i < MAX_MESSAGES; i++) {
-                        if (pNews->messages[i] == 0) {
-                            if (footballer.data[15] == 0) {
-                                pNews->messages[i] = 4; // LEKARZ: %ls całkowicie wyleczył kontuzję, zaczął trenować i może grać.
-                            }
-                            else if (footballer.data[15] == 7) {
-                                pNews->messages[i] = 5; // LEKARZ: %ls częściowo wyleczył kontuzję i może grać, ale jeszcze nie trenuje.
-                            }
-
-                            pNews->stringForMessage[i - 1] = footballer.surname;
-                            break;
-                        }
-                    }
+                    // 4 = LEKARZ: %ls całkowicie wyleczył kontuzję, zaczął trenować i może grać.
+                    // 5 = LEKARZ: %ls częściowo wyleczył kontuzję i może grać, ale jeszcze nie trenuje.
+                    pNews->setTmpMsgData(footballer.data[15] == 0 ? 4 : 5, footballer.surname);
                 }
             }
             //kontuzja end
@@ -732,14 +697,10 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             // 0 dni kontraktu, tracimy zawodnika i laduje on na liscie transferowej
             if (footballer.data[18] == 0) {
                 isProcessing = false;
-                pNews->messages[0] = 1;
-                for (int i = 1; i < MAX_MESSAGES; i++) {
-                    if (pNews->messages[i] == 0) {
-                        pNews->messages[i] = 3;
-                        pNews->stringForMessage[i - 1] = footballer.surname;
-                        break;
-                    }
-                }
+
+                // 3 = %ls odchodzi z klubu na mocy wygaśnięcia kontraktu.
+                pNews->setTmpMsgData(3, footballer.surname);
+
                 footballer.data[0] = pFootballers->getSizeTransfers() + 1;
                 if (footballer.data[22] == clubRef.clubId) {
                     footballer.data[22] = 0;
@@ -750,14 +711,9 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             }
             else if (footballer.data[18] == 7) { // przypomnienie ze za 7 dni konczy sie kontrakt
                 isProcessing = false;
-                pNews->messages[0] = 1;
-                for (int i = 1; i < MAX_MESSAGES; i++) {
-                    if (pNews->messages[i] == 0) {
-                        pNews->messages[i] = 2;
-                        pNews->stringForMessage[i - 1] = footballer.surname;
-                        break;
-                    }
-                }
+
+                // 2 = %ls: chcę przypomieć iż za tydzień kończy mi się kontrakt.
+                pNews->setTmpMsgData(2, footballer.surname);
             }
         }
         pFootballers->savePlayerTeam();
@@ -774,35 +730,19 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             }
 
             isProcessing = false;
-            pNews->messages[0] = 1;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    pNews->messages[i] = random;
-                    pNews->stringForMessage[i - 1] = clubRef.isNick ? clubRef.nick : clubRef.managerSurname;
-
-                    if (random == 9) {
-                        pNews->stringForMessage[i - 1] = clubRef.isNick ? clubRef.nick : clubRef.managerSurname;
-                    }
-
-                    break;
-                }
-            }
+            pNews->setTmpMsgData(random, clubRef.isNick ? clubRef.nick : clubRef.managerSurname);
         }
 
         //****************** zadyma **************
         if (clubRef.isRiot) {
             isProcessing = false;
-            pNews->messages[0] = 1;
             clubRef.isRiot = 0;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    pNews->messages[i] = 44;
-                    pNews->stringForMessage[i - 1] = pClub->getClubName(clubRef.clubId - 1);
-                    clubRef.finances[9] += 300000.0;
-                    break;
-                }
-            }
+            clubRef.finances[9] += 300000.0;
+
+            // 44 = PZPN: W związku z zamieszkami w ostatnim meczu, klub %ls zostaje ukarany kwotą: 300000.00 zł.
+            pNews->setTmpMsgData(44, pClub->getClubName(clubRef.clubId - 1));
         }
+
         //******** wywalenie z klubu i koniec ligi**************
         if (clubRef.month == 7 && clubRef.day == 1) { // nowy sezon
             clubRef.treBOPN = 0;
@@ -835,14 +775,9 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             int clubId = pTable->getClubNumberInPosition(1); // get club on 1st place
 
             isProcessing = false;
-            pNews->messages[0] = 1;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    pNews->messages[i] = 78; // %ls MISTRZEM POLSKI!!
-                    pNews->stringForMessage[i - 1] = pClub->getClubName(clubId - 1);
-                    break;
-                }
-            }
+
+            // 78 = %ls MISTRZEM POLSKI!!
+            pNews->setTmpMsgData(78, pClub->getClubName(clubId - 1));
         }
 
         if ((clubRef.month == 2 && clubRef.day == 1) || (clubRef.month == 6 && clubRef.day == 23)) {
@@ -863,26 +798,18 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             clubRef.managerStats[0]++;
             clubRef.managerStats[3] += (clubRef.managerStats[0] * 100);
             isProcessing = false;
-            pNews->messages[0] = 1;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    pNews->messages[i] = 79; // PREZES: Wraz z zarządem składamy panu gratulacje i podziękowanie za wielkie osiągnięcia jakie pan dokonał.
-                    break;
-                }
-            }
+
+            // 79 = PREZES: Wraz z zarządem składamy panu gratulacje i podziękowanie za wielkie osiągnięcia jakie pan dokonał.
+            pNews->setTmpMsgData(79);
         }
         else if (((clubRef.month == 12 && clubRef.day == 1) || (clubRef.month == 6 && clubRef.day == 25)) && clubPos > 13) { // spadek do 2 ligi
             isProcessing = false;
-            pNews->messages[0] = 1;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    pNews->messages[i] = 77; // PREZES: Wraz z zarządem oświadczamy, iż został pan zwolniony ze stanowiska managera klubu %ls.
-                    pNews->stringForMessage[i - 1] = pClub->getClubName(clubRef.clubId - 1);
-                    clubRef.clubId = 0;
-                    break;
-                }
-            }
+            clubRef.clubId = 0;
+
+            // 77 = PREZES: Wraz z zarządem oświadczamy, iż został pan zwolniony ze stanowiska managera klubu %ls.
+            pNews->setTmpMsgData(77, pClub->getClubName(clubRef.clubId - 1));
         }
+
         //finanse
         clubRef.finances[5] = clubRef.finances[0] + clubRef.finances[1] + clubRef.finances[2] + clubRef.finances[3] + clubRef.finances[4];
         clubRef.finances[10] = clubRef.finances[6] + clubRef.finances[7] + clubRef.finances[8] + clubRef.finances[9];
@@ -960,9 +887,8 @@ void Manager::menuItemContinueUnemployed(const SClub &clubRef)
         pFootballers->initialPlayerTeam(clubId);
         pFootballers->savePlayerTeam();
 
-        pNews->messages[0] = 1;
-        pNews->messages[1] = 1;
-        pNews->stringForMessage[0] = clubRef.managerSurname;
+        // 1 = PREZES: Panie %ls, witam pana w nowym miejscu pracy i mam nadzieję iż spełni pan nasze oczekiwania.
+        pNews->setTmpMsgData(1, clubRef.managerSurname);
 
         pClub->initNewClub(clubId);
 
@@ -2918,40 +2844,43 @@ void Manager::menuItemManagement()
 
             int tablePos = pTable->getPositionInTable(clubRef.clubId);
 
+            const int MAX_MSG = 2;
+            int messages[MAX_MSG] = {0};
+
+            // club management about player
             if (tablePos == 0) {
-                pNews->messages[8] = 43;
+                messages[0] = 43; // Zarząd: Wiążemy z panem wielkie nadzieje i oczekujemy sukcesów. Oby współpraca między nami była jak najlepsza.
             }
             else if (tablePos < 4) {
-                pNews->messages[8] = 31;
+                messages[0] = 31; // Zarząd: Jesteśmy bardzo zadowoleni z pańskiej pracy. Mamy nadzieję, iż utrzyma pan dobrą passę.
             }
             else if (tablePos > 3 && tablePos < 10) {
-                pNews->messages[8] = 32;
+                messages[0] = 32; // Zarząd: Nie jest źle, ale mogłoby być lepiej. Mamy nadzieję, iż tak będzie.
             }
             else if (tablePos > 9 && tablePos < 14) {
-                pNews->messages[8] = 33;
+                messages[0] = 33; // Zarząd: Jesteśmy zaniepokojeni pańskimi poczynaniami. Mamy nadzieję, iż poprawi pan obecną sytuację.
             }
             else if (tablePos > 13) {
-                pNews->messages[8] = 34;
+                messages[0] = 34; // Zarząd: Jesteśmy bardzo rozczarowani pańskimi poczynaniami. Jeśli nie poprawi pan sytuacji, będziemy musieli pana zwolnić.
             }
 
-            if (clubRef.finances[12] <= 500000 && clubRef.finances[11] <= 0)        pNews->messages[9] = 35;
-            else if (clubRef.finances[12] <= 500000 && clubRef.finances[11] > 0)    pNews->messages[9] = 36;
-            else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] <= 0)  pNews->messages[9] = 37;
-            else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] > 0)   pNews->messages[9] = 38;
-            else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] <= 0)  pNews->messages[9] = 39;
-            else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] > 0)   pNews->messages[9] = 40;
-            else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] <= 0)   pNews->messages[9] = 41;
-            else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] > 0)    pNews->messages[9] = 42;
+            // finances message
+            if (clubRef.finances[12] <= 500000 && clubRef.finances[11] <= 0)        messages[1] = 35; // Zarząd: Finanse klubu są katastrofalne!
+            else if (clubRef.finances[12] <= 500000 && clubRef.finances[11] > 0)    messages[1] = 36;
+            else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] <= 0)  messages[1] = 37;
+            else if (clubRef.finances[12] <= 1000000 && clubRef.finances[11] > 0)   messages[1] = 38;
+            else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] <= 0)  messages[1] = 39;
+            else if (clubRef.finances[12] <= 2000000 && clubRef.finances[11] > 0)   messages[1] = 40;
+            else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] <= 0)   messages[1] = 41;
+            else if (clubRef.finances[12] > 2000000 && clubRef.finances[11] > 0)    messages[1] = 42; // Zarząd: Finanse klubu są bardzo dobre.
 
-            for (int i = 8; i < MAX_MESSAGES; i++) {
+            for (int i = 0; i < MAX_MSG; i++) {
                 wcout << endl << endl;
-                const SNews& news = pNews->getManagerNewsByNumber(pNews->messages[i]);
+                const SNews& news = pNews->getManagerNewsByNumber(messages[i]);
                 if (news.num > 0) {
-                    wprintf(news.message, pNews->stringForMessage[i - 1].c_str(), pNews->numbersForMessage[i - 1]);
+                    wcout << news.message;
                 }
             }
-            pNews->messages[8] = 0;
-            pNews->messages[9] = 0;
 
             pColors->textcolor(GREEN);
             wcout << endl << endl << L" T Prośba o dodatkowe fundusze na transfery";
@@ -3094,27 +3023,15 @@ void Manager::menuItemNewsOld()
 
 void Manager::menuItemNews()
 {
-    const SClub& clubRef = pClub->get();
-
     info();
     pColors->textcolor(GREEN);
     wcout << endl << endl << L"WIADOMOŚCI";
-    pColors->textcolor(LIGHTGRAY);
-    if (pNews->messages[0] == 1) { //czy wogóle jest jakaś wiadomość
-        for (int i = 1; i < MAX_MESSAGES; i++) {
-            wcout << endl << endl;
-            const SNews& news = pNews->getManagerNewsByNumber(pNews->messages[i]);
-            if (news.num > 0) {
-                wprintf(news.message, pNews->stringForMessage[i - 1].c_str(), pNews->numbersForMessage[i - 1]);
 
-                pNews->addManagerMessage(news, clubRef, pNews->stringForMessage[i - 1].c_str(), pNews->numbersForMessage[i - 1]);
-            }
-        }
-        pNews->saveManagerMessages();
+    pColors->textcolor(LIGHTGRAY);
+    if (pNews->isMessage()) { //czy wogóle jest jakaś wiadomość
+        pNews->addDisplayManagerMessages(pClub->get(), true);
         pInput->getKeyBoardPressed();
     }
-
-    memset(pNews->messages, 0, MAX_MESSAGES * sizeof(int));
 }
 
 void Manager::menuItemOptions()
@@ -3217,67 +3134,43 @@ void Manager::setAssistantMessageAfterMatch()
         int PnaP = pMatch->getMonM();
         int AnaO = pMatch->getAonD();
 
-        int counter = -1;
         if (clubRef.playerGoals <= clubRef.rivalGoals) {
             // przegrana
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    counter = 0;
-                    if (AnaO < -20 && clubRef.inst[4] == 0) {
-                        pNews->messages[i + counter] = 20;
-                        counter++;
-                    }
-                    if (PnaP < -10 && clubRef.inst[0] != 4) {
-                        pNews->messages[i + counter] = 21;
-                        counter++;
-                    }
-                    if (OnaA < 0 && clubRef.inst[3] == 0) {
-                        pNews->messages[i + counter] = 22;
-                        counter++;
-                    }
-                    if (OnaA > 20 && clubRef.inst[3] == 1) {
-                        pNews->messages[i + counter] = 23;
-                        counter++;
-                    }
-                    if (PnaP > 10 && clubRef.inst[0] != 2) {
-                        pNews->messages[i + counter] = 24;
-                        counter++;
-                    }
-                    if (AnaO > 0 && clubRef.inst[4] == 1) {
-                        pNews->messages[i + counter] = 25;
-                        counter++;
-                    }
-                    if (clubRef.inst[2] == 0) {
-                        pNews->messages[i + counter] = 26;
-                        counter++;
-                    }
-                    if (clubRef.inst[2] == 1) {
-                        pNews->messages[i + counter] = 27;
-                        counter++;
-                    }
-                    if (clubRef.inst[1] != 3) {
-                        pNews->messages[i + counter] = 28;
-                        counter++;
-                    }
-                    if (counter > 0) {
-                       pNews->messages[0] = 1;
-                    }
+            if (AnaO < -20 && clubRef.inst[4] == 0) {
+                // 20 = ASYSTENT: Byliśmy osłabieni w ataku, więc moim zdaniem gra z kontry przyniosłaby lepsze rezultaty.
+                pNews->setTmpMsgData(20);
+            }
+            if (PnaP < -10 && clubRef.inst[0] != 4) {
+                pNews->setTmpMsgData(21);
+            }
+            if (OnaA < 0 && clubRef.inst[3] == 0) {
+                pNews->setTmpMsgData(22);
+            }
+            if (OnaA > 20 && clubRef.inst[3] == 1) {
+                pNews->setTmpMsgData(23);
+            }
+            if (PnaP > 10 && clubRef.inst[0] != 2) {
+                pNews->setTmpMsgData(24);
+            }
+            if (AnaO > 0 && clubRef.inst[4] == 1) {
+                pNews->setTmpMsgData(25);
+            }
 
-                    break;
-                }
+            if (clubRef.inst[2] == 0) {
+                pNews->setTmpMsgData(26);
+            }
+            if (clubRef.inst[2] == 1) {
+                pNews->setTmpMsgData(27);
+            }
+            if (clubRef.inst[1] != 3) {
+                pNews->setTmpMsgData(28);
             }
         }
         else { // wygrana meczu
             int los = rand() % 2;
-            for (int i = 1; i < MAX_MESSAGES; i++) {
-                if (pNews->messages[i] == 0) {
-                    // ASYSTENT: Gratuluję zwycięstwa. Dobrał pan właściwą taktykę.
-                    // ASYSTENT: Gratuluję wygranej. Nie mam zastrzeżeń co do zastosowanej taktyki.
-                    pNews->messages[i] = los == 0 ? 29 : 30;
-                    pNews->messages[0] = 1;
-                    break;
-                }
-            }
+            // ASYSTENT: Gratuluję zwycięstwa. Dobrał pan właściwą taktykę.
+            // ASYSTENT: Gratuluję wygranej. Nie mam zastrzeżeń co do zastosowanej taktyki.
+            pNews->setTmpMsgData(los == 0 ? 29 : 30);
         }
         clubRef.isAssistantMsg = 0;
 
