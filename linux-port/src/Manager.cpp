@@ -139,8 +139,8 @@ void Manager::runManager()
                 pColors->textcolor(LIGHTRED);
                 wcout << endl << L"Czy chcesz wyjść z gry? (T/n): ";
 
-                wchar_t yn = pInput->getch();
-                mainMenu = (yn == L't' || yn == L'\n') ? 'Q' : 0;
+                wchar_t yn = pInput->getKeyBoardPressed();
+                mainMenu = (yn == L'T' || yn == L'\n') ? 'Q' : 0;
                 break;
             }
         }
@@ -562,8 +562,8 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                     cena
                 );
                 wcout << endl << endl << L"Czy akceptujesz propozycję? (T/n): ";
-                wchar_t yn = pInput->getch();
-                if (yn == L't' || yn == L'\n') {
+                wchar_t yn = pInput->getKeyBoardPressed();
+                if (yn == L'T' || yn == L'\n') {
                     pColors->textcolor(GREEN);
                     wprintf(
                         L"\n\r\n\rKontrakt %ls wygasa. %ls zostaje sprzedany do %ls.",
@@ -586,12 +586,12 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
 
                     pClub->save();
 
-                    pInput->getch();
+                    pInput->getKeyBoardPressed();
                 }
                 else {
                     pColors->textcolor(RED);
                     wcout << endl << endl << pClub->getClubName(clubRef.clubId - 1) << L" odrzuca propozycję.";
-                    pInput->getch();
+                    pInput->getKeyBoardPressed();
                 }
             }//dla if
             //*********************************************
@@ -851,15 +851,15 @@ void Manager::menuItemContinueMatch(SClub &clubRef)
     if (!clubRef.isNotAllowedTeamPlayer) {
         pColors->textcolor(GREEN);
         wcout << endl << endl << L"Czy chcesz przejść do meczu? (T/n): ";
-        wchar_t matchYN = pInput->getch();
-        if (matchYN == L't' || matchYN == L'\n') {
+        wchar_t matchYN = pInput->getKeyBoardPressed();
+        if (matchYN == L'T' || matchYN == L'\n') {
             pMatch->runMecz();
         }
     }
     else {
         pColors->textcolor(LIGHTRED);
         wcout << endl << endl << L"Nie można rozegrać meczu! W składzie występują niedozwoleni zawodnicy!";
-        pInput->getch();
+        pInput->getKeyBoardPressed();
     }
 }
 
@@ -1300,11 +1300,11 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                             footballer.name,
                             footballer.surname
                         );
-                        wchar_t yn = pInput->getch();
-                        if (yn == L't' || yn == L'\n') {
+                        wchar_t yn = pInput->getKeyBoardPressed();
+                        if (yn == L'T' || yn == L'\n') {
                             wprintf(L"\n\rJutro wygaśnie kontrakt %ls%ls.", footballer.name, footballer.surname);
                             footballer.data[18] = 1;
-                            pInput->getch();
+                            pInput->getKeyBoardPressed();
                         }
                         break;
                     }
@@ -1388,8 +1388,8 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                             wprintf(L"\n\r%ls: Zgadzam się na proponowane warunki kontraktu.", footballer.surname);
                             pColors->textcolor(LIGHTGRAY);
                             wcout << endl << endl << L"Akceptujesz? (T/n): ";
-                            wchar_t yn = pInput->getche();
-                            if (yn == L't' || yn == L'\n') {
+                            wchar_t yn = pInput->getKeyBoardPressed();
+                            if (yn == L'T' || yn == L'\n') {
                                 footballer.finances[1] = placa;
                                 if (footballer.data[2] == PLAYERS_POS_P ||
                                     footballer.data[2] == PLAYERS_POS_N
@@ -1422,7 +1422,7 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                         else {
                             pColors->textcolor(RED);
                             wcout << endl << footballer.surname << L": Odrzucam proponowane warunki kontraktu.";
-                            pInput->getch();
+                            pInput->getKeyBoardPressed();
                         }
                         break;
                     }
@@ -2134,7 +2134,7 @@ void Manager::menuItemCalendarControlMatch()
         if (!canPlayControlMatch) {
             pColors->textcolor(RED);
             wcout << endl << L"Odrzucono propozycję.";
-            pInput->getch();
+            pInput->getKeyBoardPressed();
         }
         else if (canPlayControlMatch) {
             clubRef.controlMatchesAmount--;
@@ -2531,8 +2531,8 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
                     pColors->textcolor(LIGHTGRAY);
 
                     wcout << endl << endl << L"Akceptujesz? (T/n): ";
-                    wchar_t yn = pInput->getche();
-                    if (yn == L't' || yn == L'\n') {
+                    wchar_t yn = pInput->getKeyBoardPressed();
+                    if (yn == L'T' || yn == L'\n') {
                         footballer.data[22] = clubRef.clubId;
                         footballer.finances[1] = placa;
                         footballer.finances[0] = cena;
@@ -2583,7 +2583,7 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
                 else {
                     pColors->textcolor(RED);
                     wcout << endl << footballer.surname << L": Odrzucam proponowane warunki kontraktu.";
-                    pInput->getch();
+                    pInput->getKeyBoardPressed();
                 }
 
                 break;
@@ -2828,7 +2828,7 @@ void Manager::menuItemFinance()
             clubRef.finances[13]
         );
         wcout << endl << endl << L"Powrót do MENU - dowolny klawisz...";
-        pInput->getch();
+        pInput->getKeyBoardPressed();
     }
 }
 
@@ -2913,7 +2913,7 @@ void Manager::menuItemManagement()
 
                         pClub->save();
                     }
-                    pInput->getch();
+                    pInput->getKeyBoardPressed();
                     break;
                 }
             }
@@ -2974,6 +2974,7 @@ void Manager::menuItemNewsOld()
         pColors->textcolor(GREEN);
         wcout << endl << endl << L"STARE WIADOMOŚCI" << endl;
 
+        pColors->textcolor(LIGHTGRAY);
         // wczytujemy maxCount wiadomosci
         for (int index = startFrom, counter = maxCount - 1;
             index >= 0 && counter >= 0;

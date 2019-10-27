@@ -110,7 +110,7 @@ bool MainMenu::newGame()
     pColors->textcolor(GREEN);
     wcout << endl << endl << L"Czy na pewno chcesz rozpocząć nową grę? (T/n): ";
     wchar_t yn = pInput->getKeyBoardPressed();
-    if (yn != L't' && yn != L'\n') {
+    if (yn != L'T' && yn != L'\n') {
         return false;
     }
 
@@ -134,7 +134,7 @@ bool MainMenu::newGame()
 
     wcout << endl << L"Czy chcesz podać swoją ksywę? (T/n): ";
     yn = pInput->getKeyBoardPressed();
-    if (yn == L't' || yn == L'\n') {
+    if (yn == L'T' || yn == L'\n') {
         wcout << endl << L"Podaj swój nickname: ";
         pInput->getText2Buffer(nick, MAX_USER_NICK);
     }
