@@ -15,6 +15,8 @@
 #include "Tactic.h"
 #include "Logger.h"
 
+#define MAX_MESSAGES 10
+
 class Match {
 public:
     Match(
@@ -60,13 +62,14 @@ private:
     wstring msgFootballers[20]; // footabllers names for match messages
     wstring msgPlayerSurnames[16];
     wstring msgRivalSurnames[16];
-    int wiado[10];
-    int msgWhoBall[10]; // dla wiadomosci, kto przy piłce 1 - gracz, 2 - rywal
+    int wiado[MAX_MESSAGES];
+    int msgWhoBall[MAX_MESSAGES]; // dla wiadomosci, kto przy piłce 1 - gracz, 2 - rywal
 
+    void updateTable();
     void prepareFootballers();
     void prepareFootballersSurnames(const SClub &clubRef);
     void drawTeam(int usta, int tryb, int kto);
-    int whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef);
+    int whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef);
     void loadMatchMessages();
     void drawBoard(
         bool isHome,
@@ -82,7 +85,7 @@ private:
         int ballPossHome, int ballPossAway,
         int OnaA, int PnaP, int AnaO,
         int gdzie,
-        int pilka
+        bool isPlayerBall
     );
     void drawOnaA(bool isHome, int OnaA);
     void drawAnaO(bool isHome, int AnaO);
@@ -91,6 +94,15 @@ private:
 
     void playerTactics();
     void rivalTactics();
+
+    wstring getFootballerSurname(bool isPlayerBall, int footabllerId);
+    int getArbiterDecision(int instrTreatment);
+    int getMiddlefieldFootballerIdWhoFouled(int teamSetting);
+    int getDefFootballerId(int teamSetting);
+    int getFootballerIdWhoShootDistance(int teamSetting);
+    int getGoooalMinute(int minuta, int koniec);
+    int getRightWingerFootballerId(int teamSetting);
+    int getLefttWingerFootballerId(int teamSetting);
 };
 
 #endif /* MATCH_H */

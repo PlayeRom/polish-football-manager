@@ -248,7 +248,7 @@ struct SFootballer {
     int data[23];
     /**
      * Tabela SFootballer.data
-     * 0 - liczba porzadkowa gracza w druzynie, np. 1 - do bramkarz, 2 - obrońca, ... 12 - pierwszy rezerwowoy, itd.
+     * 0 - liczba porzadkowa gracza w druzynie, np. 1 - to bramkarz, 2 - obrońca, ... 12 - pierwszy rezerwowoy, itd.
      * 1 - co trenuje, 0 - nie trenuje, 1 - bramkarz, 2 - obrona, 3 - pomoc, 4 - atak
      * 2 - pozycja na jakiej gra, 1 - B, 2 - O, 3 - P, 4 - N
      * 3 - umiejetnosci B, od 1 do 20
@@ -292,4 +292,3 @@ struct SLastMatch {
 };
 
 #endif /* STRUCTS_H */
-

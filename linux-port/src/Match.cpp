@@ -89,7 +89,8 @@ bool Match::runMecz() {
     bool isPossibleGoToTactics = true;
     int koniec = 0; // 0 - poczatek meczu, 1 - koniec 1 polowy, 2 - poczatek 2 polowy, 3 - koniec meczu, 4 - wyjscie z meczu
     int playerGoals = 0, rivalGoals = 0; // playerGoals - gole gracza, rivalGoals - gole przeciwnika
-    int pilka = 0, ktoZacz = 0, minuta = 0, start = 0, k, czas = 2;
+    bool isPlayerBall = false; // true - player team has ball, false - rival team has a ball
+    int ktoZacz = 0, minuta = 0, start = 0, k, czas = 2;
     int sumaB = 0, sumaO = 0, sumaP = 0, sumaN = 0; // sumy B, O, P, N duzyny gracza
     int sumaB2 = 0, sumaO2 = 0, sumaP2 = 0, sumaN2 = 0; // sumy B, O, P, N duzyny rywala
     int sumaBx = 0, sumaOx = 0, sumaPx = 0, sumaNx = 0;
@@ -102,20 +103,20 @@ bool Match::runMecz() {
     // 5 - krytczna podbramkowa, rzut karny, napastnik sam na sam z bramkarzem
     int gdzie = 1;
 
-    int i = 0, los = 0, co = 0, x1 = 0, x2 = 0, x3 = 0, pos1 = 0, pos2 = 0, pos = 0;
+    int los = 0, co = 0, x1 = 0, x2 = 0, x3 = 0, pos1 = 0, pos2 = 0, pos = 0;
     int pam; // pamieta numer zawodnika, ktorego trzeba przeniesc do nastepnych wiadomosci, np. "%s strzela!", pam = x, "%s strzelił"
-    int q = 0, str[8] = {0, 0, 0, 0, 0, 0, 0, 0}, str2[8] = {0, 0, 0, 0, 0, 0, 0, 0}, dystans = 0;
-    int pkt[16], pkt2[16], golr[16], gol[16], blokada[16], walkower = 0;
-    float h = 0, strefa[6] = {0, 0, 0, 0, 0, 0}, premia = 0;
+    int q = 0, str[8] = {0, 0, 0, 0, 0, 0, 0, 0}, str2[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    bool isShotFromDistance = false;
+    float strefa[6] = {0, 0, 0, 0, 0, 0}, premia = 0;
 
     howManyPlayerChanges = 0;
     isPlayerChanges = true;
     whoPlayerChanges = 0;
 
-    time_t tmptime = time(NULL);
-    struct tm t = *localtime(&tmptime);
+    //time_t tmptime = time(NULL);
+    //struct tm t = *localtime(&tmptime);
 
-    walkower = pFootballers->getSizePlayerTeam();
+    int walkower = pFootballers->getSizePlayerTeam();
 
     memset(mingol1, 0, 10 * sizeof(int));
     memset(mingol2, 0, 10 * sizeof(int));
@@ -135,9 +136,11 @@ bool Match::runMecz() {
             prepareFootballersSurnames(clubRef);
         }
 
+        bool isHome = clubRef.rivalData[1] == 0;
+
         pInput->clrscr();
         pColors->textcolor(WHITE);
-        if (clubRef.rivalData[1] == 0) { //w domu
+        if (isHome) { //w domu
             pColors->textbackground(BLUE);
             wprintf(L" %19ls %d ", pClub->getClubName(clubRef.clubId - 1).c_str(), playerGoals);
             pColors->textbackground(RED);
@@ -153,7 +156,6 @@ bool Match::runMecz() {
         wprintf(L" Czas:%3d", minuta);
         pColors->textcolor(LIGHTGRAY);
 
-        bool isHome = clubRef.rivalData[1] == 0;
         drawWhoScored(
             isHome ? mingol1 : mingol2,
             isHome ? mingol2 : mingol1,
@@ -259,50 +261,65 @@ bool Match::runMecz() {
                 sumaN += premia / 1000;
                 sumaP += premia / 1000;
 
-                if (clubRef.inst[1] == INSTR_TREATMENT_HARD) {
-                    // obchodzenie sie twarde
-                    sumaO += 5;
-                    sumaP += 5;
-                    sumaN += 5;
-                }
-                if (clubRef.inst[1] == INSTR_TREATMENT_SOFT) {
-                    // obchodzenie sie delikatne
-                    sumaO -= 5;
-                    sumaP -= 5;
-                    sumaN -= 5;
-                }
-
-                if (clubRef.inst[5] == INSTR_ATTIT_DEFENSIVE) {
-                    //nastawienie obronne
-                    sumaO += 10;
-                    sumaN -= 10;
-                }
-                if (clubRef.inst[5] == INSTR_ATTIT_ATTACK) {
-                    //nastawienie atak
-                    sumaO -= 10;
-                    sumaN += 10;
+                switch (clubRef.inst[1]) {
+                    case INSTR_TREATMENT_HARD: {
+                        // obchodzenie sie twarde
+                        sumaO += 5;
+                        sumaP += 5;
+                        sumaN += 5;
+                        break;
+                    }
+                    case INSTR_TREATMENT_SOFT: {
+                        // obchodzenie sie delikatne
+                        sumaO -= 5;
+                        sumaP -= 5;
+                        sumaN -= 5;
+                        break;
+                    }
                 }
 
+                switch (clubRef.inst[5]) {
+                    case INSTR_ATTIT_DEFENSIVE: {
+                        //nastawienie obronne
+                        sumaO += 10;
+                        sumaN -= 10;
+                        break;
+                    }
+                    case INSTR_ATTIT_ATTACK: {
+                        //nastawienie atak
+                        sumaO -= 10;
+                        sumaN += 10;
+                        break;
+                    }
+                }
+
+                // add points from tactic training
                 sumaO += clubRef.trained[3];
                 sumaP += clubRef.trained[3];
                 sumaN += clubRef.trained[3];
 
-                //taktyka
-                if (clubRef.teamSetting == T4_4_2_DEF || clubRef.teamSetting == T3_5_2_DEF || clubRef.teamSetting == T5_3_2_DEF) {
-                    //ustawienie obronne
-                    sumaO += 10;
-                    sumaN -= 10;
-                }
-                if (clubRef.teamSetting == T4_4_2_ATT || clubRef.teamSetting == T3_5_2_ATT || clubRef.teamSetting == T5_3_2_ATT) {
-                    //ustawienie atak
-                    sumaO -= 10;
-                    sumaN += 10;
-                }
-                if (clubRef.teamSetting == T4_4_2_DIA) {
-                    //ustawienie diamond
-                    sumaO += 10;
-                    sumaN += 10;
-                    sumaP -= 15;
+                // tactic
+                switch (clubRef.teamSetting) {
+                    case T4_4_2_DEF:
+                    case T3_5_2_DEF:
+                    case T5_3_2_DEF: { //ustawienie obronne
+                        sumaO += 10;
+                        sumaN -= 10;
+                        break;
+                    }
+                    case T4_4_2_ATT:
+                    case T3_5_2_ATT:
+                    case T5_3_2_ATT: { //ustawienie atak
+                        sumaO -= 10;
+                        sumaN += 10;
+                        break;
+                    }
+                    case T4_4_2_DIA: { //ustawienie diamond
+                        sumaO += 10;
+                        sumaN += 10;
+                        sumaP -= 15;
+                        break;
+                    }
                 }
                 sumaN += clubRef.trained[2] * 2; // cos wieksza atak, ale tylko dla gracza
             }
@@ -320,35 +337,50 @@ bool Match::runMecz() {
                     sumaP2 += 10;
                     sumaN2 += 10;
                 }
-                if (clubRef.rivalInst[1] == INSTR_TREATMENT_HARD) {
-                    sumaO2 += 5;
-                    sumaP2 += 5;
-                    sumaN2 += 5;
+
+                switch (clubRef.rivalInst[1]) {
+                    case INSTR_TREATMENT_HARD: {
+                        sumaO2 += 5;
+                        sumaP2 += 5;
+                        sumaN2 += 5;
+                        break;
+                    }
+                    case INSTR_TREATMENT_SOFT: {
+                        sumaO2 -= 5;
+                        sumaP2 -= 5;
+                        sumaN2 -= 5;
+                        break;
+                    }
                 }
-                if (clubRef.rivalInst[1] == INSTR_TREATMENT_SOFT) {
-                    sumaO2 -= 5;
-                    sumaP2 -= 5;
-                    sumaN2 -= 5;
+
+                switch (clubRef.rivalInst[5]) {
+                    case INSTR_ATTIT_DEFENSIVE: { // nastawienie obronne
+                        sumaO2 += 10;
+                        sumaN2 -= 10;
+                        break;
+                    }
+                    case INSTR_ATTIT_ATTACK: { // nastawienie atak
+                        sumaO2 -= 10;
+                        sumaN2 += 10;
+                        break;
+                    }
                 }
-                if (clubRef.rivalInst[5] == INSTR_ATTIT_DEFENSIVE) {
-                    //nastawienie obronne
-                    sumaO2 += 10;
-                    sumaN2 -= 10;
-                }
-                if (clubRef.rivalInst[5] == INSTR_ATTIT_ATTACK) {
-                    //nastawienie atak
-                    sumaO2 -= 10;
-                    sumaN2 += 10;
-                }
-                if (clubRef.rivalData[2] == T4_4_2_DEF || clubRef.rivalData[2] == T3_5_2_DEF || clubRef.rivalData[2] == T5_3_2_DEF) {
-                    //ustawienie obronne
-                    sumaO2 += 10;
-                    sumaN2 -= 10;
-                }
-                if (clubRef.rivalData[2] == T4_4_2_ATT || clubRef.rivalData[2] == T3_5_2_ATT || clubRef.rivalData[2] == T5_3_2_ATT) {
-                    //ustawienie atak
-                    sumaO2 -= 10;
-                    sumaN2 += 10;
+
+                switch (clubRef.rivalData[2]) {
+                    case T4_4_2_DEF:
+                    case T3_5_2_DEF:
+                    case T5_3_2_DEF: { // ustawienie obronne
+                        sumaO2 += 10;
+                        sumaN2 -= 10;
+                        break;
+                    }
+                    case T4_4_2_ATT:
+                    case T3_5_2_ATT:
+                    case T5_3_2_ATT: { // ustawienie atak
+                        sumaO2 -= 10;
+                        sumaN2 += 10;
+                        break;
+                    }
                 }
             }
         }//dla while k!=2
@@ -356,13 +388,13 @@ bool Match::runMecz() {
         OnaA = sumaO - sumaN2;
         PnaP = sumaP - sumaP2;
         AnaO = sumaN - sumaO2;
-        if (dystans == 1) {
+        if (isShotFromDistance) {
             sumaB += 50;
             sumaB2 += 50;
-            dystans = 0;
+            isShotFromDistance = false;
         }
 
-        if (clubRef.rivalData[1] == 0) { // gracz gra w domu
+        if (isHome) { // gracz gra w domu
             drawBoard(
                 true,
                 str[0], str2[0],
@@ -377,7 +409,7 @@ bool Match::runMecz() {
                 pos1, pos2,
                 OnaA, PnaP, AnaO,
                 gdzie,
-                pilka
+                isPlayerBall
             );
         }
         else { // gracz gra na wyjezdzie
@@ -395,7 +427,7 @@ bool Match::runMecz() {
                 pos2, pos1,
                 OnaA, PnaP, AnaO,
                 gdzie,
-                pilka
+                isPlayerBall
             );
         }
 
@@ -410,100 +442,51 @@ bool Match::runMecz() {
             );
         }
         if (start == 1 && koniec < 3) { //mecz się rozpoczął
-            co = whatHappened(pilka, PnaP, OnaA, AnaO, sumaB, sumaB2, gdzie, clubRef);
+            co = whatHappened(isPlayerBall, PnaP, OnaA, AnaO, sumaB, sumaB2, gdzie, clubRef);
             //************ gdzie = 1 *******************
             if (co == 9) {
-                dystans = 1;
+                isShotFromDistance = true;
             }
 
             if (gdzie == 1) {
-                if (pilka == 1) {
-                    los = (rand() % 3) + 2;
-                    msgFootballers[0] = msgPlayerSurnames[los - 1];
-                    msgFootballers[1] = msgPlayerSurnames[6]; //czyli 7
-                }
-                else { //if (pilka==2)
-                    los = (rand() % 3) + 2;
-                    msgFootballers[0] = msgRivalSurnames[los - 1];
-                    msgFootballers[1] = msgRivalSurnames[6]; //czyli 7
-                }
+                los = (rand() % 3) + 2;
+                msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
+                msgFootballers[1] = getFootballerSurname(isPlayerBall, 6); //czyli 7
 
                 if (co == 1) {
                     wiado[0] = 8;
                     los = (rand() % 3); //blokada=1;
-                    msgWhoBall[0] = pilka;
-                    msgWhoBall[1] = pilka;
-                    if (pilka == 1) {
-                        x1 = clubRef.teamSetting;
-                        msgFootballers[2] = msgPlayerSurnames[6];
-                    }
-                    else {
-                        x1 = clubRef.rivalData[2];
-                        msgFootballers[2] = msgRivalSurnames[6];
-                    }
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
 
                     if (los == 0) { //na lewe skrzydło
                         wiado[1] = 9;
                         gdzie = 2;
-                        if (x1 == 1 || x1 == 2 || x1 == 3 || x1 == 4 || x1 == 10 || x1 == 11) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[5]; //czyli 6
-                            else msgFootballers[3] = msgRivalSurnames[5];
-                            pam = 5;
-                        }
-                        if (x1 == 5 || x1 == 6 || x1 == 7 || x1 == 8 || x1 == 12 || x1 == 13 || x1 == 14) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[4];
-                            else msgFootballers[3] = msgRivalSurnames[4];
-                            pam = 4;
-                        }
-                        if (x1 == 9) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[7];
-                            else msgFootballers[3] = msgRivalSurnames[7];
-                            pam = 7;
-                        }
+                        pam = getLefttWingerFootballerId(teamSetting);
+                        msgFootballers[3] = getFootballerSurname(isPlayerBall, pam);
                     }
-                    else { //if (los==1)//podanie na prawe skrzydło
+                    else if (los == 1) { // podanie na prawe skrzydło
                         wiado[1] = 10;
                         gdzie = 2;
-                        if (x1 == 1 || x1 == 2 || x1 == 3 || x1 == 6 || x1 == 7 || x1 == 9) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[8]; // 9
-                            else msgFootballers[3] = msgRivalSurnames[8];
-                            pam = 8;
-                        }
-
-                        if (x1 == 4 || x1 == 5 || x1 == 8 || x1 == 10) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[7]; //8
-                            else msgFootballers[3] = msgRivalSurnames[7];
-                            pam = 7;
-                        }
-
-                        if (x1 == 11) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[9]; //10
-                            else msgFootballers[3] = msgRivalSurnames[9];
-                            pam = 9;
-                        }
-
-                        if (x1 == 12 || x1 == 13 || x1 == 14) {
-                            if (pilka == 1) msgFootballers[3] = msgPlayerSurnames[5]; // 6
-                            else msgFootballers[3] = msgRivalSurnames[5];
-                            pam = 5;
-                        }
+                        pam = getRightWingerFootballerId(teamSetting);
+                        msgFootballers[3] = getFootballerSurname(isPlayerBall, pam);
                     }
-
-                    if (los == 2) {
-                        wiado[1] = 11;
+                    else if (los == 2) {
+                        wiado[1] = 11; // %ls podaje do przodu.
                         gdzie = 3;
-                        if (pilka == 1) msgFootballers[2] = msgPlayerSurnames[6];
-                        else msgFootballers[2] = msgRivalSurnames[6];
+                        msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
                     }
                 }//co=1
                 else if (co == 2) {
                     wiado[0] = 12;
                     gdzie = 3;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                 }//co=2
                 else if (co == 3 || co == 4) {
                     wiado[0] = 12;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     if (co == 4) {
                         wiado[0] = 8;
                     }
@@ -512,120 +495,71 @@ bool Match::runMecz() {
                         wiado[1] = 14;
                     }
 
-                    if (pilka == 1) {
-                        msgWhoBall[1] = 2;
-                        msgFootballers[2] = msgRivalSurnames[6];
-                        msgFootballers[3] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                        pilka = 2;
-                    }
-                    else {
-                        msgWhoBall[1] = 1;
-                        msgFootballers[2] = msgPlayerSurnames[6];
-                        msgFootballers[3] = pClub->getClubName(clubRef.clubId - 1);
-                        pilka = 1;
-                    }
+                    // zamiana pilki
+                    isPlayerBall = !isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
+                    msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
+                    msgFootballers[3] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
+
                     gdzie = 1;
                 }//co=3||co=4
                 else if (co == 5) {
                     wiado[0] = 8;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     wiado[1] = 15;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     wiado[2] = 16;
-                    if (pilka == 1) {
-                        msgWhoBall[2] = 2;
-                        msgFootballers[4] = msgRivalSurnames[6];
-                        pilka = 2;
-                    }
-                    else {
-                        msgWhoBall[2] = 1;
-                        msgFootballers[4] = msgPlayerSurnames[6];
-                        pilka = 1;
-                    }
+
+                    // zamiana pilki
+                    isPlayerBall = !isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
+
                     gdzie = 1;
                 }//co=5
                 else if (co == 6) {
                     wiado[0] = 8;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     wiado[1] = 17;
                     wiado[2] = 18;
-                    if (pilka == 1) {
-                        msgWhoBall[1] = 2;
-                        msgWhoBall[2] = 2;
-                        msgFootballers[2] = msgRivalSurnames[6];
-                        msgFootballers[3] = msgFootballers[1];
-                        msgFootballers[4] = msgRivalSurnames[6];
-                        pilka = 2;
-                    }
-                    else {
-                        msgWhoBall[1] = 1;
-                        msgWhoBall[2] = 1;
-                        msgFootballers[2] = msgPlayerSurnames[6];
-                        msgFootballers[3] = msgFootballers[1];
-                        msgFootballers[4] = msgPlayerSurnames[6];
-                        pilka = 1;
-                    }
+
+                    // zamiana pilki
+                    isPlayerBall = !isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
+                    msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
+                    msgFootballers[3] = msgFootballers[1];
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
+
                     gdzie = 1;
                 }//co=6
                 else if (co == 7) { //faul przeciwnika
                     wiado[0] = 8;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
                     wiado[1] = 14;
                     wiado[2] = 19;
-                    if (pilka == 1) {
-                        x1 = clubRef.rivalInst[1];
-                        x2 = clubRef.rivalData[2];
-                        str2[7]++;
-                    }
-                    else {
-                        x1 = clubRef.inst[1];
-                        x2 = clubRef.teamSetting;
-                        str[7]++;
-                    }
-                    los = (rand() % 6);
-                    if (x1 == 2) { //delikatne
-                        if (los == 0 || los == 1 || los == 2) co = 1; //nie ma kartki
-                        else if (los == 3 || los == 4) co = 2; //słowne upomienie
-                        else co = 3; //żólta kartka
-                    }
-                    else if (x1 == 1) { //normalne
-                        if (los == 0 || los == 1) co = 1; //nie ma kartki
-                        else if (los == 3 || los == 4) co = 2; //słowne upomienie
-                        else co = 3; //żólta kartka if (los==5||los==2)
-                    }
-                    else if (x1 == 3) { //twarde
-                        if (los == 0) co = 1; //nie ma kartki
-                        else if (los == 3 || los == 4) co = 2; //słowne upomienie
-                        else co = 3; //żólta kartka if (los==5||los==2||los==1)
-                    }
+                    int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
+                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    isPlayerBall ? str2[7]++ : str[7]++;
 
-                    // tu chyba losuje zawodnika, ktory otrzyma zolta kartke
-                    if (x2 == 1 || x2 == 2 || x2 == 3 || x2 == 4) los = (rand() % 4) + 6;
-                    else if (x2 == 5) los = (rand() % 4) + 5;
-                    else if (x2 == 6 || x2 == 7 || x2 == 8) los = (rand() % 5) + 5;
-                    else if (x2 == 9) los = (rand() % 2) + 6;
-                    else if (x2 == 10) los = (rand() % 3) + 6;
-                    else if (x2 == 11) los = (rand() % 5) + 6;
-                    else if (x2 == 12 || x2 == 13 || x2 == 14) los = (rand() % 3) + 7;
+                    co = getArbiterDecision(instrTreatment);
 
-                    if (pilka == 1) {
-                        msgFootballers[2] = msgRivalSurnames[los - 1];
-                        msgWhoBall[1] = 2;
-                        msgWhoBall[2] = 2;
-                    }
-                    else {
-                        msgFootballers[2] = msgPlayerSurnames[los - 1];
-                        msgWhoBall[1] = 1;
-                        msgWhoBall[2] = 1;
-                    }
+                    // losuje pomocnika, ktory otrzyma zolta kartke
+                    los = getMiddlefieldFootballerIdWhoFouled(teamSetting);
+
+                    // wez na odrot niz pilka wskazuje, ten kto nie ma pilki
+                    msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
+                    msgWhoBall[1] = !isPlayerBall;
+                    msgWhoBall[2] = !isPlayerBall;
 
                     if (co == 3) { //jest żółta
-                        vector<SFootballer> &tmpFootballers = (pilka == 2)
+                        vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = (pilka == 2) ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
+                        bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
                             SFootballer &footballer = tmpFootballers[index];
                             if (footballer.data[0] == los && clubId == footballer.data[22]) {
@@ -634,27 +568,21 @@ bool Match::runMecz() {
                                 if (footballer.data[7] < -3) {
                                     footballer.data[7] = -3;
                                 }
+                                is2ndYellow = footballer.data[12] >= 2;
+                                break;
                             }
                         }
 
-                        if (pilka == 2) {
+                        if (!isPlayerBall) {
                             pFootballers->savePlayerTeam();
                         }
                         else {
                             pFootballers->saveRivals();
                         }
-                        k = 0;
 
-                        for (size_t index = 0; index < tmpFootballers.size(); index++) {
-                            SFootballer &footballer = tmpFootballers[index];
-                            if (footballer.data[0] == los && clubId == footballer.data[22] && footballer.data[12] >= 2) {
-                                k = 1;
-                            }
-                        }
-
-                        if (k == 1) {
-                            wiado[3] = 60;
-                            if (pilka == 1) {
+                        if (is2ndYellow) {
+                            wiado[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                            if (isPlayerBall) {
                                 str2[5]++;
                                 str2[4]++;
                             }
@@ -664,145 +592,80 @@ bool Match::runMecz() {
                             }
                         }
                         else {
-                            wiado[3] = 20;
-                            if (pilka == 1) str2[4]++;
-                            else str[4]++;
+                            wiado[3] = 20; // %ls otrzymuje żółtą kartkę!
+                            if (isPlayerBall) {
+                                str2[4]++;
+                            }
+                            else {
+                                str[4]++;
+                            }
                         }
 
-                        if (pilka == 1) {
-                            msgFootballers[6] = msgRivalSurnames[los - 1];
-                            msgWhoBall[3] = 2;
-                        }
-                        else {
-                            msgFootballers[6] = msgPlayerSurnames[los - 1];
-                            msgWhoBall[3] = 1;
-                        }
+                        msgFootballers[6] = getFootballerSurname(!isPlayerBall, los - 1);
+                        msgWhoBall[3] = !isPlayerBall;
                     }// jest żółta end
-                    else if (co == 2) { //słownie
+                    else if (co == 2) { // upomnienie slowne
                         wiado[3] = 21;
-                        if (pilka == 1) {
-                            msgFootballers[6] = msgRivalSurnames[los - 1];
-                            msgWhoBall[3] = 2;
-                        }
-                        else {
-                            msgFootballers[6] = msgPlayerSurnames[los - 1];
-                            msgWhoBall[3] = 1;
-                        }
-                    }//słownie end
-                    wiado[4] = 22;
-                    msgWhoBall[4] = pilka;
-                    msgWhoBall[5] = pilka;
+                        msgFootballers[6] = getFootballerSurname(!isPlayerBall, los - 1);
+                        msgWhoBall[3] = !isPlayerBall;
+                    }
+
+                    wiado[4] = 22; // %ls wznawia grę.
+                    msgWhoBall[4] = isPlayerBall;
+                    msgWhoBall[5] = isPlayerBall;
+
+                    teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    msgFootballers[8] = getFootballerSurname(isPlayerBall, 6);
+                    msgFootballers[10] = getFootballerSurname(isPlayerBall, 6);
+
                     los = (rand() % 3);
-                    if (pilka == 1) {
-                        x1 = clubRef.teamSetting;
-                        msgFootballers[8] = msgPlayerSurnames[6];
-                        msgFootballers[10] = msgPlayerSurnames[6];
-                    }
-                    else {
-                        x1 = clubRef.rivalData[2];
-                        msgFootballers[8] = msgRivalSurnames[6];
-                        msgFootballers[10] = msgRivalSurnames[6];
-                    }
-
                     if (los == 0) { //na lewe skrzydło
-                        wiado[5] = 9;
+                        wiado[5] = 9; // %ls podaje na lewe skrzydło do %ls.
                         gdzie = 2;
-                        if (x1 == 1 || x1 == 2 || x1 == 3 || x1 == 4 || x1 == 10 || x1 == 11) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[5]; //czyli 6
-                            else msgFootballers[11] = msgRivalSurnames[5];
-                            pam = 5;
-                        }
-
-                        if (x1 == 5 || x1 == 6 || x1 == 7 || x1 == 8 || x1 == 12 || x1 == 13 || x1 == 14) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[4];
-                            else msgFootballers[11] = msgRivalSurnames[4];
-                            pam = 4;
-                        }
-
-                        if (x1 == 9) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[7];
-                            else msgFootballers[11] = msgRivalSurnames[7];
-                            pam = 7;
-                        }
+                        pam = getLefttWingerFootballerId(teamSetting);
+                        msgFootballers[11] = getFootballerSurname(isPlayerBall, pam);
                     }
                     else if (los == 1) { //podanie na prawe skrzydło
-                        wiado[5] = 10;
+                        wiado[5] = 10; // %ls podaje na prawe skrzydło do %ls.
                         gdzie = 2;
-                        if (x1 == 1 || x1 == 2 || x1 == 3 || x1 == 6 || x1 == 7 || x1 == 9) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[8]; // 9
-                            else msgFootballers[11] = msgRivalSurnames[8];
-                            pam = 8;
-                        }
-
-                        if (x1 == 4 || x1 == 5 || x1 == 8 || x1 == 10) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[7]; //8
-                            else msgFootballers[11] = msgRivalSurnames[7];
-                            pam = 7;
-                        }
-
-                        if (x1 == 11) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[9]; //10
-                            else msgFootballers[11] = msgRivalSurnames[9];
-                            pam = 9;
-                        }
-
-                        if (x1 == 12 || x1 == 13 || x1 == 14) {
-                            if (pilka == 1) msgFootballers[11] = msgPlayerSurnames[5]; // 6
-                            else msgFootballers[11] = msgRivalSurnames[5];
-                            pam = 5;
-                        }
+                        pam = getRightWingerFootballerId(teamSetting);
+                        msgFootballers[11] = getFootballerSurname(isPlayerBall, pam);
                     }
                     else if (los == 2) {
-                        wiado[5] = 11;
+                        wiado[5] = 11; // %ls podaje do przodu.
                         gdzie = 3;
                     }
                 }//co=7
                 else if (co == 8) { //aut dla przeciwnika
                     wiado[0] = 8;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
                     wiado[1] = 23;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     wiado[2] = (rand() % 2) == 0 ? 24 : 25;
 
                     los = (rand() % 3) + 2;
-                    if (pilka == 1) {
-                        msgFootballers[4] = msgRivalSurnames[los - 1];
-                        pilka = 2;
-                    }
-                    else {
-                        msgFootballers[4] = msgPlayerSurnames[los - 1];
-                        pilka = 1;
-                    }
+
+                    // zmiana pilki
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, los - 1);
                     gdzie = 1;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[2] = isPlayerBall;
                 }//co=8
                 else if (co == 9) { //strzał z dystansu
                     wiado[0] = 8;
-                    msgWhoBall[0] = pilka;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
                     wiado[1] = 26;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     wiado[2] = (rand() % 2) == 0 ? 27 : 28;
 
-                    if (pilka == 1) {
-                        str[0]++;
-                        x1 = clubRef.teamSetting;
-                    }
-                    else {
-                        str2[0]++;
-                        x1 = clubRef.rivalData[2];
-                    }
+                    isPlayerBall ? str[0]++ : str2[0]++;
 
-                    if (x1 == 6 || x1 == 7 || x1 == 8)          los = (rand() % 5) + 5;
-                    else if (x1 == 11)                          los = (rand() % 5) + 6;
-                    else if (x1 == 12 || x1 == 13 || x1 == 14)  los = (rand() % 3) + 7;
-                    else if (x1 == 5)                           los = (rand() % 4) + 5;
-                    else if (x1 == 10)                          los = (rand() % 3) + 6;
-                    else                                        los = (rand() % 4) + 6;
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    los = getFootballerIdWhoShootDistance(teamSetting);
 
-                    msgFootballers[1] = pilka == 1 ? msgPlayerSurnames[los - 1] : msgRivalSurnames[los - 1];
-
+                    msgFootballers[1] = getFootballerSurname(isPlayerBall, los - 1);
                     msgFootballers[2] = msgFootballers[1];
                     msgFootballers[4] = msgFootballers[2];
                     gdzie = 4;
@@ -811,29 +674,30 @@ bool Match::runMecz() {
             }////dla blokada==1 gdzie==1
                 //************** Skrzydłowy przy piłce ******************
             else if (gdzie == 2) {
-                wiado[0] = 29;
-                msgWhoBall[0] = pilka;
-                msgFootballers[0] = pilka == 1 ? msgPlayerSurnames[pam] : msgRivalSurnames[pam];
+                wiado[0] = 29; // %ls biegnie wzdłuż bocznej linii boiska.
+                msgWhoBall[0] = isPlayerBall;
+                msgFootballers[0] = getFootballerSurname(isPlayerBall, pam);
 
                 if (co == 10) { //udane dośrodkowanie
-                    wiado[1] = 30;
-                    msgWhoBall[1] = pilka;
+                    wiado[1] = 30; //  %ls mija %ls i biegnie dalej...
+                    msgWhoBall[1] = isPlayerBall;
                     msgFootballers[2] = msgFootballers[0];
 
-                    vector<SFootballer> &tmpFootballers = (pilka == 1)
+                    vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
-                    msgFootballers[3] = (pilka == 1) ? msgRivalSurnames[3] : msgPlayerSurnames[3];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    msgFootballers[3] = isPlayerBall ? msgRivalSurnames[3] : msgPlayerSurnames[3];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
                         if (footballer.data[0] == pam + 1 && footballer.data[22] == clubId) {
-                            footballer.data[20]++;
+                            footballer.data[20]++; // form up
+                            break;
                         }
                     }
 
-                    if (pilka == 1) {
+                    if (isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
@@ -842,111 +706,58 @@ bool Match::runMecz() {
 
                     wiado[2] = (rand() % 2) == 0 ? 31 : 32;
 
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[2] = isPlayerBall;
                     gdzie = 3;
                 }
                 else if (co == 11) { //faul
-                    vector<SFootballer> &tmpFootballers = (pilka == 1)
+                    vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
-                    msgFootballers[3] = (pilka == 1) ? msgRivalSurnames[3] : msgPlayerSurnames[3];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    msgFootballers[3] = isPlayerBall ? msgRivalSurnames[3] : msgPlayerSurnames[3];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
                         if (footballer.data[0] == pam + 1 && footballer.data[22] == clubId) {
-                            footballer.data[20]++;
+                            footballer.data[20]++; // form up
+                            break;
                         }
                     }
 
-                    if (pilka == 1) {
+                    if (isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
                         pFootballers->saveRivals();
                     }
 
-                    wiado[1] = 30;
-                    msgWhoBall[1] = pilka;
+                    wiado[1] = 30; //  %ls mija %ls i biegnie dalej...
+                    msgWhoBall[1] = isPlayerBall;
                     msgFootballers[2] = msgFootballers[0];
                     isPossibleGoToTactics = true;
 
-                    if (pilka == 1) {
-                        x1 = clubRef.rivalData[2];
-                        str2[7]++;
-                    }
-                    else {
-                        x1 = clubRef.teamSetting;
-                        str[7]++;
-                    }
+                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    isPlayerBall ? str2[7]++ : str[7]++;
 
-                    if (x1 == 5 || x1 == 6 || x1 == 7 || x1 == 8) {
-                        los = (rand() % 3) + 2;
-                    }
-                    else if (x1 == 12 || x1 == 13 || x1 == 14) {
-                        los = (rand() % 5) + 2;
-                    }
-                    else {
-                        los = (rand() % 4) + 2;
-                    }
+                    los = getDefFootballerId(teamSetting);
 
-                    msgFootballers[3] = pilka == 1 ? msgRivalSurnames[los - 1] : msgPlayerSurnames[los - 1];
+                    msgFootballers[3] = getFootballerSurname(!isPlayerBall, los - 1);
 
                     wiado[2] = 33;
                     msgFootballers[4] = msgFootballers[3];
                     msgFootballers[5] = msgFootballers[2];
-                    x2 = (rand() % 6);
-                    if (pilka == 1) {
-                        msgWhoBall[2] = 2;
-                        msgWhoBall[3] = 2;
-                        x1 = clubRef.rivalInst[1];
-                    }
-                    else {
-                        msgWhoBall[2] = 1;
-                        msgWhoBall[3] = 1;
-                        x1 = clubRef.inst[1];
-                    }
-
-                    if (x1 == 2) { //delikatne
-                        if (x2 == 0 || x2 == 1 || x2 == 2) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
-                    else if (x1 == 1) { //normalne
-                        if (x2 == 0 || x2 == 1) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
-                    else if (x1 == 3) { //twarde
-                        if (x2 == 0) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
+                    msgWhoBall[2] = !isPlayerBall;
+                    msgWhoBall[3] = !isPlayerBall;
+                    int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
+                    co = getArbiterDecision(instrTreatment);
 
                     if (co == 3) { //jest żółta
-                        vector<SFootballer> &tmpFootballers = (pilka == 2)
+                        vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = (pilka == 2) ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
+                        bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
                             SFootballer &footballer = tmpFootballers[index];
                             if (footballer.data[0] == los && clubId == footballer.data[22]) {
@@ -955,38 +766,23 @@ bool Match::runMecz() {
                                 if (footballer.data[7] < -3) {
                                     footballer.data[7] = -3;
                                 }
+
+                                is2ndYellow = footballer.data[12] >= 2;
+                                break;
                             }
                         }
 
-                        if (pilka == 2) {
+                        if (!isPlayerBall) {
                             pFootballers->savePlayerTeam();
                         }
                         else {
                             pFootballers->saveRivals();
                         }
 
-                        k = 0;
-
-                        for (size_t index = 0; index < tmpFootballers.size(); index++) {
-                            SFootballer &footballer = tmpFootballers[index];
-                            if (footballer.data[0] == los && clubId == footballer.data[22] && footballer.data[12] >= 2) {
-                                k = 1;
-                            }
-                        }
-
                         msgFootballers[6] = msgFootballers[3];
-                        if (k == 0) {
-                            wiado[3] = 20;
-                            if (pilka == 1) {
-                                str2[4]++;
-                            }
-                            else {
-                                str[4]++;
-                            }
-                        }
-                        else if (k == 1) {
-                            wiado[3] = 60;
-                            if (pilka == 1) {
+                        if (is2ndYellow) {
+                            wiado[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                            if (isPlayerBall) {
                                 str2[5]++;
                                 str2[4]++;
                             }
@@ -995,92 +791,72 @@ bool Match::runMecz() {
                                 str[4]++;
                             }
                         }
+                        else {
+                            wiado[3] = 20; // %ls otrzymuje żółtą kartkę!
+                            if (isPlayerBall) {
+                                str2[4]++;
+                            }
+                            else {
+                                str[4]++;
+                            }
+                        }
                     }// jest żółta end
                     else if (co == 2) { //słownie
                         wiado[3] = 21;
                         msgFootballers[6] = msgFootballers[3];
-                        if (pilka == 1) {
-                            msgWhoBall[3] = 2;
-                        }
-                        else {
-                            msgWhoBall[3] = 1;
-                        }
+                        msgWhoBall[3] = !isPlayerBall;
                     }//słownie end
-                    los = (rand() % 10) + 2;
-                    wiado[4] = 85;
-                    msgWhoBall[4] = pilka;
-                    if (pilka == 1) {
-                        msgFootballers[8] = msgPlayerSurnames[los - 1];
-                        str[0]++;
-                    }
-                    else {
-                        msgFootballers[8] = msgRivalSurnames[los - 1];
-                        str2[0]++;
-                    }
-                    pam = los - 1;
-                    wiado[5] = 63;
-                    msgWhoBall[5] = pilka;
-                    wiado[6] = 64;
-                    msgWhoBall[6] = pilka;
+
+                    wiado[4] = 85; // %ls będzie uderzał z wolnego.
+                    msgWhoBall[4] = isPlayerBall;
+
+                    pam = ((rand() % 10) + 2) - 1;
+                    msgFootballers[8] = getFootballerSurname(isPlayerBall, pam);
+                    isPlayerBall ? str[0]++ : str2[0]++;
+
+                    wiado[5] = 63; // Sędzia jeszcze ustawia mur.
+                    msgWhoBall[5] = isPlayerBall;
+
+                    wiado[6] = 64; // %ls uderza z wolnego...
+                    msgWhoBall[6] = isPlayerBall;
                     msgFootballers[12] = msgFootballers[8];
                     gdzie = 6;
                 }//end faul
                 else if (co == 12) { //aut
                     wiado[1] = 34;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    los = (rand() % 2);
-                    if (los == 0) {
-                        wiado[2] = 24;
-                    }
-                    else {
-                        wiado[2] = 25;
-                    }
+                    wiado[2] = (rand() % 2) == 0 ? 24 : 25;
 
                     los = (rand() % 3) + 2;
-                    if (pilka == 1) {
-                        msgFootballers[4] = msgRivalSurnames[los - 1];
-                        pilka = 2;
-                        msgWhoBall[2] = 2;
-                    }
-                    else {
-                        msgFootballers[4] = msgPlayerSurnames[los - 1];
-                        pilka = 1;
-                        msgWhoBall[2] = 1;
-                    }
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, los - 1);
+                    msgWhoBall[2] = isPlayerBall;
                     gdzie = 1;
                 }
                 else if (co == 13) { //nie dośrodkował
                     wiado[1] = 35;
                     los = (rand() % 3) + 2;
-                    if (pilka == 1) {
-                        pilka = 2;
-                        msgFootballers[2] = msgRivalSurnames[los - 1];
-                        msgWhoBall[1] = 2;
-                        msgWhoBall[2] = 2;
-                        x1 = clubRef.rivalInst[0];
-                    }
-                    else {
-                        pilka = 1;
-                        msgFootballers[2] = msgPlayerSurnames[los - 1];
-                        msgWhoBall[1] = 1;
-                        msgWhoBall[2] = 1;
-                        x1 = clubRef.inst[0];
-                    }
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
+                    msgWhoBall[1] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
+                    int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
 
-                    vector<SFootballer> &tmpFootballers = (pilka == 2)
+                    vector<SFootballer> &tmpFootballers = !isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = (pilka == 2) ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
                         if (footballer.data[0] == pam + 1 && footballer.data[22] == clubId) {
-                            footballer.data[20]--;
+                            footballer.data[20]--; // form down
+                            break;
                         }
                     }
 
-                    if (pilka == 2) {
+                    if (!isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
@@ -1089,28 +865,37 @@ bool Match::runMecz() {
 
                     msgFootballers[4] = msgFootballers[2];
                     los = (rand() % 6);
-                    if (x1 == 4) { //długie podania
-                        if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
-                            wiado[2] = 36; //gdzie=3;
+                    switch (instrPasses) {
+                        case INSTR_PASSES_LONG: { //długie podania
+                            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
+                                // %ls wykonuje długie podanie do przodu.
+                                wiado[2] = 36; //gdzie=3;
+                            }
+                            else {
+                                // %ls podaje do przodu.
+                                wiado[2] = 11; //gdzie=1;
+                            }
+                            break;
                         }
-                        else {
-                            wiado[2] = 11; //gdzie=1;
+                        case INSTR_PASSES_MIXES:
+                        case INSTR_PASSES_MIDDLE: { //mieszane, średnie
+                            if (los == 1 || los == 2 || los == 5) {
+                                wiado[2] = 36; //gdzie=3;
+                            }
+                            else {
+                                wiado[2] = 11; //gdzie=1;
+                            }
+                            break;
                         }
-                    }
-                    else if (x1 == 1 || x1 == 3) { //mieszane, średnie
-                        if (los == 1 || los == 2 || los == 5) {
-                            wiado[2] = 36; //gdzie=3;
-                        }
-                        else {
-                            wiado[2] = 11; //gdzie=1;
-                        }
-                    }
-                    else { //if (x1==2) //któtkie podania
-                        if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
-                            wiado[2] = 11; //gdzie=1;
-                        }
-                        else {
-                            wiado[2] = 36; //gdzie=3;
+                        case INSTR_PASSES_SHORT: //któtkie podania
+                        default: {
+                            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
+                                wiado[2] = 11; //gdzie=1;
+                            }
+                            else {
+                                wiado[2] = 36; //gdzie=3;
+                            }
+                            break;
                         }
                     }
 
@@ -1120,232 +905,154 @@ bool Match::runMecz() {
             else if (gdzie == 3) { //****************** Pole karne ********
                 if (co == 14) { //spalony
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    msgFootballers[0] = pilka == 1 ? msgPlayerSurnames[10] : msgRivalSurnames[10];
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
 
                     los = (rand() % 3);
                     if (los == 0) {
-                        wiado[1] = 38;
+                        wiado[1] = 38; // %ls na spalonym!
                     }
                     else if (los == 1) {
-                        wiado[1] = 39;
+                        wiado[1] = 39; // %ls ruszył za wcześnie. Spalony.
                     }
                     else {
-                        wiado[1] = 40;
+                        wiado[1] = 40; // Chorągiewka w górze! %ls na spalonym.
                     }
 
                     msgFootballers[2] = msgFootballers[0];
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     wiado[2] = 41;
-                    if (pilka == 1) {
-                        pilka = 2;
-                        msgFootballers[4] = msgRivalSurnames[0];
-                        msgWhoBall[2] = 2;
-                        str[3]++;
-                    }
-                    else {
-                        pilka = 1;
-                        msgFootballers[4] = msgPlayerSurnames[0];
-                        msgWhoBall[2] = 1;
-                        str2[3]++;
-                    }
+                    isPlayerBall ? str[3]++ : str2[3]++;
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, 0);
+                    msgWhoBall[2] = isPlayerBall;
                     gdzie = 1;
                 }//spalony
                 else if (co == 15) { //spalony nieudany
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     wiado[1] = 42;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     wiado[2] = 43;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[2] = isPlayerBall;
 
-                    x1 = pilka == 1 ? clubRef.teamSetting : clubRef.rivalData[2];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    switch (teamSetting) {
+                        case T4_5_1: {
+                            los = 11;
+                            break;
+                        }
+                        case T3_4_3:
+                        case T4_3_3: {
+                            los = (rand() % 3) + 9;
+                            break;
+                        }
+                        default: {
+                            los = (rand() % 2) + 10;
+                            break;
+                        }
+                    }
 
-                    if (x1 == T4_5_1) {
-                        los = 11;
-                    }
-                    else if (x1 == T3_4_3 || x1 == T4_3_3) {
-                        los = (rand() % 3) + 9;
-                    }
-                    else {
-                        los = (rand() % 2) + 10;
-                    }
-
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgPlayerSurnames[los - 1];
-                        str[0]++;
-                    }
-                    else {
-                        msgFootballers[0] = msgRivalSurnames[los - 1];
-                        str2[0]++;
-                    }
                     pam = los - 1;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, pam);
+                    isPlayerBall ? str[0]++ : str2[0]++;
+
                     msgFootballers[2] = msgFootballers[0];
                     msgFootballers[4] = msgFootballers[0];
                     gdzie = 5;
                 }//sam na sam
                 else if (co == 16) { //obrona wykopuje
-                    if (pilka == 1) {
-                        x1 = clubRef.rivalInst[0];
-                    }
-                    else {
-                        x1 = clubRef.inst[0];
-                    }
+                    int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
 
                     los = (rand() % 6);
-                    x2 = (rand() % 2);
-                    if (x1 == 4) { //długie
-                        if (los == 0) {
-                            wiado[0] = x2 == 0 ? 44 : 45;
-                            gdzie = 1;
+                    switch (instrPasses) {
+                        case INSTR_PASSES_LONG: { //długie
+                            if (los == 0) {
+                                gdzie = 1;
+                                wiado[0] = (rand() % 2) == 0 ? 44 : 45;
+                            }
+                            else {
+                                gdzie = 3;
+                                wiado[0] = (rand() % 2) == 0 ? 46 : 47;
+                            }
+                            break;
                         }
-                        else {
-                            gdzie = 3;
-                            wiado[0] = x2 == 0 ? 46 : 47;
+                        case INSTR_PASSES_SHORT: { //krótkie
+                            if (los == 0) {
+                                gdzie = 3;
+                                wiado[0] = (rand() % 2) == 0 ? 46 : 47;
+                            }
+                            else {
+                                gdzie = 1;
+                                wiado[0] = (rand() % 2) == 0 ? 44 : 45;
+                            }
+                            break;
                         }
-                    }
-                    else if (x1 == 2) { //krótkie
-                        if (los == 0) {
-                            gdzie = 3;
-                            wiado[0] = x2 == 0 ? 46 : 47;
-                        }
-                        else {
-                            gdzie = 1;
-                            wiado[0] = x2 == 0 ? 44 : 45;
-                        }
-                    }
-                    else { //pozostałe
-                        if (los == 0 || los == 1 || los == 2) {
-                            gdzie = 3;
-                            wiado[0] = x2 == 0 ? 46 : 47;
-                        }
-                        else {
-                            gdzie = 1;
-                            wiado[0] = x2 == 0 ? 44 : 45;
+                        default: { //pozostałe
+                            if (los == 0 || los == 1 || los == 2) {
+                                gdzie = 3;
+                                wiado[0] = (rand() % 2) == 0 ? 46 : 47;
+                            }
+                            else {
+                                gdzie = 1;
+                                wiado[0] = (rand() % 2) == 0 ? 44 : 45;
+                            }
+                            break;
                         }
                     }
                     los = (rand() % 3) + 2;
-                    if (pilka == 1) {
-                        pilka = 2;
-                        msgFootballers[0] = msgRivalSurnames[los - 1];
-                        msgWhoBall[0] = 2;
-                    }
-                    else {
-                        pilka = 1;
-                        msgFootballers[0] = msgPlayerSurnames[los - 1];
-                        msgWhoBall[0] = 1;
-                    }
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
+                    msgWhoBall[0] = isPlayerBall;
                     //gdzie=1;
                 }//obrona wykopuje
                 else if (co == 17) { //B łapie
                     wiado[0] = 48;
                     wiado[1] = 49;
-                    if (pilka == 1) {
-                        pilka = 2;
-                        msgFootballers[0] = msgRivalSurnames[0];
-                        msgWhoBall[0] = 2;
-                        msgWhoBall[1] = 2;
-                    }
-                    else {
-                        pilka = 1;
-                        msgFootballers[0] = msgPlayerSurnames[0];
-                        msgWhoBall[0] = 1;
-                        msgWhoBall[1] = 1;
-                    }
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
                     gdzie = 1;
                 }//B łapie
                 else if (co == 18) { //karny
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     wiado[1] = 50;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgPlayerSurnames[10];
-                        msgWhoBall[1] = 2;
-                        x1 = clubRef.rivalData[2];
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
+                    msgWhoBall[1] = !isPlayerBall;
+                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    if (isPlayerBall) {
                         str2[7]++;
                         str[6]++;
                     }
                     else {
-                        msgFootballers[0] = msgRivalSurnames[10];
-                        msgWhoBall[1] = 1;
-                        x1 = clubRef.teamSetting;
                         str[7]++;
                         str2[6]++;
                     }
 
-                    if (x1 == T4_4_2 || x1 == T4_4_2_DEF || x1 == T4_4_2_ATT || x1 == T4_4_2_DIA ||
-                        x1 == T4_2_4 || x1 == T4_3_3 || x1 == T4_5_1
-                    ) {
-                        los = (rand() % 4) + 2;
-                    }
-                    else if (x1 == T3_4_3 || x1 == T3_5_2 || x1 == T3_5_2_DEF || x1 == T3_5_2_ATT) {
-                        los = (rand() % 3) + 2;
-                    }
-                    else {
-                        los = (rand() % 5) + 2;
-                    }
+                    los = getDefFootballerId(teamSetting);
 
                     msgFootballers[3] = msgFootballers[0];
-                    msgFootballers[2] = pilka == 1 ? msgRivalSurnames[los - 1] : msgPlayerSurnames[los - 1];
+                    msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
 
-                    x1 = (rand() % 2);
-                    wiado[2] = x1 == 0 ? 51 : 52;
+                    wiado[2] = (rand() % 2) == 0 ? 51 : 52;
 
-                    x2 = (rand() % 6);
-                    if (pilka == 1) {
-                        msgWhoBall[2] = 2;
-                        msgWhoBall[3] = 2;
-                        x1 = clubRef.rivalInst[1];
-                        str[0]++;
-                    }
-                    else {
-                        msgWhoBall[2] = 1;
-                        msgWhoBall[3] = 1;
-                        x1 = clubRef.inst[1];
-                        str2[0]++;
-                    }
+                    int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
+                    msgWhoBall[2] = !isPlayerBall;
+                    msgWhoBall[3] = !isPlayerBall;
+                    isPlayerBall ? str[0]++ : str2[0]++;
 
-                    if (x1 == INSTR_TREATMENT_SOFT) { //delikatne
-                        if (x2 == 0 || x2 == 1 || x2 == 2) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
-                    else if (x1 == INSTR_TREATMENT_NORMAL) { //normalne
-                        if (x2 == 0 || x2 == 1) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
-                    else if (x1 == INSTR_TREATMENT_HARD) { //twarde
-                        if (x2 == 0) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
+                    co = getArbiterDecision(instrTreatment);
 
                     if (co == 3) { //jest żółta
-                        vector<SFootballer> &tmpFootballers = (pilka == 2)
+                        vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = (pilka == 2) ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
+                        bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
                             SFootballer &footballer = tmpFootballers[index];
                             if (footballer.data[0] == los && clubId == footballer.data[22]) {
@@ -1354,40 +1061,23 @@ bool Match::runMecz() {
                                 if (footballer.data[7] < -3) {
                                     footballer.data[7] = -3;
                                 }
+
+                                is2ndYellow = footballer.data[12] >= 2;
+                                break;
                             }
                         }
 
-                        if (pilka == 2) {
+                        if (!isPlayerBall) {
                             pFootballers->savePlayerTeam();
                         }
                         else {
                             pFootballers->saveRivals();
                         }
 
-                        k = 0;
-                        for (size_t index = 0; index < tmpFootballers.size(); index++) {
-                            SFootballer &footballer = tmpFootballers[index];
-                            if (footballer.data[0] == los &&
-                                clubId == footballer.data[22] &&
-                                footballer.data[12] >= 2
-                            ) {
-                                k = 1;
-                            }
-                        }
-
                         msgFootballers[6] = msgFootballers[2];
-                        if (k == 0) {
-                            wiado[3] = 20;
-                            if (pilka == 1) {
-                                str2[4]++;
-                            }
-                            else {
-                                str[4]++;
-                            }
-                        }
-                        else if (k == 1) {
-                            wiado[3] = 60;
-                            if (pilka == 1) {
+                        if (is2ndYellow) {
+                            wiado[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                            if (isPlayerBall) {
                                 str2[5]++;
                                 str2[4]++;
                             }
@@ -1396,232 +1086,147 @@ bool Match::runMecz() {
                                 str[4]++;
                             }
                         }
+                        else {
+                            wiado[3] = 20; // %ls otrzymuje żółtą kartkę!
+                            isPlayerBall ? str2[4]++ : str[4]++;
+                        }
                     }// jest żółta end
                     else if (co == 2) { //słownie
                         wiado[3] = 21;
                         msgFootballers[6] = msgFootballers[2];
-                        msgWhoBall[3] = pilka == 1 ? 2 : 1;
-                    }//słownie end
-                    x1 = (rand() % 2);
-                    wiado[4] = x1 == 0 ? 53 : 54;
-                    los = (rand() % 4) + 8;
-                    msgFootballers[8] = (pilka == 1) ? msgPlayerSurnames[los - 1] : msgRivalSurnames[los - 1];
-                    pam = los - 1;
+                        msgWhoBall[3] = !isPlayerBall;
+                    }
+
+                    wiado[4] = (rand() % 2) == 0 ? 53 : 54;
+                    pam = ((rand() % 4) + 8) - 1;
+                    msgFootballers[8] = getFootballerSurname(isPlayerBall, pam);
                     gdzie = 5;
-                    msgWhoBall[4] = pilka;
+                    msgWhoBall[4] = isPlayerBall;
                 }//karny
                 else if (co == 19) { //symulowany
-                    wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
-                    msgWhoBall[2] = pilka;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgPlayerSurnames[10];
-                        msgWhoBall[1] = 2;
-                        msgWhoBall[3] = 2;
-                        x1 = clubRef.rivalData[2];
-                    }
-                    else {
-                        msgFootballers[0] = msgRivalSurnames[10];
-                        msgWhoBall[1] = 1;
-                        msgWhoBall[3] = 1;
-                        x1 = clubRef.teamSetting;
-                    }
+                    wiado[0] = 37; // %ls przyjmuje piłkę w polu karnym...
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
+                    msgWhoBall[1] = !isPlayerBall;
+                    msgWhoBall[3] = !isPlayerBall;
+                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
 
-                    if (x1 == T4_4_2 || x1 == T4_4_2_DEF || x1 == T4_4_2_ATT || x1 == T4_4_2_DIA ||
-                        x1 == T4_2_4 || x1 == T4_3_3 || x1 == T4_5_1
-                    ) {
-                        los = (rand() % 4) + 2;
-                    }
-                    else if (x1 == T3_4_3 || x1 == T3_5_2 || x1 == T3_5_2_DEF || x1 == T3_5_2_ATT) {
-                        los = (rand() % 3) + 2;
-                    }
-                    else {
-                        los = (rand() % 5) + 2;
-                    }
+                    los = getDefFootballerId(teamSetting);
 
                     msgFootballers[3] = msgFootballers[0];
-                    msgFootballers[2] = pilka == 1 ? msgRivalSurnames[los - 1] : msgPlayerSurnames[los - 1];
-                    wiado[1] = 50;
-                    wiado[2] = 55;
-                    msgWhoBall[2] = pilka;
+                    msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
+                    wiado[1] = 50; // %ls wślizgiem atakuje %ls...
+                    wiado[2] = 55; // %ls pada na murawę, ale sędzia nie dał się nabrać.
+                    msgWhoBall[2] = isPlayerBall;
                     msgFootballers[4] = msgFootballers[0];
-                    los = (rand() % 2);
-                    wiado[3] = (los == 0) ? 44 : 45;
-                    pilka = (pilka == 1) ? 2 : 1;
+                    wiado[3] = ((rand() % 2) == 0) ? 44 : 45;
+                    isPlayerBall = !isPlayerBall;
                     msgFootballers[6] = msgFootballers[2];
-                    msgWhoBall[3] = pilka;
+                    msgWhoBall[3] = isPlayerBall;
                     gdzie = 1;
                 }//faul symulowany
                 else if (co == 20) { //róg
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
-                    msgWhoBall[2] = pilka;
-                    msgWhoBall[3] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
+                    msgWhoBall[3] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgPlayerSurnames[10];
-                        msgWhoBall[1] = 2;
-                        x1 = clubRef.rivalData[2];
-                        str[2]++;
-                    }
-                    else {
-                        msgFootballers[0] = msgRivalSurnames[10];
-                        msgWhoBall[1] = 1;
-                        x1 = clubRef.teamSetting;
-                        str2[2]++;
-                    }
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
+                    msgWhoBall[1] = !isPlayerBall;
+                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    isPlayerBall ? str[2]++ : str2[2]++;
 
-                    if (x1 == T4_4_2 || x1 == T4_4_2_DEF || x1 == T4_4_2_ATT || x1 == T4_4_2_DIA ||
-                        x1 == T4_2_4 || x1 == T4_3_3 || x1 == T4_5_1
-                    ) {
-                        los = (rand() % 4) + 2;
-                    }
-                    else if (x1 == T3_4_3 || x1 == T3_5_2 || x1 == T3_5_2_DEF || x1 == T3_5_2_ATT) {
-                        los = (rand() % 3) + 2;
-                    }
-                    else {
-                        los = (rand() % 5) + 2;
-                    }
+                    los = getDefFootballerId(teamSetting);
 
                     msgFootballers[3] = msgFootballers[0];
-                    msgFootballers[2] = (pilka == 1) ? msgRivalSurnames[los - 1] : msgPlayerSurnames[los - 1];
+                    msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
                     wiado[1] = 50;
                     wiado[2] = 56;
                     wiado[3] = 78;
-                    msgFootballers[6] = (pilka == 1) ? msgPlayerSurnames[6] : msgRivalSurnames[6];
+                    msgFootballers[6] = getFootballerSurname(isPlayerBall, 6);
                     gdzie = 3;
                 }//róg
                 else if (co == 21) { //strzał
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
                     los = (rand() % 2);
                     wiado[1] = (los == 0) ? 43 : 57;
-                    x1 = (pilka == 1) ? clubRef.teamSetting : clubRef.rivalData[2];
-                    if (x1 == T3_4_3 || x1 == T4_3_3) {
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
                         los = (rand() % 3) + 9;
                     }
-                    else if (x1 == T4_5_1) {
+                    else if (teamSetting == T4_5_1) {
                         los = 11;
                     }
                     else {
                         los = (rand() % 2) + 10;
                     }
 
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgPlayerSurnames[los - 1];
-                        str[0]++;
-                    }
-                    else {
-                        msgFootballers[0] = msgRivalSurnames[los - 1];
-                        str2[0]++;
-                    }
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
+                    isPlayerBall ? str[0]++ : str2[0]++;
                     msgFootballers[2] = msgFootballers[0];
                     pam = los - 1;
                     gdzie = 4;
                 }//strzał
                 else if (co == 22) { //podanie i strzał
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     wiado[1] = 58;
-                    msgWhoBall[1] = pilka;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
                     los = (rand() % 2);
                     wiado[2] = (los == 0) ? 59 : 57;
-                    msgFootballers[0] = (pilka == 1) ? msgPlayerSurnames[10] : msgRivalSurnames[10];
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     los = (rand() % 4) + 7;
-                    if (pilka == 1) {
-                        msgFootballers[2] = msgPlayerSurnames[los - 1];
-                        str[0]++;
-                    }
-                    else {
-                        msgFootballers[2] = msgRivalSurnames[los - 1];
-                        str2[0]++;
-                    }
+                    msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
+                    isPlayerBall ? str[0]++ : str2[0]++;
                     msgFootballers[4] = msgFootballers[2];
                     pam = los - 1;
                     gdzie = 4;
                 }//podanie i strzał
                 else if (co == 23) { // faul napastnika
                     wiado[0] = 37;
-                    msgWhoBall[0] = pilka;
+                    msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    if (pilka == 1) {
-                        str[7]++;
-                        msgFootballers[2] = msgRivalSurnames[1];
-                        msgWhoBall[1] = 2;
-                        msgWhoBall[2] = 2;
-                        x1 = clubRef.inst[1];
-                        x2 = clubRef.teamSetting;
-                    } else {
-                        str2[7]++;
-                        msgFootballers[2] = msgPlayerSurnames[1];
-                        msgWhoBall[1] = 1;
-                        msgWhoBall[2] = 1;
-                        x1 = clubRef.rivalInst[1];
-                        x2 = clubRef.rivalData[2];
-                    }
+                    msgFootballers[2] = getFootballerSurname(!isPlayerBall, 1);
+                    msgWhoBall[1] = !isPlayerBall;
+                    msgWhoBall[2] = !isPlayerBall;
+                    int instrTreatment = isPlayerBall ? clubRef.inst[1] : clubRef.rivalInst[1];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
 
-                    if (x2 == T3_4_3 || x2 == T4_3_3) {
+                    isPlayerBall ? str[7]++ : str2[7]++;
+
+                    if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
                         los = (rand() % 3) + 9;
                     }
-                    else if (x2 == T4_5_1) {
+                    else if (teamSetting == T4_5_1) {
                         los = 11;
                     }
                     else {
                         los = (rand() % 2) + 10;
                     }
 
-                    msgFootballers[0] = (pilka == 1) ? msgPlayerSurnames[los - 1] : msgRivalSurnames[los - 1];
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                     msgFootballers[3] = msgFootballers[0];
                     wiado[1] = 50;
                     wiado[2] = 61;
                     wiado[3] = 62;
-                    msgWhoBall[3] = pilka;
+                    msgWhoBall[3] = isPlayerBall;
                     msgFootballers[6] = msgFootballers[0];
                     wiado[4] = 19;
-                    msgWhoBall[4] = pilka;
-                    x2 = (rand() % 6);
-                    if (x1 == INSTR_TREATMENT_SOFT) { //delikatne
-                        if (x2 == 0 || x2 == 1 || x2 == 2) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
-                    else if (x1 == INSTR_TREATMENT_NORMAL) { //normalne
-                        if (x2 == 0 || x2 == 1) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
-                    else if (x1 == INSTR_TREATMENT_HARD) { //twarde
-                        if (x2 == 0) {
-                            co = 1; //nie ma kartki
-                        }
-                        else if (x2 == 3 || x2 == 4) {
-                            co = 2; //słowne upomienie
-                        }
-                        else {
-                            co = 3; //żólta kartka
-                        }
-                    }
+                    msgWhoBall[4] = isPlayerBall;
+
+                    co = getArbiterDecision(instrTreatment);
 
                     if (co == 3) { //jest żółta
-                        vector<SFootballer> &tmpFootballers = (pilka == 1)
+                        vector<SFootballer> &tmpFootballers = isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
+                        bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
                             SFootballer &footballer = tmpFootballers[index];
                             if (footballer.data[0] == los && clubId == footballer.data[22]) {
@@ -1630,41 +1235,25 @@ bool Match::runMecz() {
                                 if (footballer.data[7] < -3) {
                                     footballer.data[7] = -3;
                                 }
+
+                                is2ndYellow = footballer.data[12] >= 2;
+                                break;
                             }
                         }
 
-                        if (pilka == 1) {
+                        if (isPlayerBall) {
                             pFootballers->savePlayerTeam();
                         }
                         else {
                             pFootballers->saveRivals();
                         }
 
-                        k = 0;
-                        for (size_t index = 0; index < tmpFootballers.size(); index++) {
-                            SFootballer &footballer = tmpFootballers[index];
-                            if (footballer.data[0] == los &&
-                                clubId == footballer.data[22] &&
-                                footballer.data[12] >= 2
-                            ) {
-                                k = 1;
-                            }
-                        }
-
                         msgFootballers[10] = msgFootballers[0];
-                        msgWhoBall[5] = pilka;
-                        if (k == 0) {
-                            wiado[5] = 20;
-                            if (pilka == 1) {
-                                str[4]++;
-                            }
-                            else {
-                                str2[4]++;
-                            }
-                        }
-                        else if (k == 1) {
+                        msgWhoBall[5] = isPlayerBall;
+
+                        if (is2ndYellow) {
                             wiado[5] = 60;
-                            if (pilka == 1) {
+                            if (isPlayerBall) {
                                 str[4]++;
                                 str[5]++;
                             }
@@ -1673,22 +1262,25 @@ bool Match::runMecz() {
                                 str2[5]++;
                             }
                         }
+                        else {
+                            wiado[5] = 20;
+                            if (isPlayerBall) {
+                                str[4]++;
+                            }
+                            else {
+                                str2[4]++;
+                            }
+                        }
                     }// jest żółta end
                     else if (co == 2) { //słownie
                         wiado[5] = 21;
                         msgFootballers[10] = msgFootballers[3];
-                        msgWhoBall[5] = pilka;
-                    }//słownie end
+                        msgWhoBall[5] = isPlayerBall;
+                    }
                     wiado[6] = 41;
-                    if (pilka == 1) {
-                        pilka = 2;
-                        msgFootballers[12] = msgRivalSurnames[0];
-                    }
-                    else {
-                        pilka = 1;
-                        msgFootballers[12] = msgPlayerSurnames[0];
-                    }
-                    msgWhoBall[6] = pilka;
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[12] = getFootballerSurname(isPlayerBall, 0);
+                    msgWhoBall[6] = isPlayerBall;
                     gdzie = 1;
                 }//faul napastnika
             }//gdzie=3,blokada=1,pole karne
@@ -1696,43 +1288,36 @@ bool Match::runMecz() {
             else if (gdzie == 4 || gdzie == 5 || gdzie == 6) { //obrona B
                 if (co == 24) { // udana
                     wiado[0] = (rand() % 2) == 0 ? 65 : 66;
-                    wiado[1] = 67;
-                    wiado[2] = 49;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgRivalSurnames[0];
-                        msgWhoBall[0] = 2;
-                        msgWhoBall[1] = 2;
-                        pilka = 2;
-                        str[1]++;
-                    }
-                    else {
-                        msgFootballers[0] = msgPlayerSurnames[0];
-                        msgWhoBall[0] = 1;
-                        msgWhoBall[1] = 1;
-                        pilka = 1;
-                        str2[1]++;
-                    }
+                    wiado[1] = 67; // I łapie piłkę! Dobra obrona.
+                    wiado[2] = 49; // Bramkarz wykopuje piłkę.
+                    isPlayerBall ? str[1]++ : str2[1]++;
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
+
                     msgFootballers[2] = msgFootballers[0];
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[2] = isPlayerBall;
                     gdzie = 1;
 
-                    vector<SFootballer> &tmpFootballers = (pilka == 1)
+                    vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
                         if (footballer.data[0] == 1 && clubId == footballer.data[22]) {
-                            footballer.data[20]++;
-                            footballer.data[7]++;
+                            footballer.data[20]++; // form up
+                            footballer.data[7]++; // morale up
                             if (footballer.data[7] > 3) {
                                 footballer.data[7] = 3;
                             }
+                            break;
                         }
                     }
 
-                    if (pilka == 1) {
+                    if (isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
@@ -1740,40 +1325,36 @@ bool Match::runMecz() {
                     }
                 }//udana
                 else if (co == 25) { //no problem
+                    //68. Dobrze ustawiony %ls, bez trudu łapie piłkę.
+                    //69. %ls spokojnie łapie piłkę.
                     wiado[0] = (rand() % 2 == 0) ? 68 : 69;
-                    wiado[1] = 49;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgRivalSurnames[0];
-                        msgWhoBall[0] = 2;
-                        pilka = 2;
-                        str[1]++;
-                    }
-                    else {
-                        msgFootballers[0] = msgPlayerSurnames[0];
-                        msgWhoBall[0] = 1;
-                        pilka = 1;
-                        str2[1]++;
-                    }
-                    msgWhoBall[1] = pilka;
+                    wiado[1] = 49; // Bramkarz wykopuje piłkę.
+
+                    isPlayerBall ? str[1]++ : str2[1]++;
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
+                    msgWhoBall[0] = isPlayerBall;
+                    msgWhoBall[1] = isPlayerBall;
                     gdzie = 1;
 
-                    vector<SFootballer> &tmpFootballers = (pilka == 1)
+                    vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
                         if (footballer.data[0] == 1 && clubId == footballer.data[22]) {
-                            footballer.data[20]++;
-                            footballer.data[7]++;
+                            footballer.data[20]++; // form up
+                            footballer.data[7]++; // morale up
                             if (footballer.data[7] > 3) {
                                 footballer.data[7] = 3;
                             }
+                            break;
                         }
                     }
 
-                    if (pilka == 1) {
+                    if (isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
@@ -1783,9 +1364,9 @@ bool Match::runMecz() {
                 else if (co == 26) { //niepewnie
                     los = (rand() % 4);
                     if (los == 0) {
-                        wiado[0] = 70;
+                        wiado[0] = 70; // %ls z trudem broni, ale nie zdołał złapać piłki...
                         msgWhoBall[0] = 1;
-                        if (pilka == 1) {
+                        if (isPlayerBall) {
                             msgWhoBall[0] = 2;
                             str[1]++;
                         }
@@ -1794,70 +1375,57 @@ bool Match::runMecz() {
                         }
                     }
                     else if (los == 1) {
-                        wiado[0] = 71;
-                        msgWhoBall[0] = pilka;
+                        wiado[0] = 71; // Piłka uderza w słupek!!
+                        msgWhoBall[0] = isPlayerBall;
                     }
                     else if (los == 2) {
-                        wiado[0] = 72;
-                        msgWhoBall[0] = pilka;
+                        wiado[0] = 72; // Piłka uderza w poprzeczkę!!
+                        msgWhoBall[0] = isPlayerBall;
                     }
                     else {
-                        wiado[0] = 73;
+                        wiado[0] = 73; // Piłka uderza w któregoś z obrońców!
                         msgWhoBall[0] = 1;
-                        if (pilka == 1) {
+                        if (isPlayerBall) {
                             msgWhoBall[0] = 2;
                         }
                     }
-                    msgFootballers[0] = (pilka == 1) ? msgRivalSurnames[0] : msgPlayerSurnames[0];
+                    msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
                     gdzie = 3;
                 }//niepewnie
                 else if (co == 27) { //róg
                     isPossibleGoToTactics = true;
                     if (rand() % 2 == 0) {
                         wiado[0] = 70;
-                        if (pilka == 1) {
-                            str[1]++;
-                        }
-                        else {
-                            str2[1]++;
-                        }
+                        isPlayerBall ? str[1]++ : str2[1]++;
                     }
                     else {
                         wiado[0] = 73;
                     }
 
-                    if (pilka == 1) {
-                        str[2]++;
-                        msgWhoBall[0] = 2;
-                        msgFootballers[0] = msgRivalSurnames[0];
-                        msgFootballers[4] = msgPlayerSurnames[6];
-                    }
-                    else {
-                        str2[2]++;
-                        msgWhoBall[0] = 1;
-                        msgFootballers[0] = msgPlayerSurnames[0];
-                        msgFootballers[4] = msgRivalSurnames[6];
-                    }
+                    msgWhoBall[0] = !isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
+                    isPlayerBall ? str[2]++ : str2[2]++;
                     wiado[1] = 56;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     wiado[2] = 78;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[2] = isPlayerBall;
                     gdzie = 3;
                 }//róg
                 else if (co == 28) { // GOOL
                     isPossibleGoToTactics = true;
                     wiado[0] = (rand() % 2 == 0) ? 65 : 66;
                     wiado[1] = 74;
-                    msgWhoBall[1] = pilka;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
                     wiado[2] = (rand() % 2 == 0) ? 75 : 76;
                     wiado[3] = 22;
                     los = (rand() % 11) + 1;
 
-                    vector<SFootballer> &tmpFootballers = (pilka == 1)
+                    vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
@@ -1874,7 +1442,7 @@ bool Match::runMecz() {
                                 footballer.data[7] = 3;
                             }
 
-                            if (pilka == 1) {
+                            if (isPlayerBall) {
                                 clubRef.finances[7] += footballer.finances[2]; // premia za gola
                             }
                         }
@@ -1883,63 +1451,42 @@ bool Match::runMecz() {
                         }
                     }
 
-                    if (pilka == 1) {
+                    if (isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
                         pFootballers->saveRivals();
                     }
 
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgRivalSurnames[0];
-                        msgFootballers[2] = pClub->getClubName(clubRef.clubId - 1);
-                        msgFootballers[4] = msgPlayerSurnames[pam];
-                        msgFootballers[6] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                        pilka = 2;
-                        playerGoals++;
-                        msgWhoBall[3] = 2;
-                        msgWhoBall[0] = 2;
+                    if (isPlayerBall) {
                         str[1]++;
+                        playerGoals++;
                         dlagol1[playerGoals - 1] = msgPlayerSurnames[pam];
-                        x1 = minuta + 2;
-                        if (x1 > 45 && (koniec == 0 || koniec == 1)) {
-                            x1 = 45;
-                        }
-
-                        if (x1 > 90) {
-                            x1 = 90;
-                        }
-                        mingol1[playerGoals - 1] = x1;
+                        mingol1[playerGoals - 1] = getGoooalMinute(minuta, koniec);
                     }
                     else {
-                        msgFootballers[0] = msgPlayerSurnames[0];
-                        msgFootballers[2] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                        msgFootballers[4] = msgRivalSurnames[pam];
-                        msgFootballers[6] = pClub->getClubName(clubRef.clubId - 1);
-                        pilka = 1;
-                        rivalGoals++;
-                        msgWhoBall[3] = 1;
-                        msgWhoBall[0] = 1;
                         str2[1]++;
+                        rivalGoals++;
                         dlagol2[rivalGoals - 1] = msgRivalSurnames[pam];
-                        x1 = minuta + 2;
-                        if (x1 > 45 && (koniec == 0 || koniec == 1)) {
-                            x1 = 45;
-                        }
-
-                        if (x1 > 90) {
-                            x1 = 90;
-                        }
-                        mingol2[rivalGoals - 1] = x1;
+                        mingol2[rivalGoals - 1] = getGoooalMinute(minuta, koniec);
                     }
+
+                    msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
+                    msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, pam);
+                    msgFootballers[6] = pClub->getClubName((isPlayerBall ? clubRef.rivalData[0] : clubRef.clubId) - 1);
+                    isPlayerBall = !isPlayerBall;
+                    msgWhoBall[3] = isPlayerBall;
+                    msgWhoBall[0] = isPlayerBall;
+
                     gdzie = 1;
                     los = (rand() % 11) + 1;
 
                     // musi byc raz jeszcze pobranie zespolu i klubu bo zmienila sie pilka
-                    vector<SFootballer> &losersFootballers = (pilka == 1)
+                    vector<SFootballer> &losersFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    clubId = (pilka == 1) ? clubRef.clubId : clubRef.rivalData[0];
+                    clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
 
                     for (size_t index = 0; index < losersFootballers.size(); index++) {
                         SFootballer &footballer = losersFootballers[index];
@@ -1951,16 +1498,18 @@ bool Match::runMecz() {
                                 footballer.data[8] = 0;
                                 footballer.data[7]--;
                             }
-                            if (footballer.data[7] < -3) {
-                                footballer.data[7] = -3;
+
+                            if (footballer.data[7] < PLAYERS_MORALE_FATAL) {
+                                footballer.data[7] = PLAYERS_MORALE_FATAL;
                             }
                         }
+
                         if (footballer.data[0] == los && clubId == footballer.data[22]) {
-                            footballer.data[20]--; // losowy zawodnik dostaje tez minusy
+                            footballer.data[20]--; // losowy zawodnik dostaje tez minus forma
                         }
                     }
 
-                    if (pilka == 1) {
+                    if (isPlayerBall) {
                         pFootballers->savePlayerTeam();
                     }
                     else {
@@ -1971,32 +1520,22 @@ bool Match::runMecz() {
                     isPossibleGoToTactics = true;
                     wiado[0] = (rand() % 2 == 0) ? 65 : 66;
                     wiado[1] = 74;
-                    msgWhoBall[1] = pilka;
-                    msgWhoBall[2] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
+                    msgWhoBall[2] = isPlayerBall;
                     wiado[2] = (rand() % 2 == 0) ? 75 : 76;
                     wiado[3] = 77;
-                    msgWhoBall[3] = pilka;
+                    msgWhoBall[3] = isPlayerBall;
                     wiado[4] = 41;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgRivalSurnames[0];
-                        msgFootballers[2] = pClub->getClubName(clubRef.clubId - 1);
-                        msgFootballers[4] = msgPlayerSurnames[pam];
-                        msgFootballers[8] = msgRivalSurnames[0];
-                        pilka = 2;
-                        msgWhoBall[4] = 2;
-                        msgWhoBall[0] = 2;
-                        str[0]--;
-                    }
-                    else {
-                        msgFootballers[0] = msgPlayerSurnames[0];
-                        msgFootballers[2] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                        msgFootballers[4] = msgRivalSurnames[pam];
-                        msgFootballers[8] = msgPlayerSurnames[0];
-                        pilka = 1;
-                        msgWhoBall[4] = 1;
-                        msgWhoBall[0] = 1;
-                        str2[0]--;
-                    }
+
+                    isPlayerBall ? str[0]-- : str2[0]--;
+                    msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
+                    msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, pam);
+                    msgFootballers[8] = msgFootballers[0];
+                    isPlayerBall = !isPlayerBall;
+                    msgWhoBall[4] = isPlayerBall;
+                    msgWhoBall[0] = isPlayerBall;
+
                     gdzie = 1;
                 }//gool
                 else if (co == 30) { //niecelnie
@@ -2015,19 +1554,12 @@ bool Match::runMecz() {
                         wiado[0] = 82; // Poszło w trybuny! Fatalny strzał.
                     }
 
-                    msgWhoBall[0] = pilka;
-                    if (pilka == 1) {
-                        msgFootballers[0] = msgPlayerSurnames[pam];
-                        pilka = 2;
-                        msgFootballers[2] = msgRivalSurnames[0];
-                    }
-                    else {
-                        msgFootballers[0] = msgRivalSurnames[pam];
-                        pilka = 1;
-                        msgFootballers[2] = msgPlayerSurnames[0];
-                    }
+                    msgWhoBall[0] = isPlayerBall;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, pam);
+                    isPlayerBall = !isPlayerBall;
+                    msgFootballers[2] = getFootballerSurname(!isPlayerBall, 0);
                     wiado[1] = 41;
-                    msgWhoBall[1] = pilka;
+                    msgWhoBall[1] = isPlayerBall;
                     gdzie = 1;
                 }//niecelnie
             }//obrona B gdzie=4;
@@ -2039,26 +1571,26 @@ bool Match::runMecz() {
                 ktoZacz = (rand() % 2) + 1;
                 if (ktoZacz == 1) { //zaczyna gracz
                     msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
-                    pilka = 1;
+                    isPlayerBall = true;
                 }
                 else { //zaczyna przeciwnik
                     msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                    pilka = 2;
+                    isPlayerBall = false;
                 }
                 gdzie = 1;
-                msgWhoBall[0] = pilka;
+                msgWhoBall[0] = isPlayerBall;
             }//dla minuta=0 początek meczu
             else if (minuta == 45 && koniec == 2) { //początek 2 połowy
                 if (ktoZacz == 1) { //zaczyna rywal
                     msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                    pilka = 2;
+                    isPlayerBall = false;
                 }
                 else { // zaczyna gracz
                     msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
-                    pilka = 1;
+                    isPlayerBall = true;
                 }
                 gdzie = 1;
-                msgWhoBall[0] = pilka;
+                msgWhoBall[0] = isPlayerBall;
                 memset(wiado, 0, 10 * sizeof(int));
                 wiado[0] = 2;
             }//dla początek 2 połowy
@@ -2078,7 +1610,9 @@ bool Match::runMecz() {
                 x1 = (rand() % 2); // losuj ktory zespol 50/50
                 los = (rand() % 11) + 1; // losuj ktory zawodnik
 
-                vector<SFootballer> &tmpFootballers = (x1 == 0) ? pFootballers->getPlayersTeam() : pFootballers->getRivals();
+                vector<SFootballer> &tmpFootballers = (x1 == 0)
+                    ? pFootballers->getPlayersTeam()
+                    : pFootballers->getRivals();
                 int clubId = (x1 == 0) ? clubRef.clubId : clubRef.rivalData[0];
 
                 for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -2086,12 +1620,12 @@ bool Match::runMecz() {
                     if (footballer.data[0] == los && footballer.data[22] == clubId && footballer.data[12] < 2) {
                         footballer.data[11] = 0;
                         footballer.data[19] = 1;
-                        for (i = 10; i > 0; i--) {
+                        for (int i = MAX_MESSAGES; i > 0; i--) {
                             if (wiado[i] == 0) {
                                 k = i;
                             }
                         }
-                        wiado[k] = (x1 == 0) ? 83 : 84; // %ls doznaje kontuzji! / %ls kontuzjowany!
+                        wiado[k] = (rand() % 2 == 0) ? 83 : 84; // %ls doznaje kontuzji! / %ls kontuzjowany!
 
                         if (x1 == 0) {
                             msgWhoBall[k] = 1;
@@ -2101,6 +1635,8 @@ bool Match::runMecz() {
                             msgWhoBall[k] = 2;
                             msgFootballers[k * 2] = msgRivalSurnames[los - 1];
                         }
+
+                        break;
                     }
                 }
 
@@ -2119,25 +1655,30 @@ bool Match::runMecz() {
                 x3 = 0;
                 for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                     SFootballer &footballer = pFootballers->getRival(index);
-                    if (footballer.data[11] == 0 && clubRef.rivalData[0] == footballer.data[22] && footballer.data[0] < 12) {
+                    if (footballer.data[11] == 0 &&
+                        clubRef.rivalData[0] == footballer.data[22] &&
+                        footballer.data[0] < 12
+                    ) {
                         x1 = footballer.data[0];
                         x2 = footballer.data[2]; // formacja na jakiej gra
                     }
                 }
 
-                for (i = 0; i < 3; i++) {
+                for (int i = 0; i < 3; i++) {
                     if (juzzmienil[i] == 0) {
                         juzzmienil[i] = x1;
                         break;
                     }
                 }
-                for (i = 0; i < 3; i++) {
+
+                for (int i = 0; i < 3; i++) {
                     if (juzzmienil[i] == x1) {
                         x3++;
                     }
                 }
+
                 if (x3 > 1) {
-                    for (i = 2; i >= 0; i--) {
+                    for (int i = 2; i >= 0; i--) {
                         if (juzzmienil[i] == x1) {
                             juzzmienil[i] = 0;
                             break;
@@ -2145,6 +1686,7 @@ bool Match::runMecz() {
                     }
                     x1 = 0;
                 }
+
                 if (x1 > 0) {
                     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                         SFootballer &footballer = pFootballers->getRival(index);
@@ -2159,11 +1701,13 @@ bool Match::runMecz() {
 
                     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                         SFootballer &footballer = pFootballers->getRival(index);
-                        if (footballer.data[0] == x1 && clubRef.rivalData[0] == footballer.data[22]) {
-                            footballer.data[0] = x3;
-                        }
-                        else if (footballer.data[0] == x3 && clubRef.rivalData[0] == footballer.data[22]) {
-                            footballer.data[0] = x1;
+                        if (clubRef.rivalData[0] == footballer.data[22]) {
+                            if (footballer.data[0] == x1) {
+                                footballer.data[0] = x3;
+                            }
+                            else if (footballer.data[0] == x3) {
+                                footballer.data[0] = x1;
+                            }
                         }
                     }
                     pFootballers->saveRivals();
@@ -2173,12 +1717,12 @@ bool Match::runMecz() {
             }//dla if isPossibleGoToTactics
             //************************************************
             if (whoPlayerChanges > 0) { //zmiana zawodnika**************
-                for (i = 10; i > 0; i--) {
+                for (int i = MAX_MESSAGES; i > 0; i--) {
                     if (wiado[i] == 0) {
                         k = i;
                     }
                 }
-                wiado[k] = 5;
+                wiado[k] = 5; // %ls dokonuje zmiany...
                 if (whoPlayerChanges == 1) { // zmiana gracza
                     msgWhoBall[k] = 1;
                     msgFootballers[k * 2] = pClub->getClubName(clubRef.clubId - 1);
@@ -2196,7 +1740,7 @@ bool Match::runMecz() {
             //*************** zadyma **********************
             x1 = (rand() % 100);
             if (x1 == 1 && gdzie == 1) {
-                for (i = 10; i > 0; i--) {
+                for (int i = MAX_MESSAGES; i > 0; i--) {
                     if (wiado[i] == 0) {
                         k = i;
                     }
@@ -2205,7 +1749,7 @@ bool Match::runMecz() {
                 wiado[k + 1] = 87;
                 wiado[k + 2] = 88;
                 wiado[k + 3] = 89;
-                if (clubRef.rivalData[1] == 0) { //u mnie
+                if (clubRef.rivalData[1] == 0) { // home
                     msgWhoBall[k] = 1;
                     msgWhoBall[k + 1] = 1;
                     msgWhoBall[k + 2] = 1;
@@ -2222,7 +1766,7 @@ bool Match::runMecz() {
                 }
             }
             //*********************************
-            for (i = 0; i < 10; i++) {
+            for (int i = 0; i < MAX_MESSAGES; i++) {
                 k = i * 2;
                 if (wiado[i] != 0) {
                     wcout << endl;
@@ -2320,11 +1864,11 @@ bool Match::runMecz() {
                 }
             }
             pColors->textbackground(BLACK);
-            memset(wiado, 0, 10 * sizeof(int));
+            memset(wiado, 0, MAX_MESSAGES * sizeof(int));
             minuta += 2;
             minuta2 += 2;
             //****************** posiadanie piłki i strefy **********************
-            if (pilka == 1) {
+            if (isPlayerBall) {
                 pos++;
             }
             pos1 = (pos * 100) / (minuta2 / 2);
@@ -2334,16 +1878,11 @@ bool Match::runMecz() {
                 strefa[1]++;
             }
             else {
-                if (pilka == 1){
-                    strefa[2]++;
-                }
-                else {
-                    strefa[0]++;
-                }
+                isPlayerBall ? strefa[2]++ : strefa[0]++;
             }
-            strefa[3] = (strefa[0]*100) / (minuta2 / 2);
-            strefa[4] = (strefa[1]*100) / (minuta2 / 2);
-            strefa[5] = (strefa[2]*100) / (minuta2 / 2);
+            strefa[3] = (strefa[0] * 100) / (minuta2 / 2);
+            strefa[4] = (strefa[1] * 100) / (minuta2 / 2);
+            strefa[5] = (strefa[2] * 100) / (minuta2 / 2);
             //***************** posiadanie i strefy end *********************
             //***************** kondycja ***************************
             k = (clubRef.inst[2] == 1) ? 2 : 3;
@@ -2509,15 +2048,15 @@ bool Match::runMecz() {
 
     pColors->textcolor(LIGHTGRAY);
     wcout << endl << L"Proszę czekać...";
-    if (clubRef.rivalData[1] == 0) {
-        x1 = (rand() % 30) + 30;
-        h = x1 * 5000.0;
-        clubRef.finances[0] += h; //bilety
-        x2 = (rand() % 30) + 30;
-        h = x2 * 5000.0;
-        clubRef.finances[1] += h; //Tv
-        k = (rand() % 10) + 1;
-        clubRef.finances[2] += k * 1000; //handel
+    if (clubRef.rivalData[1] == 0) { // player home
+        float tickets = ((rand() % 30) + 30) * 5000.0;
+        clubRef.finances[0] += tickets; //bilety
+
+        float tv = ((rand() % 30) + 30) * 5000.0;
+        clubRef.finances[1] += tv; //Tv
+
+        clubRef.finances[2] += ((rand() % 10) + 1) * 1000; //handel
+
         clubRef.finances[4] += 300000;
     }
     else {
@@ -2599,105 +2138,118 @@ bool Match::runMecz() {
     for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
         SFootballer &footballer = pFootballers->getPlayerTeam(index);
         if (footballer.data[13] >= 2) {
-            footballer.data[13] = 0;
+            footballer.data[13] = 0; // reset yellow cards
         }
 
         if (footballer.data[14] == 1) {
-            footballer.data[14] = 0;
+            footballer.data[14] = 0; // reset red cards
         }
 
-        if (footballer.data[21] > 0) {
-            footballer.data[16] += footballer.data[21];
-            footballer.data[21] = 0;
+        if (footballer.data[21] > 0) { // goals in match
+            footballer.data[16] += footballer.data[21]; // sum it
+            footballer.data[21] = 0; // and reset for match
         }
 
-        if (footballer.data[12] >= 2) {
-            footballer.data[14] = 1;
-            footballer.data[12] = 0;
-            footballer.data[13] = 0;
+        if (footballer.data[12] >= 2) { // 2 yellow cart in match
+            footballer.data[14] = 1; // the red card
+            footballer.data[12] = 0; // reset yellow in match
+            footballer.data[13] = 0; // reset yellow general
         }
 
-        if (footballer.data[12] > 0) {
-            footballer.data[13] += footballer.data[12];
+        if (footballer.data[12] > 0) { // is yellow cart in match
+            footballer.data[13] += footballer.data[12]; // sum it
+            footballer.data[12] = 0; // reset yellow card in match
         }
 
-        footballer.data[9] += footballer.data[20];
-        footballer.data[12] = 0;
+        footballer.data[9] += footballer.data[20]; // form in match change general form
 
-        if (footballer.data[9] > 10) {
+        if (footballer.data[9] > 10) { // form more then limit
             footballer.data[9] = 10;
         }
 
-        if (footballer.data[9] < 1) {
+        if (footballer.data[9] < 1) { // form less then minimum
             footballer.data[9] = 1;
         }
     }
     pFootballers->savePlayerTeam();
 
-    //******************** tabela ***********************************
-    sumaN = 0;
-    while (sumaN != 3) {
-        sumaN++;
-        k = -1;
+    updateTable();
+
+    pColors->textcolor(LIGHTGREEN);
+    return true;
+}
+
+void Match::updateTable()
+{
+    int pkt[16], clubId[16], golr[16], gol[16], blokada[16];
+    int loop = 0;
+    int tmpReplace = 0;
+
+    while (loop != 3) {
+        loop++;
+
+        int k = 0;
         for (size_t index = 0; index < pTable->getSize(); index++) {
             STable &tableRef = pTable->get(index);
-            k++;
             pkt[k] = tableRef.data[7]; //zapisuje punkty do pkt
-            pkt2[k] = tableRef.num;
-            golr[k] = tableRef.data[6];
+            clubId[k] = tableRef.num; // numer klubu
+            golr[k] = tableRef.data[6]; // roznica goli
             gol[k] = tableRef.data[4]; //gole zdobyte
             blokada[k] = 0;
+            k++;
         }
 
-        for (i = 0; i < 16; i++) { //sortowanie wg. pkt
+        for (int i = 0; i < 16; i++) { //sortowanie wg. pkt
             blokada[i] = 0;
-            for (k = i + 1; k < 16; k++) {
+            for (int k = i + 1; k < 16; k++) {
                 if (pkt[i] < pkt[k]) {
-                    sumaO = pkt2[i]; //pkt2 numery klubów, zamieniam wg. kolejności
-                    pkt2[i] = pkt2[k];
-                    pkt2[k] = sumaO;
+                    tmpReplace = clubId[i]; // numery klubów, zamieniam wg. kolejności
+                    clubId[i] = clubId[k];
+                    clubId[k] = tmpReplace;
                     //**********
-                    sumaO = pkt[i]; //punkty klubów
+                    tmpReplace = pkt[i]; //punkty klubów
                     pkt[i] = pkt[k];
-                    pkt[k] = sumaO;
+                    pkt[k] = tmpReplace;
                 }
             }
         }
-        for (i = 0; i < 16; i++) { //sortowanie wg. +/-
-            for (k = i + 1; k < 16; k++) {
+
+        for (int i = 0; i < 16; i++) { //sortowanie wg. +/-
+            for (int k = i + 1; k < 16; k++) {
                 if (golr[i] < golr[k] && pkt[i] == pkt[k]) {
-                    sumaO = pkt2[i]; //pkt2 numery klubów, zamieniam wg. kolejności
-                    pkt2[i] = pkt2[k];
-                    pkt2[k] = sumaO;
+                    tmpReplace = clubId[i]; // numery klubów, zamieniam wg. kolejności
+                    clubId[i] = clubId[k];
+                    clubId[k] = tmpReplace;
                     //**********
-                    sumaO = pkt[i]; //punkty klubów
+                    tmpReplace = pkt[i]; //punkty klubów
                     pkt[i] = pkt[k];
-                    pkt[k] = sumaO;
+                    pkt[k] = tmpReplace;
                     //**********
-                    sumaO = golr[i]; //różnica goli
+                    tmpReplace = golr[i]; //różnica goli
                     golr[i] = golr[k];
-                    golr[k] = sumaO;
+                    golr[k] = tmpReplace;
                 }
             }
         }
-        for (i = 0; i < 16; i++) {//sortowanie wg. goli zdobytych
-            for (k = i + 1; k < 16; k++) {
+
+        for (int i = 0; i < 16; i++) {//sortowanie wg. goli zdobytych
+            for (int k = i + 1; k < 16; k++) {
                 if (gol[i] < gol[k] && golr[i] == golr[k] && pkt[i] == pkt[k]) {
-                    sumaO = pkt2[i]; //pkt2 numery klubów, zamieniam wg. kolejności
-                    pkt2[i] = pkt2[k];
-                    pkt2[k] = sumaO;
+                    tmpReplace = clubId[i]; // numery klubów, zamieniam wg. kolejności
+                    clubId[i] = clubId[k];
+                    clubId[k] = tmpReplace;
                     //**********
-                    sumaO = pkt[i]; //punkty klubów
+                    tmpReplace = pkt[i]; //punkty klubów
                     pkt[i] = pkt[k];
-                    pkt[k] = sumaO;
+                    pkt[k] = tmpReplace;
                     //**********
-                    sumaO = golr[i]; //różnica goli
+                    tmpReplace = golr[i]; //różnica goli
                     golr[i] = golr[k];
-                    golr[k] = sumaO;
+                    golr[k] = tmpReplace;
                     //***********
-                    sumaO = gol[i]; //gole zdobyte
+                    tmpReplace = gol[i]; //gole zdobyte
                     gol[i] = gol[k];
-                    gol[k] = sumaO;
+                    gol[k] = tmpReplace;
                 }
             }
         }
@@ -2708,7 +2260,7 @@ bool Match::runMecz() {
                 for (int v = 0; v < 16; v++) {
                     for (size_t index = 0; index < pTable->getSize(); index++) {
                         STable &tableRef = pTable->get(index);
-                        if (pkt2[i] == tableRef.num &&
+                        if (clubId[i] == tableRef.num &&
                             pkt[i] == tableRef.data[7] &&
                             golr[k] == tableRef.data[6] &&
                             gol[v] == tableRef.data[4] &&
@@ -2724,9 +2276,7 @@ bool Match::runMecz() {
         }
         pTable->overrideTable(newTable);
         pTable->save();
-    }//dla while!=2
-    pColors->textcolor(LIGHTGREEN);
-    return true;
+    }
 }
 
 void Match::prepareFootballers()
@@ -2933,15 +2483,15 @@ void Match::drawTeam(int usta, int tryb, int kto)
     }
 }
 
-int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef) {
+int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef) {
     int x1, x2, x3, los, co;
     if (gdzie == 1) { //gdzie = 1 P/P
-        if (pilka == 1) {
+        if (isPlayerBall) {
             x1 = clubRef.inst[4]; //gra z kontry twoja
             x2 = clubRef.trained[1]; //podania trening
             x3 = clubRef.rivalInst[2]; //pressing rywala
         }
-        else {  //if (pilka==2)
+        else {
             x1 = clubRef.rivalInst[4]; //gra z kontry rywala
             x2 = 2; //podania trening rywala
             x3 = clubRef.inst[2]; //pressing twój
@@ -2951,7 +2501,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
             co = los;
         }
         else {
-            if ((PnaP > 20 && pilka == 1) || (PnaP < -20 && pilka == 2)) { // przewaga duża
+            if ((PnaP > 20 && isPlayerBall) || (PnaP < -20 && !isPlayerBall)) { // przewaga duża
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
                     co = 1;
                 }
@@ -2996,7 +2546,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 2; //udana z kontry
                 }
             }
-            else if ((PnaP > 10 && PnaP < 21 && pilka == 1) || (PnaP < -10 && PnaP > -21 && pilka == 2))//przewaga mała
+            else if ((PnaP > 10 && PnaP < 21 && isPlayerBall) || (PnaP < -10 && PnaP > -21 && !isPlayerBall))//przewaga mała
             {
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
                     if (los == 14 || los == 22) co = 4;
@@ -3064,7 +2614,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 2; //udana z kontryif (los==10||los==11||los==12||los==19||los==20||los==21||los==25)
                 }
             }
-            else if ((PnaP > 20 && pilka == 2) || (PnaP < -20 && pilka == 1)) { //osłabienie duże
+            else if ((PnaP > 20 && !isPlayerBall) || (PnaP < -20 && isPlayerBall)) { //osłabienie duże
                 if (x1 == 0 && x2 >= 2 && x3 == 0){
                     co = 4;
                 }
@@ -3109,7 +2659,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 3; //nieudana z kontry
                 }
             }
-            else if ((PnaP < -10 && PnaP > -21 && pilka == 1) || (PnaP > 10 && PnaP < 21 && pilka == 2)) { //osłabienie
+            else if ((PnaP < -10 && PnaP > -21 && isPlayerBall) || (PnaP > 10 && PnaP < 21 && !isPlayerBall)) { //osłabienie
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
                     if (los == 14 || los == 22 || los == 23 || los == 27) co = 1;
                     else if (los == 15 || los == 24) co = 7;
@@ -3253,27 +2803,27 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
             co = los + 9;
         }
         else {
-            if ((AnaO > 10 && pilka == 1) || (OnaA < -10 && pilka == 2)) { //duża przewaga ataku
+            if ((AnaO > 10 && isPlayerBall) || (OnaA < -10 && !isPlayerBall)) { //duża przewaga ataku
                 los = (rand() % 10) + 1;
                 if (los == 1 || los == 2) co = 11;
                 else co = 10;
             }
-            else if ((AnaO > 0 && AnaO < 11 && pilka == 1) || (OnaA > -11 && OnaA < 0 && pilka == 2)) { //przewaga ataku
+            else if ((AnaO > 0 && AnaO < 11 && isPlayerBall) || (OnaA > -11 && OnaA < 0 && !isPlayerBall)) { //przewaga ataku
                 if (los == 6 || los == 7 || los == 8 || los == 9) co = 10;
                 else if (los == 10 || los == 11 || los == 12) co = 11;
                 else co = 13;
             }//przewaga w ataku
-            else if ((AnaO < -40 && pilka == 1) || (OnaA > 40 && pilka == 2)) { //duża przewaga obrony
+            else if ((AnaO < -40 && isPlayerBall) || (OnaA > 40 && !isPlayerBall)) { //duża przewaga obrony
                 los = (rand() % 10) + 1;
                 if (los == 1 || los == 2) co = 12;
                 else co = 13;
             }
-            else if ((AnaO > -41 && AnaO < -20 && pilka == 1) || (OnaA > 20 && OnaA < 41 && pilka == 2)) { //przewaga obrony
+            else if ((AnaO > -41 && AnaO < -20 && isPlayerBall) || (OnaA > 20 && OnaA < 41 && !isPlayerBall)) { //przewaga obrony
                 if (los == 5 || los == 6 || los == 7 || los == 8 || los == 9) co = 13;
                 else if (los == 10 || los == 11) co = 10;
                 else co = 11;
             }//przewaga w obronie
-            else { //if ((AnaO > -21&&AnaO<1&&pilka==1)||(OnaA<21&&OnaA > -1&&pilka==2))
+            else { //if ((AnaO > -21&&AnaO<1&& isPlayerBall)||(OnaA<21&&OnaA > -1&& !isPlayerBall))
                 if (los > 4 && los < 9) co = los + 5;
                 else co = los + 1;
             }
@@ -3281,7 +2831,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
     }
     else if (gdzie == 3) { //pole karne A/O
         los = (rand() % 30) + 1;
-        if (pilka == 1) {
+        if (isPlayerBall) {
             x1 = clubRef.rivalInst[3]; //pułapki ofsajdowe rywala
         }
         else {
@@ -3292,7 +2842,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
             co = los + 13;
         }
         else {
-            if ((AnaO > 10 && pilka == 1) || (OnaA < -10 && pilka == 2)) { //duża przewaga ataku
+            if ((AnaO > 10 && isPlayerBall) || (OnaA < -10 && !isPlayerBall)) { //duża przewaga ataku
                 if (x1 == 0) {
                     los = (rand() % 10) + 1;
                     if (los == 1 || los == 2 || los == 3) co = 21;
@@ -3306,7 +2856,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 22;
                 }
             }
-            else if ((AnaO > 0 && AnaO < 11 && pilka == 1) || (OnaA > -11 && OnaA < 0 && pilka == 2)) { //przewaga ataku
+            else if ((AnaO > 0 && AnaO < 11 && isPlayerBall) || (OnaA > -11 && OnaA < 0 && !isPlayerBall)) { //przewaga ataku
                 if (x1 == 0) {
                     if (los == 11 || los == 27) co = 16;
                     else if (los == 12 || los == 26) co = 17;
@@ -3328,7 +2878,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 23;
                 }
             }
-            else if ((AnaO < -40 && pilka == 1) || (OnaA > 40 && pilka == 2)) { //duża przewaga obrony
+            else if ((AnaO < -40 && isPlayerBall) || (OnaA > 40 && !isPlayerBall)) { //duża przewaga obrony
                 if (x1 == 0) {
                     los = (rand() % 10) + 1;
                     if (los == 1 || los == 2 || los == 3) co = 17;
@@ -3342,7 +2892,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 14;
                 }
             }
-            else if ((AnaO > -41 && AnaO < -20 && pilka == 1) || (OnaA > 20 && OnaA < 41 && pilka == 2)) { //przewaga obrony
+            else if ((AnaO > -41 && AnaO < -20 && isPlayerBall) || (OnaA > 20 && OnaA < 41 && !isPlayerBall)) { //przewaga obrony
                 if (x1 == 0) {
                     if (los == 11 || los == 12 || los == 13 || los == 21 || los == 22 || los == 30) co = 16;
                     else if (los == 14 || los == 23 || los == 24) co = 17;
@@ -3364,7 +2914,7 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
                     else co = 23;
                 }
             }
-            else if ((AnaO > -21 && AnaO < 1 && pilka == 1) || (OnaA < 21 && OnaA > -1 && pilka == 2)) {
+            else if ((AnaO > -21 && AnaO < 1 && isPlayerBall) || (OnaA < 21 && OnaA > -1 && !isPlayerBall)) {
                 if (x1 == 0) {
                     if (los == 11 || los == 12 || los == 13 || los == 21) co = 16;
                     else if (los == 30) co = 14;
@@ -3385,11 +2935,11 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
     else if (gdzie == 4 || gdzie == 6) { //obrona B sumaB max 43, mini 8, śred 26
         los = (rand() % 12) + 1;
         if (gdzie == 4) {
-            if (pilka == 1) x1 = sumaB2; //umiejętności bramkarza
+            if (isPlayerBall) x1 = sumaB2; //umiejętności bramkarza
             else x1 = sumaB;
         }
         else if (gdzie == 6) {
-            if (pilka == 1) x1 = sumaB2 - (clubRef.trained[2] * 2); //umiejętności bramkarza
+            if (isPlayerBall) x1 = sumaB2 - (clubRef.trained[2] * 2); //umiejętności bramkarza
             else x1 = sumaB - 2;
         }
 
@@ -3427,11 +2977,10 @@ int Match::whatHappened(int pilka, int PnaP, int OnaA, int AnaO, int sumaB, int 
             else if (los == 9 || los == 10) co = 25; //bez problemu
             else co = 30; //strzał niecelny2x
         }
-        //dystans=0;
     }//gdzie = 4//obrona B
     else if (gdzie == 5) { //obrona B - karny, sma na sam
         los = (rand() % 9) + 1;
-        if (pilka == 1) {
+        if (isPlayerBall) {
             x1 = sumaB2 - clubRef.trained[2]; //um. bramkarza-stałe fragmenty
         }
         else {
@@ -3477,7 +3026,7 @@ void Match::drawBoard(
     int ballPossHome, int ballPossAway,
     int OnaA, int PnaP, int AnaO,
     int gdzie,
-    int pilka
+    bool isPlayerBall
 ) {
     pColors->textcolor(WHITE);
     pColors->textbackground(GREEN);
@@ -3774,7 +3323,7 @@ void Match::drawBoard(
         wcout << L"                 ^";
     }
     else {
-        if (pilka == (isHome ? 1 : 2)) {
+        if (isPlayerBall == isHome) {
             wcout << L"                              ^";
         }
         else {
@@ -4206,4 +3755,210 @@ void Match::rivalTactics()
         }
     }
     while (menuTeamSetting != 'Q');
+}
+
+wstring Match::getFootballerSurname(bool isPlayerBall, int footabllerId)
+{
+    return isPlayerBall ? msgPlayerSurnames[footabllerId] : msgRivalSurnames[footabllerId];
+}
+
+int Match::getArbiterDecision(int instrTreatment)
+{
+    int chance = (rand() % 6);
+
+    switch (instrTreatment) {
+        case INSTR_TREATMENT_SOFT: {
+            if (chance == 0 || chance == 1 || chance == 2) {
+                return 1; // nie ma kartki 1/2
+            }
+            else if (chance == 3 || chance == 4) {
+                return 2; // słowne upomienie 1/3
+            }
+
+            return 3; // żólta kartka 1/6
+        }
+        case INSTR_TREATMENT_HARD: {
+            if (chance == 0) {
+                return 1; //nie ma kartki 1/6
+            }
+            else if (chance == 1 || chance == 2) {
+                return 2; //słowne upomienie 1/3
+            }
+
+            return 3; //żólta kartka 1/2
+        }
+        case INSTR_TREATMENT_NORMAL:
+        default: {
+            if (chance == 0 || chance == 1) {
+                return 1; // nie ma kartki 1/3
+            }
+            else if (chance == 2 || chance == 3) {
+                return 2; // słowne upomienie 1/3
+            }
+
+            return 3; // żólta kartka 1/3
+        }
+    }
+}
+
+/**
+ * Get ID of middlefield footballer who fouled
+ *
+ * @param teamSetting
+ * @return
+ */
+int Match::getMiddlefieldFootballerIdWhoFouled(int teamSetting)
+{
+    switch (teamSetting) {
+        case T4_4_2:
+        case T4_4_2_DEF:
+        case T4_4_2_ATT:
+        case T4_4_2_DIA: {
+            return (rand() % 4) + 6; // middlefield 6-9
+        }
+        case T3_4_3: {
+            return (rand() % 4) + 5; // middlefield 5-8
+        }
+        case T3_5_2:
+        case T3_5_2_DEF:
+        case T3_5_2_ATT: {
+            return (rand() % 5) + 5; // middlefield 5-9
+        }
+        case T4_2_4: {
+            return (rand() % 2) + 6;
+        }
+        case T4_3_3: {
+            return (rand() % 3) + 6;;
+        }
+        case T4_5_1: {
+            return (rand() % 5) + 6;
+        }
+        case T5_3_2:
+        case T5_3_2_DEF:
+        case T5_3_2_ATT: {
+            return (rand() % 3) + 7;;
+        }
+    }
+}
+
+int Match::getDefFootballerId(int teamSetting)
+{
+    switch (teamSetting) {
+        case T4_4_2:
+        case T4_4_2_DEF:
+        case T4_4_2_ATT:
+        case T4_4_2_DIA:
+        case T4_2_4:
+        case T4_3_3:
+        case T4_5_1: {
+            return (rand() % 4) + 2;
+        }
+        case T3_4_3:
+        case T3_5_2:
+        case T3_5_2_DEF:
+        case T3_5_2_ATT: {
+            return (rand() % 3) + 2;
+        }
+        default: {
+            return (rand() % 5) + 2;
+        }
+    }
+}
+
+int Match::getFootballerIdWhoShootDistance(int teamSetting)
+{
+    switch (teamSetting) {
+        case T3_5_2:
+        case T3_5_2_DEF:
+        case T3_5_2_ATT: {
+            return (rand() % 5) + 5;
+        }
+        case T4_5_1: {
+            return (rand() % 5) + 6;
+        }
+        case T5_3_2:
+        case T5_3_2_DEF:
+        case T5_3_2_ATT: {
+            return (rand() % 3) + 7;
+        }
+        case T3_4_3: {
+            return (rand() % 4) + 5;
+        }
+        case T4_3_3: {
+            return (rand() % 4) + 6;
+        }
+        default: {
+            return (rand() % 4) + 6;
+        }
+    }
+}
+
+int Match::getGoooalMinute(int minuta, int koniec)
+{
+    int result = minuta + 2;
+    if (result > 45 && (koniec == 0 || koniec == 1)) {
+        result = 45;
+    }
+
+    if (result > 90) {
+        result = 90;
+    }
+
+    return result;
+}
+
+int Match::getRightWingerFootballerId(int teamSetting)
+{
+    switch (teamSetting) {
+        case T4_4_2:
+        case T4_4_2_DEF:
+        case T4_4_2_ATT:
+        case T3_5_2:
+        case T3_5_2_DEF:
+        case T4_2_4: {
+            return 8;
+        }
+        case T4_4_2_DIA:
+        case T3_4_3:
+        case T3_5_2_ATT:
+        case T4_3_3: {
+            return 7;
+        }
+        case T4_5_1: {
+            return 9;
+        }
+        case T5_3_2:
+        case T5_3_2_DEF:
+        case T5_3_2_ATT:
+        default: {
+            return 5;
+        }
+    }
+}
+
+int Match::getLefttWingerFootballerId(int teamSetting)
+{
+    switch (teamSetting) {
+        case T4_4_2:
+        case T4_4_2_DEF:
+        case T4_4_2_ATT:
+        case T4_4_2_DIA:
+        case T4_3_3:
+        case T4_5_1: {
+            return 5;
+        }
+        case T3_4_3:
+        case T3_5_2:
+        case T3_5_2_DEF:
+        case T3_5_2_ATT:
+        case T5_3_2:
+        case T5_3_2_DEF:
+        case T5_3_2_ATT: {
+            return 4;
+        }
+        case T4_2_4:
+        default: {
+            return 7;
+        }
+    }
 }
