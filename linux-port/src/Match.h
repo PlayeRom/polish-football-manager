@@ -17,6 +17,22 @@
 
 #define MAX_MESSAGES 10
 
+struct SFormationsSum {
+    SFormationsSum() { clean(); }
+    void clean() {
+        sumGol = 0;
+        sumDef = 0;
+        sumMid = 0;
+        sumAtt = 0;
+        goalBonus = 0.0;
+    }
+    int sumGol;
+    int sumDef;
+    int sumMid;
+    int sumAtt;
+    float goalBonus;
+};
+
 class Match {
 public:
     Match(
@@ -69,7 +85,16 @@ private:
     void prepareFootballers();
     void prepareFootballersSurnames(const SClub &clubRef);
     void drawTeam(int usta, int tryb, int kto);
-    int whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef);
+    int whatHappened(
+        bool isPlayerBall,
+        int PnaP,
+        int OnaA,
+        int AnaO,
+        int playerGoalkeeperSkills,
+        int rivalGoalkeeperSkills,
+        int whereIsAction,
+        const SClub &clubRef
+    );
     void loadMatchMessages();
     void drawBoard(
         bool isHome,
@@ -84,7 +109,7 @@ private:
         int redsHome, int redsAway,
         int ballPossHome, int ballPossAway,
         int OnaA, int PnaP, int AnaO,
-        int gdzie,
+        int whereIsAction,
         bool isPlayerBall
     );
     void drawOnaA(bool isHome, int OnaA);
@@ -103,6 +128,16 @@ private:
     int getGoooalMinute(int minuta, int koniec);
     int getRightWingerFootballerId(int teamSetting);
     int getLefttWingerFootballerId(int teamSetting);
+
+    int getFooballerStats(const SFootballer& footballer);
+    int getFooballerStatsGoalkeeper(const SFootballer& footballer);
+    int getFooballerStatsDefence(const SFootballer& footballer);
+    int getFooballerStatsMiddlefield(const SFootballer& footballer);
+    int getFooballerStatsAttack(const SFootballer& footballer);
+
+    SFormationsSum getFormationsSum(const SClub &clubRef, bool isPlayerTeam);
+    SFormationsSum getPlayerFormationsSum(const SClub &clubRef);
+    SFormationsSum getRivalFormationsSum(const SClub &clubRef);
 };
 
 #endif /* MATCH_H */

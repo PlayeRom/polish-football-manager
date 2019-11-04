@@ -21,7 +21,7 @@ public:
     int getPositionInTable(int clubNumber);
     int getClubNumberInPosition(int tablePosition);
     void drawTable(int clubId, const PlayerClub *club);
-    void updateAfterMatch(const SRound &round, int sumaP, SClub &clubRef);
+    void updateAfterMatch(const SRound &round, int roundIndex, SClub &clubRef);
 
     STable& get(int index) { return table[index]; }
     int getSize() const { return MAX_CLUBS; }

@@ -234,47 +234,45 @@ void Table::drawTableHorizontalBottom()
     wcout << BOX_LIGHT_UP_LEFT;
 }
 
-void Table::updateAfterMatch(const SRound &round, int sumaP, SClub &clubRef)
+void Table::updateAfterMatch(const SRound &round, int roundIndex, SClub &clubRef)
 {
     for (int i = 0; i < MAX_CLUBS; i++) { // petla po numerach klubow w kolejce
         for (int j = 0; j < MAX_CLUBS; j++) { // petla po klubach w tabeli
             STable &tableRef = table[j];
 
             if (round.clubNumbers[i] == tableRef.num) {
-                int sumaO = i;
                 tableRef.data[0]++;
-                if (sumaO % 2 == 0) {
-                    tableRef.data[4] += clubRef.goalsLeague[sumaP - 16 + sumaO];
-                    tableRef.data[5] += clubRef.goalsLeague[sumaP - 16 + sumaO + 1];
-                    if (clubRef.goalsLeague[sumaP - 16 + sumaO] > clubRef.goalsLeague[sumaP - 16 + sumaO + 1]) {
-                        tableRef.data[1]++;
-                        tableRef.data[7] += 3;
+                if (i % 2 == 0) {
+                    tableRef.data[4] += clubRef.goalsLeague[roundIndex - 16 + i];
+                    tableRef.data[5] += clubRef.goalsLeague[roundIndex - 16 + i + 1];
+                    if (clubRef.goalsLeague[roundIndex - 16 + i] > clubRef.goalsLeague[roundIndex - 16 + i + 1]) {
+                        tableRef.data[1]++; // win
+                        tableRef.data[7] += 3; // points +3
                     }
-                    else if (clubRef.goalsLeague[sumaP - 16 + sumaO] == clubRef.goalsLeague[sumaP - 16 + sumaO + 1]) {
-                        tableRef.data[2]++;
-                        tableRef.data[7]++;
-                    }
-                    else {
-                        tableRef.data[3]++; //przegrana
-                    }
-                }
-                else //nieparzysta
-                {
-                    tableRef.data[4] += clubRef.goalsLeague[sumaP - 16 + sumaO];
-                    tableRef.data[5] += clubRef.goalsLeague[sumaP - 16 + sumaO - 1];
-                    if (clubRef.goalsLeague[sumaP - 16 + sumaO] > clubRef.goalsLeague[sumaP - 16 + sumaO - 1]) {
-                        tableRef.data[1]++;
-                        tableRef.data[7] += 3;
-                    }
-                    else if (clubRef.goalsLeague[sumaP - 16 + sumaO] == clubRef.goalsLeague[sumaP - 16 + sumaO - 1]) {
-                        tableRef.data[2]++;
-                        tableRef.data[7]++;
+                    else if (clubRef.goalsLeague[roundIndex - 16 + i] == clubRef.goalsLeague[roundIndex - 16 + i + 1]) {
+                        tableRef.data[2]++; // draw
+                        tableRef.data[7]++; // points +1
                     }
                     else {
-                        tableRef.data[3]++; //przegrana
+                        tableRef.data[3]++; // defeat
                     }
                 }
-                tableRef.data[6] = tableRef.data[4] - tableRef.data[5];
+                else { //nieparzysta
+                    tableRef.data[4] += clubRef.goalsLeague[roundIndex - 16 + i];
+                    tableRef.data[5] += clubRef.goalsLeague[roundIndex - 16 + i - 1];
+                    if (clubRef.goalsLeague[roundIndex - 16 + i] > clubRef.goalsLeague[roundIndex - 16 + i - 1]) {
+                        tableRef.data[1]++; // win
+                        tableRef.data[7] += 3; // points +3
+                    }
+                    else if (clubRef.goalsLeague[roundIndex - 16 + i] == clubRef.goalsLeague[roundIndex - 16 + i - 1]) {
+                        tableRef.data[2]++; // draw
+                        tableRef.data[7]++; // points +1
+                    }
+                    else {
+                        tableRef.data[3]++; // defeat
+                    }
+                }
+                tableRef.data[6] = tableRef.data[4] - tableRef.data[5]; // goal difference
 
                 break;
             }

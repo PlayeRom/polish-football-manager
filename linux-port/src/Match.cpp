@@ -12,6 +12,14 @@
 #include "BoxDrawingChars.h"
 #include "TeamComposition.h"
 
+// Where is acrion
+#define ACTION_IN_MIDDLEFIELD       1 // ball in the middle field
+#define ACTION_IN_WINGER            2 // ball in winger
+#define ACTION_IN_PANELTY_AREA      3 // ball in panelty area
+#define ACTION_IN_GOAL_SITUATION    4 // shot on goal
+#define ACTION_IN_PANELTY_OR_1ON1   5 // critical goal situation (panelty shot or attacker one on one with goalkeeper)
+#define ACTION_IN_DIRECT_FREE_KICK  6 // goal situation by direct free kick
+
 using namespace std;
 
 Match::Match(
@@ -100,23 +108,22 @@ bool Match::runMecz() {
     int playerGoals = 0, rivalGoals = 0; // playerGoals - gole gracza, rivalGoals - gole przeciwnika
     bool isPlayerBall = false; // true - player team has ball, false - rival team has a ball
     int ktoZacz = 0, minuta = 0, start = 0, k, czas = 2;
-    int sumaB = 0, sumaO = 0, sumaP = 0, sumaN = 0; // sumy B, O, P, N duzyny gracza
-    int sumaB2 = 0, sumaO2 = 0, sumaP2 = 0, sumaN2 = 0; // sumy B, O, P, N duzyny rywala
-    int sumaBx = 0, sumaOx = 0, sumaPx = 0, sumaNx = 0;
+    SFormationsSum playerFormationsSum;
+    SFormationsSum rivalFormationsSum;
 
-    // gdzie jest pilka/akcja:
-    // 1 - srodek pola,
-    // 2 - skrzydlowy przy pilce,
-    // 3 - pole karne,
-    // 4, 6 - sytuacja podbramkowa,
-    // 5 - krytczna podbramkowa, rzut karny, napastnik sam na sam z bramkarzem
-    int gdzie = 1;
+    // where is ball/action
+    int whereIsAction = ACTION_IN_MIDDLEFIELD;
 
     int los = 0, co = 0, x1 = 0, x2 = 0, x3 = 0, pos1 = 0, pos2 = 0, pos = 0;
-    int pam; // pamieta numer zawodnika, ktorego trzeba przeniesc do nastepnych wiadomosci, np. "%s strzela!", pam = x, "%s strzelił"
-    int q = 0, str[8] = {0, 0, 0, 0, 0, 0, 0, 0}, str2[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    // remembers the number of the player who needs to be moved to the next message,
+    // eg. "%s shoots!", footballerMemory = %s, "%s has scored!"
+    int footballerMemory;
+
+    int str[8] = {0, 0, 0, 0, 0, 0, 0, 0}, str2[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     bool isShotFromDistance = false;
-    float strefa[6] = {0, 0, 0, 0, 0, 0}, premia = 0;
+    bool endHalfMatch = false;
+    float strefa[6] = {0, 0, 0, 0, 0, 0};
 
     howManyPlayerChanges = 0;
     isPlayerChanges = true;
@@ -172,234 +179,16 @@ bool Match::runMecz() {
             isHome ? dlagol2 : dlagol1
         );
 
-        k = 0;
-        sumaB = 0;
-        sumaO = 0;
-        sumaP = 0;
-        sumaN = 0;
-        sumaB2 = 0;
-        sumaO2 = 0;
-        sumaP2 = 0;
-        sumaN2 = 0;
+        playerFormationsSum = getPlayerFormationsSum(clubRef);
+        rivalFormationsSum = getRivalFormationsSum(clubRef);
 
-        while (k != 2) {
-            k++;
-            sumaBx = 0;
-            sumaOx = 0;
-            sumaPx = 0;
-            sumaNx = 0;
-            premia = 0;
-
-            // sumowanie formacji
-            vector<SFootballer> &tmpFootballers = k == 1 ? pFootballers->getPlayersTeam() : pFootballers->getRivals();
-            int clubId      = k == 1 ? clubRef.clubId : clubRef.rivalData[0];
-            int clubTactic  = k == 1 ? clubRef.teamSetting : clubRef.rivalData[2];
-
-            for (size_t index = 0; index < tmpFootballers.size(); index++) {
-                SFootballer &footballer = tmpFootballers[index];
-
-                if (clubId == footballer.data[22] && footballer.data[12] < 2) {
-                    if (footballer.data[0] < 12) {
-                        premia += footballer.finances[2];
-                    }
-
-                    if (footballer.data[0] == 1) {
-                        sumaBx = footballer.data[3] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if (footballer.data[0] == 2 || footballer.data[0] == 3 || footballer.data[0] == 4) {
-                        sumaOx += footballer.data[4] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if ((footballer.data[0] == 5) &&
-                        (
-                            clubTactic == 1 || clubTactic == 2 || clubTactic == 3 || clubTactic == 4 ||
-                            clubTactic == 9 || clubTactic == 10 || clubTactic == 11 || clubTactic == 12 || clubTactic == 13 || clubTactic == 14
-                        )
-                    ) {
-                        sumaOx += footballer.data[4] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-                    else if (footballer.data[0] == 5) {
-                        sumaPx += footballer.data[5] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if ((footballer.data[0] == 6) && (clubTactic == 12 || clubTactic == 13 || clubTactic == 14)) {
-                        sumaOx += footballer.data[4] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-                    else if (footballer.data[0] == 6) {
-                        sumaPx += footballer.data[5] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if (footballer.data[0] == 7) {
-                        sumaPx += footballer.data[5] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if ((footballer.data[0] == 8) && (clubTactic == 9)) {
-                        sumaNx += footballer.data[6] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-                    else if (footballer.data[0] == 8) {
-                        sumaPx += footballer.data[5] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if ((footballer.data[0] == 9) && (clubTactic == 5 || clubTactic == 10 || clubTactic == 9)) {
-                        sumaNx += footballer.data[6] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-                    else if (footballer.data[0] == 9) {
-                        sumaPx += footballer.data[5] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if ((footballer.data[0] == 10) && (clubTactic == 11)) {
-                        sumaPx += footballer.data[5] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-                    else if (footballer.data[0] == 10) {
-                        sumaNx += footballer.data[6] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-
-                    if (footballer.data[0] == 11) {
-                        sumaNx += footballer.data[6] + footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
-                    }
-                }
-            }
-            // end - sumowanie formacji
-
-            if (k == 1) {
-                sumaB = sumaBx;
-                sumaO = sumaOx;
-                sumaP = sumaPx;
-                sumaN = sumaNx;
-                sumaN += premia / 1000;
-                sumaP += premia / 1000;
-
-                switch (clubRef.inst[1]) {
-                    case INSTR_TREATMENT_HARD: {
-                        // obchodzenie sie twarde
-                        sumaO += 5;
-                        sumaP += 5;
-                        sumaN += 5;
-                        break;
-                    }
-                    case INSTR_TREATMENT_SOFT: {
-                        // obchodzenie sie delikatne
-                        sumaO -= 5;
-                        sumaP -= 5;
-                        sumaN -= 5;
-                        break;
-                    }
-                }
-
-                switch (clubRef.inst[5]) {
-                    case INSTR_ATTIT_DEFENSIVE: {
-                        //nastawienie obronne
-                        sumaO += 10;
-                        sumaN -= 10;
-                        break;
-                    }
-                    case INSTR_ATTIT_ATTACK: {
-                        //nastawienie atak
-                        sumaO -= 10;
-                        sumaN += 10;
-                        break;
-                    }
-                }
-
-                // add points from tactic training
-                sumaO += clubRef.trained[3];
-                sumaP += clubRef.trained[3];
-                sumaN += clubRef.trained[3];
-
-                // tactic
-                switch (clubRef.teamSetting) {
-                    case T4_4_2_DEF:
-                    case T3_5_2_DEF:
-                    case T5_3_2_DEF: { //ustawienie obronne
-                        sumaO += 10;
-                        sumaN -= 10;
-                        break;
-                    }
-                    case T4_4_2_ATT:
-                    case T3_5_2_ATT:
-                    case T5_3_2_ATT: { //ustawienie atak
-                        sumaO -= 10;
-                        sumaN += 10;
-                        break;
-                    }
-                    case T4_4_2_DIA: { //ustawienie diamond
-                        sumaO += 10;
-                        sumaN += 10;
-                        sumaP -= 15;
-                        break;
-                    }
-                }
-                sumaN += clubRef.trained[2] * 2; // cos wieksza atak, ale tylko dla gracza
-            }
-            else {
-                sumaB2 = sumaBx;
-                sumaO2 = sumaOx;
-                sumaP2 = sumaPx;
-                sumaN2 = sumaNx;
-                sumaN2 += premia / 1000;
-                sumaP2 += premia / 1000;
-
-                if (clubRef.rivalData[1] == 1) { // rywal gra u siebie
-                    sumaB2 += 5;
-                    sumaO2 += 10;
-                    sumaP2 += 10;
-                    sumaN2 += 10;
-                }
-
-                switch (clubRef.rivalInst[1]) {
-                    case INSTR_TREATMENT_HARD: {
-                        sumaO2 += 5;
-                        sumaP2 += 5;
-                        sumaN2 += 5;
-                        break;
-                    }
-                    case INSTR_TREATMENT_SOFT: {
-                        sumaO2 -= 5;
-                        sumaP2 -= 5;
-                        sumaN2 -= 5;
-                        break;
-                    }
-                }
-
-                switch (clubRef.rivalInst[5]) {
-                    case INSTR_ATTIT_DEFENSIVE: { // nastawienie obronne
-                        sumaO2 += 10;
-                        sumaN2 -= 10;
-                        break;
-                    }
-                    case INSTR_ATTIT_ATTACK: { // nastawienie atak
-                        sumaO2 -= 10;
-                        sumaN2 += 10;
-                        break;
-                    }
-                }
-
-                switch (clubRef.rivalData[2]) {
-                    case T4_4_2_DEF:
-                    case T3_5_2_DEF:
-                    case T5_3_2_DEF: { // ustawienie obronne
-                        sumaO2 += 10;
-                        sumaN2 -= 10;
-                        break;
-                    }
-                    case T4_4_2_ATT:
-                    case T3_5_2_ATT:
-                    case T5_3_2_ATT: { // ustawienie atak
-                        sumaO2 -= 10;
-                        sumaN2 += 10;
-                        break;
-                    }
-                }
-            }
-        }//dla while k!=2
-
-        OnaA = sumaO - sumaN2;
-        PnaP = sumaP - sumaP2;
-        AnaO = sumaN - sumaO2;
+        OnaA = playerFormationsSum.sumDef - rivalFormationsSum.sumAtt;
+        PnaP = playerFormationsSum.sumMid - rivalFormationsSum.sumMid;
+        AnaO = playerFormationsSum.sumAtt - rivalFormationsSum.sumDef;
         if (isShotFromDistance) {
-            sumaB += 50;
-            sumaB2 += 50;
+            // increase the chance of defending a shot from a distance
+            playerFormationsSum.sumGol += 50;
+            rivalFormationsSum.sumGol += 50;
             isShotFromDistance = false;
         }
 
@@ -417,7 +206,7 @@ bool Match::runMecz() {
                 str[5], str2[5],
                 pos1, pos2,
                 OnaA, PnaP, AnaO,
-                gdzie,
+                whereIsAction,
                 isPlayerBall
             );
         }
@@ -435,7 +224,7 @@ bool Match::runMecz() {
                 str2[5], str[5],
                 pos2, pos1,
                 OnaA, PnaP, AnaO,
-                gdzie,
+                whereIsAction,
                 isPlayerBall
             );
         }
@@ -451,13 +240,22 @@ bool Match::runMecz() {
             );
         }
         if (start == 1 && koniec < 3) { //mecz się rozpoczął
-            co = whatHappened(isPlayerBall, PnaP, OnaA, AnaO, sumaB, sumaB2, gdzie, clubRef);
-            //************ gdzie = 1 *******************
+            co = whatHappened(
+                isPlayerBall,
+                PnaP,
+                OnaA,
+                AnaO,
+                playerFormationsSum.sumGol,
+                rivalFormationsSum.sumGol,
+                whereIsAction,
+                clubRef
+            );
+            //************ whereIsAction = ACTION_IN_MIDDLEFIELD *******************
             if (co == 9) {
                 isShotFromDistance = true;
             }
 
-            if (gdzie == 1) {
+            if (whereIsAction == ACTION_IN_MIDDLEFIELD) {
                 los = (rand() % 3) + 2;
                 msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                 msgFootballers[1] = getFootballerSurname(isPlayerBall, 6); //czyli 7
@@ -472,25 +270,25 @@ bool Match::runMecz() {
 
                     if (los == 0) { //na lewe skrzydło
                         wiado[1] = 9;
-                        gdzie = 2;
-                        pam = getLefttWingerFootballerId(teamSetting);
-                        msgFootballers[3] = getFootballerSurname(isPlayerBall, pam);
+                        whereIsAction = ACTION_IN_WINGER;
+                        footballerMemory = getLefttWingerFootballerId(teamSetting);
+                        msgFootballers[3] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 1) { // podanie na prawe skrzydło
                         wiado[1] = 10;
-                        gdzie = 2;
-                        pam = getRightWingerFootballerId(teamSetting);
-                        msgFootballers[3] = getFootballerSurname(isPlayerBall, pam);
+                        whereIsAction = ACTION_IN_WINGER;
+                        footballerMemory = getRightWingerFootballerId(teamSetting);
+                        msgFootballers[3] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 2) {
                         wiado[1] = 11; // %ls podaje do przodu.
-                        gdzie = 3;
+                        whereIsAction = ACTION_IN_PANELTY_AREA;
                         msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
                     }
                 }//co=1
                 else if (co == 2) {
                     wiado[0] = 12;
-                    gdzie = 3;
+                    whereIsAction = ACTION_IN_PANELTY_AREA;
                     msgWhoBall[0] = isPlayerBall;
                 }//co=2
                 else if (co == 3 || co == 4) {
@@ -510,7 +308,7 @@ bool Match::runMecz() {
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
                     msgFootballers[3] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
 
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//co=3||co=4
                 else if (co == 5) {
                     wiado[0] = 8;
@@ -524,7 +322,7 @@ bool Match::runMecz() {
                     msgWhoBall[2] = isPlayerBall;
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
 
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//co=5
                 else if (co == 6) {
                     wiado[0] = 8;
@@ -540,7 +338,7 @@ bool Match::runMecz() {
                     msgFootballers[3] = msgFootballers[1];
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
 
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//co=6
                 else if (co == 7) { //faul przeciwnika
                     wiado[0] = 8;
@@ -630,19 +428,19 @@ bool Match::runMecz() {
                     los = (rand() % 3);
                     if (los == 0) { //na lewe skrzydło
                         wiado[5] = 9; // %ls podaje na lewe skrzydło do %ls.
-                        gdzie = 2;
-                        pam = getLefttWingerFootballerId(teamSetting);
-                        msgFootballers[11] = getFootballerSurname(isPlayerBall, pam);
+                        whereIsAction = ACTION_IN_WINGER;
+                        footballerMemory = getLefttWingerFootballerId(teamSetting);
+                        msgFootballers[11] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 1) { //podanie na prawe skrzydło
                         wiado[5] = 10; // %ls podaje na prawe skrzydło do %ls.
-                        gdzie = 2;
-                        pam = getRightWingerFootballerId(teamSetting);
-                        msgFootballers[11] = getFootballerSurname(isPlayerBall, pam);
+                        whereIsAction = ACTION_IN_WINGER;
+                        footballerMemory = getRightWingerFootballerId(teamSetting);
+                        msgFootballers[11] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 2) {
                         wiado[5] = 11; // %ls podaje do przodu.
-                        gdzie = 3;
+                        whereIsAction = ACTION_IN_PANELTY_AREA;
                     }
                 }//co=7
                 else if (co == 8) { //aut dla przeciwnika
@@ -658,7 +456,7 @@ bool Match::runMecz() {
                     // zmiana pilki
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, los - 1);
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                     msgWhoBall[2] = isPlayerBall;
                 }//co=8
                 else if (co == 9) { //strzał z dystansu
@@ -677,15 +475,15 @@ bool Match::runMecz() {
                     msgFootballers[1] = getFootballerSurname(isPlayerBall, los - 1);
                     msgFootballers[2] = msgFootballers[1];
                     msgFootballers[4] = msgFootballers[2];
-                    gdzie = 4;
-                    pam = los - 1;
+                    whereIsAction = ACTION_IN_GOAL_SITUATION;
+                    footballerMemory = los - 1;
                 }//co=9
-            }////dla blokada==1 gdzie==1
+            } // dla blokada==1 whereIsAction == ACTION_IN_MIDDLEFIELD
+            else if (whereIsAction == ACTION_IN_WINGER) {
                 //************** Skrzydłowy przy piłce ******************
-            else if (gdzie == 2) {
                 wiado[0] = 29; // %ls biegnie wzdłuż bocznej linii boiska.
                 msgWhoBall[0] = isPlayerBall;
-                msgFootballers[0] = getFootballerSurname(isPlayerBall, pam);
+                msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
 
                 if (co == 10) { //udane dośrodkowanie
                     wiado[1] = 30; //  %ls mija %ls i biegnie dalej...
@@ -700,7 +498,7 @@ bool Match::runMecz() {
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
-                        if (footballer.data[0] == pam + 1 && footballer.data[22] == clubId) {
+                        if (footballer.data[0] == footballerMemory + 1 && footballer.data[22] == clubId) {
                             footballer.data[20]++; // form up
                             break;
                         }
@@ -716,7 +514,7 @@ bool Match::runMecz() {
                     wiado[2] = (rand() % 2) == 0 ? 31 : 32;
 
                     msgWhoBall[2] = isPlayerBall;
-                    gdzie = 3;
+                    whereIsAction = ACTION_IN_PANELTY_AREA;
                 }
                 else if (co == 11) { //faul
                     vector<SFootballer> &tmpFootballers = isPlayerBall
@@ -727,7 +525,7 @@ bool Match::runMecz() {
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
-                        if (footballer.data[0] == pam + 1 && footballer.data[22] == clubId) {
+                        if (footballer.data[0] == footballerMemory + 1 && footballer.data[22] == clubId) {
                             footballer.data[20]++; // form up
                             break;
                         }
@@ -819,8 +617,8 @@ bool Match::runMecz() {
                     wiado[4] = 85; // %ls będzie uderzał z wolnego.
                     msgWhoBall[4] = isPlayerBall;
 
-                    pam = ((rand() % 10) + 2) - 1;
-                    msgFootballers[8] = getFootballerSurname(isPlayerBall, pam);
+                    footballerMemory = ((rand() % 10) + 2) - 1;
+                    msgFootballers[8] = getFootballerSurname(isPlayerBall, footballerMemory);
                     isPlayerBall ? str[0]++ : str2[0]++;
 
                     wiado[5] = 63; // Sędzia jeszcze ustawia mur.
@@ -829,7 +627,7 @@ bool Match::runMecz() {
                     wiado[6] = 64; // %ls uderza z wolnego...
                     msgWhoBall[6] = isPlayerBall;
                     msgFootballers[12] = msgFootballers[8];
-                    gdzie = 6;
+                    whereIsAction = ACTION_IN_DIRECT_FREE_KICK;
                 }//end faul
                 else if (co == 12) { //aut
                     wiado[1] = 34;
@@ -841,7 +639,7 @@ bool Match::runMecz() {
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[2] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }
                 else if (co == 13) { //nie dośrodkował
                     wiado[1] = 35;
@@ -859,7 +657,7 @@ bool Match::runMecz() {
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
-                        if (footballer.data[0] == pam + 1 && footballer.data[22] == clubId) {
+                        if (footballer.data[0] == footballerMemory + 1 && footballer.data[22] == clubId) {
                             footballer.data[20]--; // form down
                             break;
                         }
@@ -878,40 +676,40 @@ bool Match::runMecz() {
                         case INSTR_PASSES_LONG: { //długie podania
                             if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
                                 // %ls wykonuje długie podanie do przodu.
-                                wiado[2] = 36; //gdzie=3;
+                                wiado[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             else {
                                 // %ls podaje do przodu.
-                                wiado[2] = 11; //gdzie=1;
+                                wiado[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             break;
                         }
                         case INSTR_PASSES_MIXES:
                         case INSTR_PASSES_MIDDLE: { //mieszane, średnie
                             if (los == 1 || los == 2 || los == 5) {
-                                wiado[2] = 36; //gdzie=3;
+                                wiado[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             else {
-                                wiado[2] = 11; //gdzie=1;
+                                wiado[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             break;
                         }
                         case INSTR_PASSES_SHORT: //któtkie podania
                         default: {
                             if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
-                                wiado[2] = 11; //gdzie=1;
+                                wiado[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             else {
-                                wiado[2] = 36; //gdzie=3;
+                                wiado[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             break;
                         }
                     }
 
-                    gdzie = wiado[2] == 11 ? 1 : 3;
+                    whereIsAction = wiado[2] == 11 ? ACTION_IN_MIDDLEFIELD : ACTION_IN_PANELTY_AREA;
                 }//nie dośrodkował
             }//dla skrzydłowy przy piłce
-            else if (gdzie == 3) { //****************** Pole karne ********
+            else if (whereIsAction == ACTION_IN_PANELTY_AREA) { //****************** Pole karne ********
                 if (co == 14) { //spalony
                     wiado[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
@@ -936,7 +734,7 @@ bool Match::runMecz() {
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[2] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//spalony
                 else if (co == 15) { //spalony nieudany
                     wiado[0] = 37;
@@ -963,13 +761,13 @@ bool Match::runMecz() {
                         }
                     }
 
-                    pam = los - 1;
-                    msgFootballers[0] = getFootballerSurname(isPlayerBall, pam);
+                    footballerMemory = los - 1;
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
                     isPlayerBall ? str[0]++ : str2[0]++;
 
                     msgFootballers[2] = msgFootballers[0];
                     msgFootballers[4] = msgFootballers[0];
-                    gdzie = 5;
+                    whereIsAction = ACTION_IN_PANELTY_OR_1ON1;
                 }//sam na sam
                 else if (co == 16) { //obrona wykopuje
                     int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
@@ -978,33 +776,33 @@ bool Match::runMecz() {
                     switch (instrPasses) {
                         case INSTR_PASSES_LONG: { //długie
                             if (los == 0) {
-                                gdzie = 1;
+                                whereIsAction = ACTION_IN_MIDDLEFIELD;
                                 wiado[0] = (rand() % 2) == 0 ? 44 : 45;
                             }
                             else {
-                                gdzie = 3;
+                                whereIsAction = ACTION_IN_PANELTY_AREA;
                                 wiado[0] = (rand() % 2) == 0 ? 46 : 47;
                             }
                             break;
                         }
                         case INSTR_PASSES_SHORT: { //krótkie
                             if (los == 0) {
-                                gdzie = 3;
+                                whereIsAction = ACTION_IN_PANELTY_AREA;
                                 wiado[0] = (rand() % 2) == 0 ? 46 : 47;
                             }
                             else {
-                                gdzie = 1;
+                                whereIsAction = ACTION_IN_MIDDLEFIELD;
                                 wiado[0] = (rand() % 2) == 0 ? 44 : 45;
                             }
                             break;
                         }
                         default: { //pozostałe
                             if (los == 0 || los == 1 || los == 2) {
-                                gdzie = 3;
+                                whereIsAction = ACTION_IN_PANELTY_AREA;
                                 wiado[0] = (rand() % 2) == 0 ? 46 : 47;
                             }
                             else {
-                                gdzie = 1;
+                                whereIsAction = ACTION_IN_MIDDLEFIELD;
                                 wiado[0] = (rand() % 2) == 0 ? 44 : 45;
                             }
                             break;
@@ -1014,7 +812,6 @@ bool Match::runMecz() {
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[0] = isPlayerBall;
-                    //gdzie=1;
                 }//obrona wykopuje
                 else if (co == 17) { //B łapie
                     wiado[0] = 48;
@@ -1023,7 +820,7 @@ bool Match::runMecz() {
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//B łapie
                 else if (co == 18) { //karny
                     wiado[0] = 37;
@@ -1107,9 +904,9 @@ bool Match::runMecz() {
                     }
 
                     wiado[4] = (rand() % 2) == 0 ? 53 : 54;
-                    pam = ((rand() % 4) + 8) - 1;
-                    msgFootballers[8] = getFootballerSurname(isPlayerBall, pam);
-                    gdzie = 5;
+                    footballerMemory = ((rand() % 4) + 8) - 1;
+                    msgFootballers[8] = getFootballerSurname(isPlayerBall, footballerMemory);
+                    whereIsAction = ACTION_IN_PANELTY_OR_1ON1;
                     msgWhoBall[4] = isPlayerBall;
                 }//karny
                 else if (co == 19) { //symulowany
@@ -1133,7 +930,7 @@ bool Match::runMecz() {
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[6] = msgFootballers[2];
                     msgWhoBall[3] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//faul symulowany
                 else if (co == 20) { //róg
                     wiado[0] = 37;
@@ -1154,7 +951,7 @@ bool Match::runMecz() {
                     wiado[2] = 56;
                     wiado[3] = 78;
                     msgFootballers[6] = getFootballerSurname(isPlayerBall, 6);
-                    gdzie = 3;
+                    whereIsAction = ACTION_IN_PANELTY_AREA;
                 }//róg
                 else if (co == 21) { //strzał
                     wiado[0] = 37;
@@ -1176,8 +973,8 @@ bool Match::runMecz() {
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                     isPlayerBall ? str[0]++ : str2[0]++;
                     msgFootballers[2] = msgFootballers[0];
-                    pam = los - 1;
-                    gdzie = 4;
+                    footballerMemory = los - 1;
+                    whereIsAction = ACTION_IN_GOAL_SITUATION;
                 }//strzał
                 else if (co == 22) { //podanie i strzał
                     wiado[0] = 37;
@@ -1192,8 +989,8 @@ bool Match::runMecz() {
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
                     isPlayerBall ? str[0]++ : str2[0]++;
                     msgFootballers[4] = msgFootballers[2];
-                    pam = los - 1;
-                    gdzie = 4;
+                    footballerMemory = los - 1;
+                    whereIsAction = ACTION_IN_GOAL_SITUATION;
                 }//podanie i strzał
                 else if (co == 23) { // faul napastnika
                     wiado[0] = 37;
@@ -1290,11 +1087,14 @@ bool Match::runMecz() {
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[12] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[6] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//faul napastnika
-            }//gdzie=3,blokada=1,pole karne
+            }//whereIsAction = ACTION_IN_PANELTY_AREA, blokada=1, pole karne
             //*********************** obron B ***********************************
-            else if (gdzie == 4 || gdzie == 5 || gdzie == 6) { //obrona B
+            else if (whereIsAction == ACTION_IN_GOAL_SITUATION ||
+                     whereIsAction == ACTION_IN_PANELTY_OR_1ON1 ||
+                     whereIsAction == ACTION_IN_DIRECT_FREE_KICK
+            ) { //obrona B
                 if (co == 24) { // udana
                     wiado[0] = (rand() % 2) == 0 ? 65 : 66;
                     wiado[1] = 67; // I łapie piłkę! Dobra obrona.
@@ -1307,7 +1107,7 @@ bool Match::runMecz() {
 
                     msgFootballers[2] = msgFootballers[0];
                     msgWhoBall[2] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
 
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
@@ -1344,7 +1144,7 @@ bool Match::runMecz() {
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
 
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
@@ -1399,7 +1199,7 @@ bool Match::runMecz() {
                         }
                     }
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
-                    gdzie = 3;
+                    whereIsAction = ACTION_IN_PANELTY_AREA;
                 }//niepewnie
                 else if (co == 27) { //róg
                     isPossibleGoToTactics = true;
@@ -1419,7 +1219,7 @@ bool Match::runMecz() {
                     msgWhoBall[1] = isPlayerBall;
                     wiado[2] = 78;
                     msgWhoBall[2] = isPlayerBall;
-                    gdzie = 3;
+                    whereIsAction = ACTION_IN_PANELTY_AREA;
                 }//róg
                 else if (co == 28) { // GOOL
                     isPossibleGoToTactics = true;
@@ -1438,7 +1238,7 @@ bool Match::runMecz() {
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
-                        if (footballer.data[0] == pam + 1 && clubId == footballer.data[22]) {
+                        if (footballer.data[0] == footballerMemory + 1 && clubId == footballer.data[22]) {
                             footballer.data[21]++; // gole w meczu++
                             footballer.data[20]++; // forma podczas meczu
                             footballer.data[8] += 3; // morale
@@ -1470,25 +1270,25 @@ bool Match::runMecz() {
                     if (isPlayerBall) {
                         str[1]++;
                         playerGoals++;
-                        dlagol1[playerGoals - 1] = msgPlayerSurnames[pam];
+                        dlagol1[playerGoals - 1] = msgPlayerSurnames[footballerMemory];
                         mingol1[playerGoals - 1] = getGoooalMinute(minuta, koniec);
                     }
                     else {
                         str2[1]++;
                         rivalGoals++;
-                        dlagol2[rivalGoals - 1] = msgRivalSurnames[pam];
+                        dlagol2[rivalGoals - 1] = msgRivalSurnames[footballerMemory];
                         mingol2[rivalGoals - 1] = getGoooalMinute(minuta, koniec);
                     }
 
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
                     msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
-                    msgFootballers[4] = getFootballerSurname(isPlayerBall, pam);
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, footballerMemory);
                     msgFootballers[6] = pClub->getClubName((isPlayerBall ? clubRef.rivalData[0] : clubRef.clubId) - 1);
                     isPlayerBall = !isPlayerBall;
                     msgWhoBall[3] = isPlayerBall;
                     msgWhoBall[0] = isPlayerBall;
 
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                     los = (rand() % 11) + 1;
 
                     // musi byc raz jeszcze pobranie zespolu i klubu bo zmienila sie pilka
@@ -1539,13 +1339,13 @@ bool Match::runMecz() {
                     isPlayerBall ? str[0]-- : str2[0]--;
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
                     msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
-                    msgFootballers[4] = getFootballerSurname(isPlayerBall, pam);
+                    msgFootballers[4] = getFootballerSurname(isPlayerBall, footballerMemory);
                     msgFootballers[8] = msgFootballers[0];
                     isPlayerBall = !isPlayerBall;
                     msgWhoBall[4] = isPlayerBall;
                     msgWhoBall[0] = isPlayerBall;
 
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//gool
                 else if (co == 30) { //niecelnie
                     los = (rand() % 4);
@@ -1564,14 +1364,14 @@ bool Match::runMecz() {
                     }
 
                     msgWhoBall[0] = isPlayerBall;
-                    msgFootballers[0] = getFootballerSurname(isPlayerBall, pam);
+                    msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, 0);
                     wiado[1] = 41;
                     msgWhoBall[1] = isPlayerBall;
-                    gdzie = 1;
+                    whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }//niecelnie
-            }//obrona B gdzie=4;
+            }//obrona B whereIsAction = ACTION_IN_GOAL_SITUATION;
 
             pColors->textcolor(LIGHTGRAY);
             if (minuta == 0 && koniec == 0) { //początek meczu
@@ -1586,7 +1386,7 @@ bool Match::runMecz() {
                     msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
                     isPlayerBall = false;
                 }
-                gdzie = 1;
+                whereIsAction = ACTION_IN_MIDDLEFIELD;
                 msgWhoBall[0] = isPlayerBall;
             }//dla minuta=0 początek meczu
             else if (minuta == 45 && koniec == 2) { //początek 2 połowy
@@ -1598,7 +1398,7 @@ bool Match::runMecz() {
                     msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
                     isPlayerBall = true;
                 }
-                gdzie = 1;
+                whereIsAction = ACTION_IN_MIDDLEFIELD;
                 msgWhoBall[0] = isPlayerBall;
                 memset(wiado, 0, 10 * sizeof(int));
                 wiado[0] = 2;
@@ -1608,7 +1408,7 @@ bool Match::runMecz() {
                 minuta = 43;
                 koniec = 2; // poczatek 2 polowy
                 start = 0;
-                gdzie = 1;
+                whereIsAction = ACTION_IN_MIDDLEFIELD;
                 memset(wiado, 0, 10 * sizeof(int));
                 wiado[0] = 3; // "Koniec pierwszej połowy."
             }
@@ -1748,7 +1548,7 @@ bool Match::runMecz() {
             }
             //*************** zadyma **********************
             x1 = (rand() % 100);
-            if (x1 == 1 && gdzie == 1) {
+            if (x1 == 1 && whereIsAction == ACTION_IN_MIDDLEFIELD) {
                 for (int i = MAX_MESSAGES; i > 0; i--) {
                     if (wiado[i] == 0) {
                         k = i;
@@ -1889,7 +1689,7 @@ bool Match::runMecz() {
             pos1 = (pos * 100) / (minuta2 / 2);
             pos2 = 100 - pos1;
 
-            if (gdzie == 1) {
+            if (whereIsAction == ACTION_IN_MIDDLEFIELD) {
                 strefa[1]++;
             }
             else {
@@ -1939,14 +1739,15 @@ bool Match::runMecz() {
             pFootballers->saveRivals();
         }//dla start=1
         //************ wypisz wiadomość *************
-        if (minuta > 45 && gdzie == 1 && koniec == 0 && q == 0) {
+
+        if (minuta > 45 && whereIsAction == ACTION_IN_MIDDLEFIELD && koniec == 0 && !endHalfMatch) {
             koniec = 1; // koniec 1 polowy
             minuta = 45;
-            q = 1;
-            gdzie = 1;
+            endHalfMatch = true;
+            whereIsAction = ACTION_IN_MIDDLEFIELD;
         }//koniec1 połowy
 
-        if (minuta > 90 && gdzie == 1 && koniec == 2) {
+        if (minuta > 90 && whereIsAction == ACTION_IN_MIDDLEFIELD && koniec == 2) {
             koniec = 3; // koniec meczu
         }
 
@@ -2115,32 +1916,32 @@ bool Match::runMecz() {
     }
     else if (clubRef.roundNumber > 0) {
         k = -2;
-        while (k != 14) { //wszystkie mecze kolejki
+        while (k != 14) { //wszystkie mecze kolejki, losujemy wyniki meczy
             k += 2;
-            sumaO = clubRef.roundNumber * 16;
-            sumaP = (rand() % 5);
-            sumaN = (rand() % 4);
-            clubRef.goalsLeague[sumaO - 16 + k] = sumaP;
-            clubRef.goalsLeague[sumaO - 16 + k + 1] = sumaN;
+            int round = clubRef.roundNumber * 16;
+            int homeGoals = (rand() % 5);
+            int awayGoals = (rand() % 4);
+            clubRef.goalsLeague[round - 16 + k] = homeGoals;
+            clubRef.goalsLeague[round - 16 + k + 1] = awayGoals;
         }
 
-        sumaO = pRounds->getClubIndexInRoundByClubId(clubRef.roundNumber, clubRef.clubId);
+        int clubIndexInRound = pRounds->getClubIndexInRoundByClubId(clubRef.roundNumber, clubRef.clubId);
 
-        sumaP = clubRef.roundNumber * 16;
-        if (sumaO % 2 == 0) {
-            clubRef.goalsLeague[sumaP - 16 + sumaO] = playerGoals;
-            clubRef.goalsLeague[sumaP - 16 + sumaO + 1] = rivalGoals;
+        int roundIndex = clubRef.roundNumber * 16;
+        if (clubIndexInRound % 2 == 0) {
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound] = playerGoals;
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound + 1] = rivalGoals;
         }
         else {
-            clubRef.goalsLeague[sumaP - 16 + sumaO] = playerGoals;
-            clubRef.goalsLeague[sumaP - 16 + sumaO - 1] = rivalGoals;
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound] = playerGoals;
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound - 1] = rivalGoals;
         }
 
         for (size_t index = 0; pRounds->getSize(); index++) {
             SRound &round = pRounds->get(index);
 
             if (clubRef.roundNumber == round.number) {
-                pTable->updateAfterMatch(round, sumaP, clubRef);
+                pTable->updateAfterMatch(round, roundIndex, clubRef);
                 break;
             }
         }
@@ -2498,9 +2299,18 @@ void Match::drawTeam(int usta, int tryb, int kto)
     }
 }
 
-int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sumaB, int sumaB2, int gdzie, const SClub &clubRef) {
+int Match::whatHappened(
+    bool isPlayerBall,
+    int PnaP,
+    int OnaA,
+    int AnaO,
+    int playerGoalkeeperSkills,
+    int rivalGoalkeeperSkills,
+    int whereIsAction,
+    const SClub &clubRef
+) {
     int x1, x2, x3, los, co;
-    if (gdzie == 1) { //gdzie = 1 P/P
+    if (whereIsAction == ACTION_IN_MIDDLEFIELD) { // P/P
         if (isPlayerBall) {
             x1 = clubRef.inst[4]; //gra z kontry twoja
             x2 = clubRef.trained[1]; //podania trening
@@ -2811,8 +2621,8 @@ int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sum
                 }
             }
         }
-    }//gdzie = 1 P/P
-    else if (gdzie == 2) { //skrzydłowy przy piłce //gdzie =2 A/O
+    }//whereIsAction = ACTION_IN_MIDDLEFIELD  P/P
+    else if (whereIsAction == ACTION_IN_WINGER) { //skrzydłowy przy piłce, A/O
         los = (rand() % 12) + 1;
         if (los < 5) {
             co = los + 9;
@@ -2844,7 +2654,7 @@ int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sum
             }
         }//else
     }
-    else if (gdzie == 3) { //pole karne A/O
+    else if (whereIsAction == ACTION_IN_PANELTY_AREA) { //pole karne A/O
         los = (rand() % 30) + 1;
         if (isPlayerBall) {
             x1 = clubRef.rivalInst[3]; //pułapki ofsajdowe rywala
@@ -2946,16 +2756,26 @@ int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sum
                 }
             }
         }//else
-    }//dla gdzie==3 A/O
-    else if (gdzie == 4 || gdzie == 6) { //obrona B sumaB max 43, mini 8, śred 26
+    }//dla whereIsAction == ACTION_IN_PANELTY_AREA A/O
+    else if (whereIsAction == ACTION_IN_GOAL_SITUATION ||
+             whereIsAction == ACTION_IN_DIRECT_FREE_KICK
+    ) { //obrona B playerGoalkeeperSkills max 43, mini 8, śred 26
         los = (rand() % 12) + 1;
-        if (gdzie == 4) {
-            if (isPlayerBall) x1 = sumaB2; //umiejętności bramkarza
-            else x1 = sumaB;
+        if (whereIsAction == ACTION_IN_GOAL_SITUATION) {
+            if (isPlayerBall) {
+                x1 = rivalGoalkeeperSkills; //umiejętności bramkarza
+            }
+            else {
+                x1 = playerGoalkeeperSkills;
+            }
         }
-        else if (gdzie == 6) {
-            if (isPlayerBall) x1 = sumaB2 - (clubRef.trained[2] * 2); //umiejętności bramkarza
-            else x1 = sumaB - 2;
+        else if (whereIsAction == ACTION_IN_DIRECT_FREE_KICK) {
+            if (isPlayerBall) {
+                x1 = rivalGoalkeeperSkills - (clubRef.trained[2] * 2); //umiejętności bramkarza
+            }
+            else {
+                x1 = playerGoalkeeperSkills - 2;
+            }
         }
 
         if (x1 < 15) {
@@ -2992,14 +2812,14 @@ int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sum
             else if (los == 9 || los == 10) co = 25; //bez problemu
             else co = 30; //strzał niecelny2x
         }
-    }//gdzie = 4//obrona B
-    else if (gdzie == 5) { //obrona B - karny, sma na sam
+    } // whereIsAction = ACTION_IN_GOAL_SITUATION // obrona B
+    else if (whereIsAction == ACTION_IN_PANELTY_OR_1ON1) { //obrona B - karny, sma na sam
         los = (rand() % 9) + 1;
         if (isPlayerBall) {
-            x1 = sumaB2 - clubRef.trained[2]; //um. bramkarza-stałe fragmenty
+            x1 = rivalGoalkeeperSkills - clubRef.trained[2]; //um. bramkarza-stałe fragmenty
         }
         else {
-            x1 = sumaB - 2;
+            x1 = playerGoalkeeperSkills - 2;
         }
 
         if (x1 < 15) {
@@ -3022,7 +2842,7 @@ int Match::whatHappened(bool isPlayerBall, int PnaP, int OnaA, int AnaO, int sum
             else if (los == 8 || los == 6 || los == 5) co = 24; //obronił
             else co = 30; //strzał niecelny 2x
         }
-    }//gdzie = 5//obrona B
+    }//whereIsAction = ACTION_IN_PANELTY_OR_1ON1 //obrona B
 
     return co;
 }
@@ -3040,7 +2860,7 @@ void Match::drawBoard(
     int redsHome, int redsAway,
     int ballPossHome, int ballPossAway,
     int OnaA, int PnaP, int AnaO,
-    int gdzie,
+    int whereIsAction,
     bool isPlayerBall
 ) {
     pColors->textcolor(WHITE);
@@ -3334,7 +3154,7 @@ void Match::drawBoard(
     pColors->textbackground(BLACK);
     pColors->textcolor(WHITE);
     wcout << endl;
-    if (gdzie == 1) { // srodek pola
+    if (whereIsAction == ACTION_IN_MIDDLEFIELD) { // srodek pola
         wcout << L"                 ^";
     }
     else {
@@ -3976,4 +3796,247 @@ int Match::getLefttWingerFootballerId(int teamSetting)
             return 7;
         }
     }
+}
+
+int Match::getFooballerStats(const SFootballer& footballer)
+{
+    return footballer.data[7] + footballer.data[9] + footballer.data[20] + footballer.data[11] / 10;
+}
+
+int Match::getFooballerStatsGoalkeeper(const SFootballer& footballer)
+{
+    return footballer.data[3] + getFooballerStats(footballer);
+}
+
+int Match::getFooballerStatsDefence(const SFootballer& footballer)
+{
+    return footballer.data[4] + getFooballerStats(footballer);
+}
+
+int Match::getFooballerStatsMiddlefield(const SFootballer& footballer)
+{
+    return footballer.data[5] + getFooballerStats(footballer);
+}
+
+int Match::getFooballerStatsAttack(const SFootballer& footballer)
+{
+    return footballer.data[6] + getFooballerStats(footballer);
+}
+
+SFormationsSum Match::getFormationsSum(const SClub &clubRef, bool isPlayerTeam)
+{
+    SFormationsSum formationSum;
+
+    vector<SFootballer> &tmpFootballers = isPlayerTeam ? pFootballers->getPlayersTeam() : pFootballers->getRivals();
+    int clubId      = isPlayerTeam ? clubRef.clubId : clubRef.rivalData[0];
+    int clubTactic  = isPlayerTeam ? clubRef.teamSetting : clubRef.rivalData[2];
+
+    for (size_t index = 0; index < tmpFootballers.size(); index++) {
+        SFootballer &footballer = tmpFootballers[index];
+
+        if (clubId == footballer.data[22] && footballer.data[12] < 2) {
+            if (footballer.data[0] < 12) {
+                formationSum.goalBonus += footballer.finances[2];
+            }
+
+            if (footballer.data[0] == 1) {
+                formationSum.sumGol = getFooballerStatsGoalkeeper(footballer);
+            }
+
+            if (footballer.data[0] == 2 ||
+                footballer.data[0] == 3 ||
+                footballer.data[0] == 4
+            ) {
+                formationSum.sumDef += getFooballerStatsDefence(footballer);
+            }
+
+            if (footballer.data[0] == 5) {
+                if (clubTactic == T4_4_2 || clubTactic == T4_4_2_DEF || clubTactic == T4_4_2_ATT ||
+                    clubTactic == T4_4_2_DIA || clubTactic == T4_2_4 || clubTactic == T4_3_3 ||
+                    clubTactic == T4_5_1 || clubTactic == T5_3_2 || clubTactic == T5_3_2_DEF || clubTactic == T5_3_2_ATT
+                ) {
+                    formationSum.sumDef += getFooballerStatsDefence(footballer);
+                }
+                else {
+                    formationSum.sumMid += getFooballerStatsMiddlefield(footballer);
+                }
+            }
+
+            if (footballer.data[0] == 6) {
+                if (clubTactic == T5_3_2 || clubTactic == T5_3_2_DEF || clubTactic == T5_3_2_ATT) {
+                    formationSum.sumDef += getFooballerStatsDefence(footballer);
+                }
+                else {
+                    formationSum.sumMid += getFooballerStatsMiddlefield(footballer);
+                }
+            }
+
+            if (footballer.data[0] == 7) {
+                formationSum.sumMid += getFooballerStatsMiddlefield(footballer);
+            }
+
+            if (footballer.data[0] == 8) {
+                if (clubTactic == T4_2_4) {
+                    formationSum.sumAtt += getFooballerStatsAttack(footballer);
+                }
+                else {
+                    formationSum.sumMid += getFooballerStatsMiddlefield(footballer);
+                }
+            }
+
+            if (footballer.data[0] == 9) {
+                if (clubTactic == T3_4_3 || clubTactic == T4_3_3 || clubTactic == T4_2_4) {
+                    formationSum.sumAtt += getFooballerStatsAttack(footballer);
+                }
+                else {
+                    formationSum.sumMid += getFooballerStatsMiddlefield(footballer);
+                }
+            }
+
+            if (footballer.data[0] == 10) {
+                if (clubTactic == T4_5_1) {
+                    formationSum.sumMid += getFooballerStatsMiddlefield(footballer);
+                }
+                else {
+                    formationSum.sumAtt += getFooballerStatsAttack(footballer);
+                }
+            }
+
+            if (footballer.data[0] == 11) {
+                formationSum.sumAtt += getFooballerStatsAttack(footballer);
+            }
+        }
+    }
+
+    return formationSum;
+}
+
+SFormationsSum Match::getPlayerFormationsSum(const SClub &clubRef)
+{
+    SFormationsSum playerFormationsSum = getFormationsSum(clubRef, true);
+
+    playerFormationsSum.sumAtt += playerFormationsSum.goalBonus / 1000;
+    playerFormationsSum.sumMid += playerFormationsSum.goalBonus / 1000;
+
+    switch (clubRef.inst[1]) {
+        case INSTR_TREATMENT_HARD: { // obchodzenie sie twarde
+            playerFormationsSum.sumDef += 5;
+            playerFormationsSum.sumMid += 5;
+            playerFormationsSum.sumAtt += 5;
+            break;
+        }
+        case INSTR_TREATMENT_SOFT: { // obchodzenie sie delikatne
+            playerFormationsSum.sumDef -= 5;
+            playerFormationsSum.sumMid -= 5;
+            playerFormationsSum.sumAtt -= 5;
+            break;
+        }
+    }
+
+    switch (clubRef.inst[5]) {
+        case INSTR_ATTIT_DEFENSIVE: { //nastawienie obronne
+            playerFormationsSum.sumDef += 10;
+            playerFormationsSum.sumAtt -= 10;
+            break;
+        }
+        case INSTR_ATTIT_ATTACK: { //nastawienie atak
+            playerFormationsSum.sumDef -= 10;
+            playerFormationsSum.sumAtt += 10;
+            break;
+        }
+    }
+
+    // add points from tactic training
+    playerFormationsSum.sumDef += clubRef.trained[3];
+    playerFormationsSum.sumMid += clubRef.trained[3];
+    playerFormationsSum.sumAtt += clubRef.trained[3];
+
+    // tactic
+    switch (clubRef.teamSetting) {
+        case T4_4_2_DEF:
+        case T3_5_2_DEF:
+        case T5_3_2_DEF: { //ustawienie obronne
+            playerFormationsSum.sumDef += 10;
+            playerFormationsSum.sumAtt -= 10;
+            break;
+        }
+        case T4_4_2_ATT:
+        case T3_5_2_ATT:
+        case T5_3_2_ATT: { //ustawienie atak
+            playerFormationsSum.sumDef -= 10;
+            playerFormationsSum.sumAtt += 10;
+            break;
+        }
+        case T4_4_2_DIA: { //ustawienie diamond
+            playerFormationsSum.sumDef += 10;
+            playerFormationsSum.sumAtt += 10;
+            playerFormationsSum.sumMid -= 15;
+            break;
+        }
+    }
+    playerFormationsSum.sumAtt += clubRef.trained[2] * 2; // stale fragmenty, ale tylko dla gracza
+
+    return playerFormationsSum;
+}
+
+SFormationsSum Match::getRivalFormationsSum(const SClub &clubRef)
+{
+    SFormationsSum rivalFormationsSum = getFormationsSum(clubRef, false);
+
+    rivalFormationsSum.sumAtt += rivalFormationsSum.goalBonus / 1000;
+    rivalFormationsSum.sumMid += rivalFormationsSum.goalBonus / 1000;
+
+    if (clubRef.rivalData[1] == 1) { // rywal gra u siebie
+        rivalFormationsSum.sumGol += 5;
+        rivalFormationsSum.sumDef += 10;
+        rivalFormationsSum.sumMid += 10;
+        rivalFormationsSum.sumAtt += 10;
+    }
+
+    switch (clubRef.rivalInst[1]) {
+        case INSTR_TREATMENT_HARD: {
+            rivalFormationsSum.sumDef += 5;
+            rivalFormationsSum.sumMid += 5;
+            rivalFormationsSum.sumAtt += 5;
+            break;
+        }
+        case INSTR_TREATMENT_SOFT: {
+            rivalFormationsSum.sumDef -= 5;
+            rivalFormationsSum.sumMid -= 5;
+            rivalFormationsSum.sumAtt -= 5;
+            break;
+        }
+    }
+
+    switch (clubRef.rivalInst[5]) {
+        case INSTR_ATTIT_DEFENSIVE: { // nastawienie obronne
+            rivalFormationsSum.sumDef += 10;
+            rivalFormationsSum.sumAtt -= 10;
+            break;
+        }
+        case INSTR_ATTIT_ATTACK: { // nastawienie atak
+            rivalFormationsSum.sumDef -= 10;
+            rivalFormationsSum.sumAtt += 10;
+            break;
+        }
+    }
+
+    switch (clubRef.rivalData[2]) {
+        case T4_4_2_DEF:
+        case T3_5_2_DEF:
+        case T5_3_2_DEF: { // ustawienie obronne
+            rivalFormationsSum.sumDef += 10;
+            rivalFormationsSum.sumAtt -= 10;
+            break;
+        }
+        case T4_4_2_ATT:
+        case T3_5_2_ATT:
+        case T5_3_2_ATT: { // ustawienie atak
+            rivalFormationsSum.sumDef -= 10;
+            rivalFormationsSum.sumAtt += 10;
+            break;
+        }
+    }
+
+    return rivalFormationsSum;
 }
