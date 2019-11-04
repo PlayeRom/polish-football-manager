@@ -214,11 +214,9 @@ struct STable {
 #define MAX_NEWS_LENGTH 500
 
 struct SNews {
-    wchar_t message[MAX_NEWS_LENGTH]; // tresc wiadomosci
-    int num; // numer wiadomosci
-    SNews() : num(0) {
-        memset(message, 0, MAX_NEWS_LENGTH * sizeof(wchar_t));
-    }
+    int num; // number of message
+    std::wstring message; // content of message
+    SNews() : num(0), message(L"") {}
 };
 
 // pozycja na ktore gra gracz, dla Footballer.data[2]

@@ -27,10 +27,19 @@ void News::init()
         throw std::invalid_argument(message);
     }
 
-    SNews news;
-    while (fread(&news, sizeof(SNews), 1, f) == 1) {
-        allManagerMessages.push_back(news);
+    wchar_t buffer[MAX_NEWS_LENGTH];
+    while (fgetws(buffer, MAX_NEWS_LENGTH, f) != NULL) {
+        wstring line = buffer;
+        if (line.size() > 1) {
+            line[line.size() - 1] = L'\0'; // remove \n on end of line
+            std::size_t colonPos = line.find(L":", 0);
+            SNews news;
+            news.num = std::stoi(line.substr(0, colonPos));
+            news.message = line.substr(colonPos + 1);
+            allManagerMessages.push_back(news);
+        }
     }
+
     fclose(f);
 }
 
@@ -120,7 +129,7 @@ void News::addManagerMessage(const SNews &news, const SClub& club, int index)
     swprintf(
         tmpBuffer,
         MAX_NEWS_LENGTH,
-        news.message,
+        news.message.c_str(),
         messages[index].strForMsg.c_str(),
         messages[index].numberForMsg
     );
@@ -131,7 +140,7 @@ void News::addManagerMessage(const SNews &news, const SClub& club, int index)
 
 void News::coutManagerMessage(const SNews &news, int index)
 {
-    wprintf(news.message, messages[index].strForMsg.c_str(), messages[index].numberForMsg);
+    wprintf(news.message.c_str(), messages[index].strForMsg.c_str(), messages[index].numberForMsg);
 }
 
 void News::setTmpMsgData(int msgId)

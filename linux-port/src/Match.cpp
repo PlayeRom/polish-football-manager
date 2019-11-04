@@ -56,10 +56,19 @@ void Match::loadMatchMessages()
         throw std::invalid_argument(message);
     }
 
-    SNews news;
-    while (fread(&news, sizeof (news), 1, f) == 1) {
-        matchMsgs.push_back(news);
+    wchar_t buffer[MAX_NEWS_LENGTH];
+    while (fgetws(buffer, MAX_NEWS_LENGTH, f) != NULL) {
+        wstring line = buffer;
+        if (line.size() > 1) {
+            line[line.size() - 1] = L'\0'; // remove \n on end of line
+            std::size_t colonPos = line.find(L":", 0);
+            SNews news;
+            news.num = std::stoi(line.substr(0, colonPos));
+            news.message = line.substr(colonPos + 1);
+            matchMsgs.push_back(news);
+        }
     }
+
     fclose(f);
 }
 
@@ -1804,7 +1813,13 @@ bool Match::runMecz() {
                         pColors->textcolor(color);
                         pColors->textbackground(bkgcolor);
 
-                        swprintf(tmpMessage, MAX_NEWS_LENGTH, meczs.message, msgFootballers[k].c_str(), msgFootballers[k + 1].c_str());
+                        swprintf(
+                            tmpMessage,
+                            MAX_NEWS_LENGTH,
+                            meczs.message.c_str(),
+                            msgFootballers[k].c_str(),
+                            msgFootballers[k + 1].c_str()
+                        );
 
                         wcout << tmpMessage;
 
