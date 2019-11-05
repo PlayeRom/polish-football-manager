@@ -67,11 +67,21 @@ void Match::loadMatchMessages()
     wchar_t buffer[MAX_NEWS_LENGTH];
     while (fgetws(buffer, MAX_NEWS_LENGTH, f) != NULL) {
         wstring line = buffer;
-        if (line.size() > 1) {
+        if (line.size() < 3) {
+            continue;
+        }
+
+        std::size_t colonPos = line.find(L":", 0);
+        if (colonPos == wstring::npos) {
+            continue;
+        }
+
+        wstring strNumber = line.substr(0, colonPos);
+        if (!strNumber.empty()) {
             line[line.size() - 1] = L'\0'; // remove \n on end of line
-            std::size_t colonPos = line.find(L":", 0);
+
             SNews news;
-            news.num = std::stoi(line.substr(0, colonPos));
+            news.num = std::stoi(strNumber);
             news.message = line.substr(colonPos + 1);
             matchMsgs.push_back(news);
         }
@@ -2182,8 +2192,12 @@ void Match::drawTeam(int usta, int tryb, int kto)
     wcout << L"Morale  For. ForM Kon. Gole";
     pColors->textcolor(LIGHTBLUE);
     int color = LIGHTBLUE;
-    if (tryb == 16) i = 11; //dla pokazania rezerwowych w taktyce
-    if (tryb == 40) i = 20; //dla dalej w Składzie
+    if (tryb == 16) {
+        i = 11; // dla pokazania rezerwowych w taktyce
+    }
+    else if (tryb == 40) {
+        i = 20; // dla dalej w Składzie
+    }
 
     while (i != tryb) {
         i++;
@@ -2191,7 +2205,7 @@ void Match::drawTeam(int usta, int tryb, int kto)
             color = YELLOW;
             pColors->textcolor(color);//BROWN);
         }
-        if (tryb == 40) {
+        else if (tryb == 40) {
             color = LIGHTGRAY;
             pColors->textcolor(color);
         }

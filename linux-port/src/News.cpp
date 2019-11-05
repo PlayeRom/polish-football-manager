@@ -30,11 +30,21 @@ void News::init()
     wchar_t buffer[MAX_NEWS_LENGTH];
     while (fgetws(buffer, MAX_NEWS_LENGTH, f) != NULL) {
         wstring line = buffer;
-        if (line.size() > 1) {
+        if (line.size() < 3) {
+            continue;
+        }
+
+        std::size_t colonPos = line.find(L":", 0);
+        if (colonPos == wstring::npos) {
+            continue;
+        }
+
+        wstring strNumber = line.substr(0, colonPos);
+        if (!strNumber.empty()) {
             line[line.size() - 1] = L'\0'; // remove \n on end of line
-            std::size_t colonPos = line.find(L":", 0);
+
             SNews news;
-            news.num = std::stoi(line.substr(0, colonPos));
+            news.num = std::stoi(strNumber);
             news.message = line.substr(colonPos + 1);
             allManagerMessages.push_back(news);
         }
