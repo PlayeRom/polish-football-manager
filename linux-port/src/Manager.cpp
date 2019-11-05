@@ -214,13 +214,10 @@ wchar_t Manager::displayMainMenu(const wstring *pTactics)
     wcout << endl << L" D Zarząd klubu";
     wcout << endl << L" M Manager";
     if (pNews->isMessage()) {
-        wcout << L"\033[5m"; // <- miganie, nie dziala na gnome
+        pColors->startBlinking();
         pColors->textcolor(LIGHTRED);
-
-        wcout << endl << L" W";
-        pColors->textcolor(140);
-        wcout << L" Masz wiadomość";
-        wcout << L"\033[0m"; // <- przerwij miganie
+        wcout << endl << L" W Masz wiadomość";
+        pColors->stopBlinking();
     }
     else {
         pColors->textcolor(LIGHTGRAY);

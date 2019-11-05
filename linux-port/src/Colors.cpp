@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <iostream>
 #include <sstream>  // for string streams
 #include <string>  // for string
 #include "Colors.h"
@@ -67,6 +66,7 @@ int Colors::convertFromConio(int conioColor, bool isBkg) const
         case 14: // conio.h YELLOW
             return getFgBgColor(Colors::FG_YELLOW, isBkg);
         case 15: // conio.h WHITE
+        case 143:
             return getFgBgColor(Colors::FG_WHITE, isBkg);
         default:
             return getFgBgColor(Colors::FG_DEFAULT, isBkg);

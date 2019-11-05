@@ -1,6 +1,7 @@
 #ifndef COLORS_H
 #define COLORS_H
 
+#include <iostream>
 #include <stdarg.h>
 #include <string>
 
@@ -35,6 +36,9 @@ public:
 
     void textcolor(int colorConio) const;
     void textbackground(int colorConio) const;
+
+    void startBlinking() const { std::wcout << L"\033[5m"; }
+    void stopBlinking() const { std::wcout << L"\033[0m"; }
 
 private:
     int getFgBgColor(int color, bool isBkg) const;

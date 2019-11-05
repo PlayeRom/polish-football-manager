@@ -1595,7 +1595,8 @@ bool Match::runMecz() {
                     const SNews &meczs = matchMsgs[index];
                     if (wiado[i] == meczs.num) {
                         int color = 0;
-                        if (wiado[i] == 74) { // GOOOL dla %ls!!!
+                        bool isGoal = wiado[i] == 74; // GOOOL dla %ls!!!
+                        if (isGoal) {
                             color = 143;
                         }
                         else if (wiado[i] == 20) { // %ls otrzymuje żółtą kartkę!
@@ -1631,7 +1632,15 @@ bool Match::runMecz() {
                             msgFootballers[k + 1].c_str()
                         );
 
+                        if (isGoal) {
+                            pColors->startBlinking();
+                        }
+
                         wcout << tmpMessage;
+
+                        if (isGoal) {
+                            pColors->stopBlinking();
+                        }
 
                         saveMatchMessageToFile(bkgcolor, minuta, tmpMessage);
 
