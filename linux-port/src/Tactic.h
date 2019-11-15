@@ -6,6 +6,7 @@
 #include <string>
 #include "Colors.h"
 #include "Structs.h"
+#include "Language.h"
 
 // Tactic IDs
 #define T4_4_2      1
@@ -23,43 +24,46 @@
 #define T5_3_2_DEF  13
 #define T5_3_2_ATT  14
 
+using namespace std;
+
 class Tactic {
 public:
-    Tactic(const Colors *pColors);
+    Tactic(const Colors *pColors, Language *pLang);
 
     void drawTeamSetting(int setting, bool isPlayerTeam = true) const;
-    void drawChart(int setting, int who, const std::vector<SFootballer> &footballers, bool isRival = false);
+    void drawChart(int setting, int who, const vector<SFootballer> &footballers, bool isRival = false);
 
     const std::wstring* getTeamSettings() const {
         static std::wstring settings[15] = {
             L"4-4-2",
-            L"4-4-2 Obrona",
-            L"4-4-2 Atak",
-            L"4-4-2 Diamond",
+            pLang->get(L"4-4-2 Defense"),
+            pLang->get(L"4-4-2 Attack"),
+            pLang->get(L"4-4-2 Diamond"),
             L"3-4-3",
             L"3-5-2",
-            L"3-5-2 Obrona",
-            L"3-5-2 Atak",
+            pLang->get(L"3-5-2 Defense"),
+            pLang->get(L"3-5-2 Attack"),
             L"4-2-4",
             L"4-3-3",
             L"4-5-1",
             L"5-3-2",
-            L"5-3-2 Obrona",
-            L"5-3-2 Atak",
-            L"Błąd"
+            pLang->get(L"5-3-2 Defense"),
+            pLang->get(L"5-3-2 Attack"),
+            pLang->get(L"Error")
         };
 
         return settings;
     };
 
-    const std::wstring getTeamSetting(int index) {
+    const wstring getTeamSetting(int index) {
         return getTeamSettings()[index];
     }
 
 private:
     const Colors* pColors;
+    Language *pLang;
 
-    void drawBoxes(int color, wchar_t sign, int strength, int max);
+    void drawBoxes(int color, const wstring& sign, int strength, int max);
 };
 
 #endif /* TACTIC_H */

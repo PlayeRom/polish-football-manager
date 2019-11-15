@@ -4,11 +4,10 @@
 #include "ConioColors.h"
 #include "BoxDrawingChars.h"
 
-using namespace std;
-
-Tactic::Tactic(const Colors *pColors)
+Tactic::Tactic(const Colors *pColors, Language *pLang)
 {
     this->pColors = pColors;
+    this->pLang = pLang;
 }
 
 /**
@@ -21,7 +20,7 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
     const wstring *settings = getTeamSettings();
 
     pColors->textbackground(GREEN);
-    pColors->textcolor(BLACK); //setting,wypis taktyk
+    pColors->textcolor(BLACK); //wypis taktyk
     wprintf(L"\n\r %-15ls", settings[setting - 1].c_str());
 
     //--------------------linia ataku
@@ -42,7 +41,7 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
     if (isPlayerTeam) {
         pColors->textbackground(BLACK);
         pColors->textcolor(GREEN);
-        wcout << L"     U Zmiana ustawienia         P Zamiana zawodników";
+        wcout << pLang->get(L"     U Change formation         P Swap players");
         pColors->textbackground(GREEN);
         pColors->textcolor(LIGHTGREEN);
     }
@@ -57,7 +56,7 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
 
     pColors->textbackground(BLACK);
     pColors->textcolor(GREEN);
-    wcout << L"     I Instrukcje dla drużyny    R Pokaż rezerwowych";
+    wcout << pLang->get(L"     I Team instructions        R Show reserve");
     pColors->textbackground(GREEN);
 
     //--------------------------linia pomocy
@@ -74,7 +73,7 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
 
     pColors->textbackground(BLACK);
     pColors->textcolor(RED);
-    wcout << L"     Q Powrót";
+    wcout << pLang->get(L"     Q Back");
     pColors->textbackground(GREEN);
     pColors->textcolor(LIGHTCYAN);
 
@@ -223,18 +222,18 @@ void Tactic::drawChart(int setting, int clubId, const vector<SFootballer> &footb
     }
 
     wcout << endl;
-    drawBoxes(LIGHTBLUE, L'B', goalkeeper, 4);
-    drawBoxes(MAGENTA, L'O', defense, 20);
-    drawBoxes(LIGHTCYAN, L'P', midfield, 20);
-    drawBoxes(LIGHTGREEN, L'N', attack, 16);
+    drawBoxes(LIGHTBLUE, pLang->get(L"G"), goalkeeper, 4);
+    drawBoxes(MAGENTA, pLang->get(L"D"), defense, 20);
+    drawBoxes(LIGHTCYAN, pLang->get(L"M"), midfield, 20);
+    drawBoxes(LIGHTGREEN, pLang->get(L"A"), attack, 16);
 
     if (isRival) {
         pColors->textcolor(LIGHTGRAY);
-        wcout << L"<- Rywal";
+        wcout << L"<- " << pLang->get(L"Rival");
     }
 }
 
-void Tactic::drawBoxes(int color, wchar_t sign, int strength, int max)
+void Tactic::drawBoxes(int color, const wstring& sign, int strength, int max)
 {
     pColors->textcolor(color);
     wcout << sign << L"-";

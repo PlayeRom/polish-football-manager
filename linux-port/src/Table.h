@@ -8,12 +8,11 @@
 #include "Colors.h"
 #include "Rounds.h"
 #include "PlayerClub.h"
+#include "Language.h"
 
 class Table {
 public:
-    Table(const Colors *pColors);
-    Table(const Table& orig);
-    virtual ~Table();
+    Table(const Colors *pColors, Language *pLang);
 
     void createTable();
     void save();
@@ -30,6 +29,7 @@ public:
 private:
     STable table[MAX_CLUBS];
     const Colors *pColors;
+    Language *pLang;
 
     void drawTableHorizontalInner();
     void drawTableHorizontalBottom();

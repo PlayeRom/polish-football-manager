@@ -35,9 +35,11 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/ArgumentsReader.o \
 	${OBJECTDIR}/Colors.o \
 	${OBJECTDIR}/Footballers.o \
 	${OBJECTDIR}/Input.o \
+	${OBJECTDIR}/Language.o \
 	${OBJECTDIR}/Logger.o \
 	${OBJECTDIR}/MainMenu.o \
 	${OBJECTDIR}/Manager.o \
@@ -45,9 +47,9 @@ OBJECTFILES= \
 	${OBJECTDIR}/News.o \
 	${OBJECTDIR}/PlayerClub.o \
 	${OBJECTDIR}/Rounds.o \
+	${OBJECTDIR}/Squad.o \
 	${OBJECTDIR}/Table.o \
 	${OBJECTDIR}/Tactic.o \
-	${OBJECTDIR}/TeamComposition.o \
 	${OBJECTDIR}/TeamInstructions.o \
 	${OBJECTDIR}/main.o
 
@@ -76,6 +78,11 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/managerligipolskiej2002: ${OBJECTFILE
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/managerligipolskiej2002 ${OBJECTFILES} ${LDLIBSOPTIONS}
 
+${OBJECTDIR}/ArgumentsReader.o: ArgumentsReader.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ArgumentsReader.o ArgumentsReader.cpp
+
 ${OBJECTDIR}/Colors.o: Colors.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
@@ -90,6 +97,11 @@ ${OBJECTDIR}/Input.o: Input.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Input.o Input.cpp
+
+${OBJECTDIR}/Language.o: Language.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Language.o Language.cpp
 
 ${OBJECTDIR}/Logger.o: Logger.cpp
 	${MKDIR} -p ${OBJECTDIR}
@@ -126,6 +138,11 @@ ${OBJECTDIR}/Rounds.o: Rounds.cpp
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Rounds.o Rounds.cpp
 
+${OBJECTDIR}/Squad.o: Squad.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Squad.o Squad.cpp
+
 ${OBJECTDIR}/Table.o: Table.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
@@ -135,11 +152,6 @@ ${OBJECTDIR}/Tactic.o: Tactic.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Tactic.o Tactic.cpp
-
-${OBJECTDIR}/TeamComposition.o: TeamComposition.cpp
-	${MKDIR} -p ${OBJECTDIR}
-	${RM} "$@.d"
-	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/TeamComposition.o TeamComposition.cpp
 
 ${OBJECTDIR}/TeamInstructions.o: TeamInstructions.cpp
 	${MKDIR} -p ${OBJECTDIR}

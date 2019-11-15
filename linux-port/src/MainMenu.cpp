@@ -14,7 +14,8 @@ MainMenu::MainMenu(
     PlayerClub *pClub,
     Table *pTable,
     Rounds *pRounds,
-    News *pNews
+    News *pNews,
+    Language *pLang
 ) {
     this->pColors = pColors;
     this->pInput = pInput;
@@ -23,6 +24,7 @@ MainMenu::MainMenu(
     this->pTable = pTable;
     this->pRounds = pRounds;
     this->pNews = pNews;
+    this->pLang = pLang;
 }
 
 /**
@@ -33,7 +35,7 @@ MainMenu::MainMenu(
 void MainMenu::run()
 {
     wchar_t menu = 0;
-    Manager manager(pClub, pColors, pInput, pFootballers, pTable, pRounds, pNews);
+    Manager manager(pClub, pColors, pInput, pFootballers, pTable, pRounds, pNews, pLang);
 
     do {
         draw();
@@ -42,7 +44,7 @@ void MainMenu::run()
 
         bool isNewGame = false;
         switch (menu) {
-            case 'N': {
+            case L'N': {
                 isNewGame = newGame();
                 if (!isNewGame) {
                     break;
@@ -50,14 +52,16 @@ void MainMenu::run()
 
                 // break; // no break!
             }
-            case 'W': { // wczytaj grę
+            case L'W':
+            case L'L': { // load game and run
                 loadGame(isNewGame);
 
                 manager.runManager();
+                break;
             }
         }
     }
-    while (menu != 'Q');
+    while (menu != L'Q');
 }
 
 /**
@@ -78,11 +82,13 @@ void MainMenu::draw()
 
     pColors->textbackground(WHITE);
     pColors->textcolor(RED);
-    wcout << endl << endl << L" MANAGER LIGI  ";
+    //wcout << endl << endl << L" MANAGER LIGI  ";
+    wcout << endl << endl << pLang->get(L"   MANAGER of the   ");
 
     pColors->textbackground(RED);
     pColors->textcolor(LIGHTGRAY);
-    wcout << endl << L" POLSKIEJ 2002 ";
+    //wcout << endl << L" POLSKIEJ 2002 ";
+    wcout << endl << pLang->get(L" POLISH LEAGUE 2002 ");
 
     pColors->textbackground(BLACK);
 
@@ -91,11 +97,11 @@ void MainMenu::draw()
 
     pColors->textcolor(GREEN);
     wcout << endl << endl <<
-        L"N Nowa gra" << endl <<
-        L"W Wczytaj grę";
+        pLang->get(L"N New game") << endl <<
+        pLang->get(L"L Load game");
 
     pColors->textcolor(RED);
-    wcout << endl << L"Q Wyjście" << endl;
+    wcout << endl << pLang->get(L"Q Quit") << endl;
 
     pColors->textcolor(GREEN);
 }
@@ -108,9 +114,9 @@ void MainMenu::draw()
 bool MainMenu::newGame()
 {
     pColors->textcolor(GREEN);
-    wcout << endl << endl << L"Czy na pewno chcesz rozpocząć nową grę? (T/n): ";
+    wcout << endl << endl << pLang->get(L"Are you sure you want to start a new game? (Y/n): ");
     wchar_t yn = pInput->getKeyBoardPressed();
-    if (yn != L'T' && yn != L'\n') {
+    if (yn != pLang->getYesKeyborad() && yn != L'\n') {
         return false;
     }
 
@@ -126,16 +132,16 @@ bool MainMenu::newGame()
     wchar_t surname[MAX_USER_SURNAME] = {0};
     wchar_t nick[MAX_USER_NICK] = {0};
 
-    wcout << endl << L"Podaj swoje imię: ";
+    wcout << endl << pLang->get(L"Enter your name: ");
     pInput->getText2Buffer(name, MAX_USER_NAME);
 
-    wcout << L"Podaj swoje nazwisko: ";
+    wcout << pLang->get(L"Enter your surname: ");
     pInput->getText2Buffer(surname, MAX_USER_SURNAME);
 
-    wcout << endl << L"Czy chcesz podać swoją ksywę? (T/n): ";
+    wcout << endl << pLang->get(L"Do you want to enter your nickname? (Y/n): ");
     yn = pInput->getKeyBoardPressed();
-    if (yn == L'T' || yn == L'\n') {
-        wcout << endl << L"Podaj swój nickname: ";
+    if (yn == pLang->getYesKeyborad() || yn == L'\n') {
+        wcout << endl << pLang->get(L"Enter your nickname: ");
         pInput->getText2Buffer(nick, MAX_USER_NICK);
     }
 
@@ -144,12 +150,11 @@ bool MainMenu::newGame()
     while (!isClubSelected) {
         pInput->clrscr();
 
-        wcout << endl << L"Wybierz klub, którego będziesz Managerem:";
+        wcout << endl << pLang->get(L"Choose the club you will be the manager of:");
         for (int i = 0; i < MAX_CLUBS; i++) {
             wcout << endl << std::setfill(L' ') << std::setw(2) << i + 1 << ". " << pClub->getClubName(i);
         }
-        wcout << endl << endl << L"Wpisz odpowiedni numer: ";
-        //scanf(L"%d", &clubRef.clubId);
+        wcout << endl << endl << pLang->get(L"Enter the appropriate number: ");
 
         clubId = pInput->getNumber();;
         isClubSelected = (clubId >= 1 && clubId <= MAX_CLUBS);

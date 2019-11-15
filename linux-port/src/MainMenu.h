@@ -9,6 +9,7 @@
 #include "Table.h"
 #include "Rounds.h"
 #include "News.h"
+#include "Language.h"
 
 using namespace std;
 
@@ -21,7 +22,8 @@ public:
         PlayerClub *pClub,
         Table *pTable,
         Rounds *pRounds,
-        News *pNews
+        News *pNews,
+        Language *pLang
     );
 
     void run();
@@ -34,6 +36,7 @@ private:
     Table *pTable;
     Rounds *pRounds;
     News *pNews;
+    Language *pLang;
 
     void draw();
     bool newGame();

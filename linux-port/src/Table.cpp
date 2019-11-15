@@ -10,17 +10,10 @@
 
 using namespace std;
 
-Table::Table(const Colors *pColors)
+Table::Table(const Colors *pColors, Language *pLang)
 {
     this->pColors = pColors;
-}
-
-Table::Table(const Table& orig)
-{
-}
-
-Table::~Table()
-{
+    this->pLang = pLang;
 }
 
 void Table::createTable()
@@ -37,7 +30,7 @@ void Table::createTable()
 void Table::save()
 {
     FILE *f = fopen(FILE_SAVE_TABLE, "wb");
-    fclose(f); // wyczyść stary plik
+    fclose(f); // clear old file
 
     f = fopen(FILE_SAVE_TABLE, "ab");
     for (int i = 0; i < MAX_CLUBS; i++) {
@@ -112,9 +105,16 @@ void Table::drawTable(int clubId, const PlayerClub *club)
         wcout << BOX_LIGHT_HORIZONTAL;
     }
     pColors->textcolor(WHITE);
-    wcout << L" TABELA - I LIGA ";
+    const int maxLabel = 18;
+    const wstring label = pLang->cut(pLang->get(L" TABLE - I LEAGUE "), maxLabel);
+    wcout << label;
     pColors->textcolor(LIGHTGRAY);
-    for (int i = 0; i < 6; i++) {
+    // add missing horizonal according to translations
+    for (int i = label.length(); i < maxLabel; i++) {
+        wcout << BOX_LIGHT_HORIZONTAL;
+    }
+
+    for (int i = 0; i < 5; i++) {
         wcout << BOX_LIGHT_HORIZONTAL;
     }
     wcout << BOX_LIGHT_DOWN_HORIZONTAL;
@@ -127,22 +127,22 @@ void Table::drawTable(int clubId, const PlayerClub *club)
     }
     wcout << BOX_LIGHT_DOWN_LEFT << endl << BOX_LIGHT_VERTICAL;
     pColors->textcolor(GREEN);
-    wcout << L"Lp. Klub                  M ";
+    wcout << pLang->get(L"No  Club                  M ");
 
     pColors->textcolor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
     pColors->textcolor(GREEN);
-    wcout << L"  W  R  P ";
+    wcout << pLang->get(L"  W  D  L ");
 
     pColors->textcolor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
     pColors->textcolor(GREEN);
-    wcout << L" Gz  Gs ";
+    wcout << pLang->get(L" G+  G- ");
 
     pColors->textcolor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
     pColors->textcolor(GREEN);
-    wcout << L" Pkt";
+    wcout << pLang->get(L" Pts");
 
     pColors->textcolor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;

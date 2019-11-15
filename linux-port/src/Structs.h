@@ -29,16 +29,16 @@
 #define MAX_CLUBS 16
 #define MAX_TEAM_INSTRUCTIONS 6 // ilosc instrukcji dla zespolu w taktyce
 
-#define TRENNING_CONDITIONS     1
-#define TRENNING_PASSES         2 // podanie
-#define TRENNING_FREE_KICKS     3 // rzuty wolne, stale frag. gry
-#define TRENNING_TACTICKS       4 // taktyka
-#define TRENNING_B              5
-#define TRENNING_O              6
-#define TRENNING_P              7
-#define TRENNING_N              8
-#define TRENNING_HOLIDAY        9 // wolne od treningu, odpoczynek
-#define TRENNING_EMPTY          10 // wypelniacz pustego miejsca
+#define TRAINING_CONDITIONS     1
+#define TRAINING_PASSES         2 // podanie
+#define TRAINING_FREE_KICKS     3 // rzuty wolne, stale frag. gry
+#define TRAINING_TACTICKS       4 // taktyka
+#define TRAINING_B              5
+#define TRAINING_O              6
+#define TRAINING_P              7
+#define TRAINING_N              8
+#define TRAINING_HOLIDAY        9 // wolne od treningu, odpoczynek
+#define TRAINING_EMPTY          10 // wypelniacz pustego miejsca
 
 // wartosci dla instrukcji w taktyce
 #define INSTR_PASSES_MIXES      1 // podania mieszane
@@ -80,7 +80,7 @@ struct SClub {
      * 6 - O
      * 7 - P
      * 8 - N
-     * 9 - wolne od treningu TRENNING_HOLIDAY
+     * 9 - wolne od treningu TRAINING_HOLIDAY
      * 10 - plomba
      */
 
@@ -225,11 +225,11 @@ struct SNews {
 #define PLAYERS_POS_P 3 // midfielder
 #define PLAYERS_POS_N 4 // striker
 // co zawodnik trenuje
-#define PLAYERS_TRENNING_NONE 0 // nie trenuje
-#define PLAYERS_TRENNING_B 1 // bycia bramkarzem
-#define PLAYERS_TRENNING_O 2 // obronę
-#define PLAYERS_TRENNING_P 3 // pomoc
-#define PLAYERS_TRENNING_N 4 // atak
+#define PLAYERS_TRAINING_NONE 0 // nie trenuje
+#define PLAYERS_TRAINING_B 1 // bycia bramkarzem
+#define PLAYERS_TRAINING_O 2 // obronę
+#define PLAYERS_TRAINING_P 3 // pomoc
+#define PLAYERS_TRAINING_N 4 // atak
 // morale zawodnika
 #define PLAYERS_MORALE_FATAL    -3
 #define PLAYERS_MORALE_BAD      -2

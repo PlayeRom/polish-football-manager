@@ -7,6 +7,8 @@
 #include "PlayerClub.h"
 #include "Logger.h"
 #include "MainMenu.h"
+#include "Language.h"
+#include "ArgumentsReader.h"
 
 using namespace std;
 
@@ -17,10 +19,18 @@ int main(int argc, char** argv)
     srand(time(NULL));
 
     try {
+        ArgumentsReader argsReader(argc, argv);
+        if (argsReader.isExitFlag()) {
+            return EXIT_FAILURE;
+        }
+
+        Language lang;
+        lang.load(argsReader.getLanguage());
+        
         Input input;
         Colors colors;
         Footballers footballers;
-        Table table(&colors);
+        Table table(&colors, &lang);
         Rounds rounds;
         PlayerClub club;
         News news;
@@ -32,7 +42,8 @@ int main(int argc, char** argv)
             &club,
             &table,
             &rounds,
-            &news
+            &news,
+            &lang
         );
         mainMenu.run();
     }

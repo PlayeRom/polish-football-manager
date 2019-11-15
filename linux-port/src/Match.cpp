@@ -10,7 +10,7 @@
 #include "ConioColors.h"
 #include "Match.h"
 #include "BoxDrawingChars.h"
-#include "TeamComposition.h"
+#include "Squad.h"
 
 // Where is acrion
 #define ACTION_IN_MIDDLEFIELD       1 // ball in the middle field
@@ -29,7 +29,8 @@ Match::Match(
     Footballers *pFootballers,
     Table *pTable,
     Rounds *pRounds,
-    const TeamInstructions *pTeamInstruction
+    const TeamInstructions *pTeamInstruction,
+    Language *pLang
 ) {
     this->pClub = pClub;
     this->pColors = pColors;
@@ -38,8 +39,9 @@ Match::Match(
     this->pTable = pTable;
     this->pRounds = pRounds;
     this->pTeamInstruction = pTeamInstruction;
+    this->pLang = pLang;
 
-    pTactic = new Tactic(pColors);
+    pTactic = new Tactic(pColors, pLang);
     pLogger = new Logger();
 }
 
@@ -2179,7 +2181,7 @@ void Match::prepareFootballersSurnames(const SClub &clubRef)
 
 void Match::drawTeam(int usta, int tryb, int kto)
 {
-    TeamComposition teamComposition(pColors);
+    Squad squad(pColors, pLang);
     int i = 0;
 
     pColors->textcolor(GREEN);
@@ -2250,15 +2252,15 @@ void Match::drawTeam(int usta, int tryb, int kto)
                 }
 
                 wprintf(
-                    L"%3ls%-15ls %lc  %2d %2d %2d %2d  %-7ls  %2d",
+                    L"%3ls%-15ls %ls  %2d %2d %2d %2d  %-7ls  %2d",
                     footballer.name,
                     footballer.surname,
-                    teamComposition.getFootballerPosition(footballer.data[2]),
+                    squad.getFootballerPosition(footballer.data[2]).c_str(),
                     footballer.data[3],
                     footballer.data[4],
                     footballer.data[5],
                     footballer.data[6],
-                    teamComposition.getMorale(footballer.data[7]).c_str(),
+                    squad.getMorale(footballer.data[7]).c_str(),
                     footballer.data[9]
                 );
 

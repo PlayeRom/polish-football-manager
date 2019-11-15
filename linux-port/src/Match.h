@@ -14,6 +14,7 @@
 #include "TeamInstructions.h"
 #include "Tactic.h"
 #include "Logger.h"
+#include "Language.h"
 
 #define MAX_MESSAGES 10
 
@@ -42,7 +43,8 @@ public:
         Footballers *pFootballers,
         Table *pTable,
         Rounds *pRounds,
-        const TeamInstructions *pTeamInstruction
+        const TeamInstructions *pTeamInstruction,
+        Language *pLang
     );
     Match(const Match& orig);
     virtual ~Match();
@@ -61,6 +63,7 @@ private:
     Table *pTable;
     Rounds *pRounds;
     const TeamInstructions *pTeamInstruction;
+    Language *pLang;
     const Tactic *pTactic;
     vector<SNews> matchMsgs;
     Logger *pLogger;

@@ -6,34 +6,34 @@
 #include "PlayerClub.h"
 
 const int defaultTrenningPlan[28] = {
-    TRENNING_B,         // pn
-    TRENNING_B,         // wt
-    TRENNING_CONDITIONS,// sr
-    TRENNING_TACTICKS,  // cz
-    TRENNING_FREE_KICKS,// pt
-    TRENNING_PASSES,    // so
-    TRENNING_HOLIDAY,   // n
-    TRENNING_O,         // pn
-    TRENNING_O,         // wt
-    TRENNING_PASSES,    // sr
-    TRENNING_CONDITIONS,// cz
-    TRENNING_TACTICKS,  // pt
-    TRENNING_FREE_KICKS,// so
-    TRENNING_EMPTY,     // n
-    TRENNING_P,         // pn
-    TRENNING_P,         // wt
-    TRENNING_FREE_KICKS,// sr
-    TRENNING_PASSES,    // cz
-    TRENNING_CONDITIONS,// pt
-    TRENNING_TACTICKS,  // so
-    TRENNING_EMPTY,     // n
-    TRENNING_N,         // pn
-    TRENNING_N,         // wt
-    TRENNING_EMPTY,     // sr
-    TRENNING_EMPTY,     // cz
-    TRENNING_EMPTY,     // pt
-    TRENNING_EMPTY,     // so
-    TRENNING_EMPTY      // n
+    TRAINING_B,         // pn
+    TRAINING_B,         // wt
+    TRAINING_CONDITIONS,// sr
+    TRAINING_TACTICKS,  // cz
+    TRAINING_FREE_KICKS,// pt
+    TRAINING_PASSES,    // so
+    TRAINING_HOLIDAY,   // n
+    TRAINING_O,         // pn
+    TRAINING_O,         // wt
+    TRAINING_PASSES,    // sr
+    TRAINING_CONDITIONS,// cz
+    TRAINING_TACTICKS,  // pt
+    TRAINING_FREE_KICKS,// so
+    TRAINING_EMPTY,     // n
+    TRAINING_P,         // pn
+    TRAINING_P,         // wt
+    TRAINING_FREE_KICKS,// sr
+    TRAINING_PASSES,    // cz
+    TRAINING_CONDITIONS,// pt
+    TRAINING_TACTICKS,  // so
+    TRAINING_EMPTY,     // n
+    TRAINING_N,         // pn
+    TRAINING_N,         // wt
+    TRAINING_EMPTY,     // sr
+    TRAINING_EMPTY,     // cz
+    TRAINING_EMPTY,     // pt
+    TRAINING_EMPTY,     // so
+    TRAINING_EMPTY      // n
 };
 
 PlayerClub::PlayerClub()

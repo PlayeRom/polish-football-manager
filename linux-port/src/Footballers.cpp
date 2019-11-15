@@ -5,15 +5,6 @@
 #include <algorithm>
 #include "Footballers.h"
 
-Footballers::Footballers() {
-}
-
-Footballers::Footballers(const Footballers& orig) {
-}
-
-Footballers::~Footballers() {
-}
-
 /**
  * Load for initial file
  */
@@ -87,6 +78,7 @@ void Footballers::loadPlayerTeam()
         snprintf(message, 512, ERROR_OPEN_FILE, FILE_SAVE_FOOTBALLERS_MANAGER);
         throw std::invalid_argument(message);
     }
+
     SFootballer footballer;
     while (fread(&footballer, sizeof (SFootballer), 1, f) == 1) {
         playerTeam.push_back(footballer);

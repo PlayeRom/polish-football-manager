@@ -8,10 +8,6 @@
 
 class Footballers {
 public:
-    Footballers();
-    Footballers(const Footballers& orig);
-    virtual ~Footballers();
-
     size_t getSizePlayerTeam() const { return playerTeam.size(); }
     size_t getSizeRivals() const { return rivals.size(); }
     size_t getSizeTransfers() const { return transfers.size(); }

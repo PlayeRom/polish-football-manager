@@ -6,17 +6,10 @@
 
 using namespace std;
 
-TeamInstructions::TeamInstructions(const Colors *pColors)
+TeamInstructions::TeamInstructions(const Colors *pColors, Language *pLang)
 {
     this->pColors = pColors;
-}
-
-TeamInstructions::TeamInstructions(const TeamInstructions& orig)
-{
-}
-
-TeamInstructions::~TeamInstructions()
-{
+    this->pLang = pLang;
 }
 
 /**
@@ -41,38 +34,38 @@ void TeamInstructions::draw(
 ) const {
     vector< pair<wstring, int> > data[MAX_TEAM_INSTRUCTIONS] = {
         {
-            {L"Nastawienie", attitude},
-            {L"Normalne", INSTR_ATTIT_NORMAL},
-            {L"Obronne", INSTR_ATTIT_DEFENSIVE},
-            {L"Atak", INSTR_ATTIT_ATTACK}
+            {pLang->get(L"Attitude"), attitude},
+            {pLang->get(L"Normal"), INSTR_ATTIT_NORMAL},
+            {pLang->get(L"Defence"), INSTR_ATTIT_DEFENSIVE},
+            {pLang->get(L"Attack"), INSTR_ATTIT_ATTACK}
         },
         {
-            {L"Podania", passes},
-            {L"Mieszane", INSTR_PASSES_MIXES},
-            {L"Krótkie", INSTR_PASSES_SHORT},
-            {L"Średnie", INSTR_PASSES_MIDDLE},
-            {L"Długie", INSTR_PASSES_LONG}
+            {pLang->get(L"Passing the ball"), passes},
+            {pLang->get(L"Mixed"), INSTR_PASSES_MIXES},
+            {pLang->get(L"Short"), INSTR_PASSES_SHORT},
+            {pLang->get(L"Medium"), INSTR_PASSES_MIDDLE},
+            {pLang->get(L"Long"), INSTR_PASSES_LONG}
         },
         {
-            {L"Traktowanie rywala", rivalThreat},
-            {L"Normalne", INSTR_TREATMENT_NORMAL},
-            {L"Delikatne", INSTR_TREATMENT_SOFT},
-            {L"Twarde", INSTR_TREATMENT_HARD}
+            {pLang->get(L"Treatment of rival"), rivalThreat},
+            {pLang->get(L"Normal"), INSTR_TREATMENT_NORMAL},
+            {pLang->get(L"Soft"), INSTR_TREATMENT_SOFT},
+            {pLang->get(L"Hard"), INSTR_TREATMENT_HARD}
         },
         {
-            {L"Pressing", pressing},
-            {L"Nie", INSTR_NO},
-            {L"Tak", INSTR_YES},
+            {pLang->get(L"Pressing"), pressing},
+            {pLang->get(L"No"), INSTR_NO},
+            {pLang->get(L"Yes"), INSTR_YES},
         },
         {
-            {L"Pułapki ofsajdowe", offsides},
-            {L"Nie", INSTR_NO},
-            {L"Tak", INSTR_YES},
+            {pLang->get(L"Offside traps"), offsides},
+            {pLang->get(L"No"), INSTR_NO},
+            {pLang->get(L"Yes"), INSTR_YES},
         },
         {
-            {L"Gra z kontry", contra},
-            {L"Nie", INSTR_NO},
-            {L"Tak", INSTR_YES},
+            {pLang->get(L"Counter game"), contra},
+            {pLang->get(L"No"), INSTR_NO},
+            {pLang->get(L"Yes"), INSTR_YES},
         }
     };
 

@@ -11,10 +11,11 @@
 #include "PlayerClub.h"
 #include "News.h"
 #include "TeamInstructions.h"
-#include "TeamComposition.h"
+#include "Squad.h"
 #include "Tactic.h"
 #include "Match.h"
 #include "Logger.h"
+#include "Language.h"
 
 using namespace std;
 
@@ -28,7 +29,8 @@ public:
         Footballers *pFootballers,
         Table *pTable,
         Rounds *pRounds,
-        News *pNews
+        News *pNews,
+        Language *pLang
     );
     virtual ~Manager();
 
@@ -44,15 +46,16 @@ private:
     News *pNews;
     TeamInstructions *pTeamInstr;
     Tactic *pTactic;
-    TeamComposition *pTeamComposition;
+    Squad *pSquad;
     Match *pMatch;
     Logger *pLogger;
+    Language *pLang;
 
     // filtry listy transferowej:
     int filterPosition;
     int filterGoalkeeper;
     int filterDefense;
-    int filterMiddlefield;
+    int filterMidfield;
     int filterAttact;
     int filterForm;
     float filterMinPrice;
@@ -68,12 +71,12 @@ private:
     void menuItemContinueUnemployed(const SClub &clubRef);
 
     void menuItemTactics();
-    void menuItemTeamComposition();
-    void menuItemTeamCompositionFootballerDetails();
+    void menuItemTeamSquad();
+    void menuItemTeamSquadFootballerDetails();
 
-    void menuItemTrenning();
-    void menuItemTrenningWeekDay(wchar_t trenningMenu, int *ilex);
-    void menuItemTrenningIndividual();
+    void menuItemTraining();
+    void menuItemTrainingWeekDay(wchar_t trainingMenu, int *ilex);
+    void menuItemTrainingIndividual();
 
     void menuItemLastMatch();
     void menuItemRival();
@@ -84,6 +87,7 @@ private:
     void menuItemTransfersListBuyFootballer(int mode);
     void menuItemTransfersListFilters();
 
+    void printFinancesValues(int financesIndex, const wstring label);
     void menuItemFinance();
     void menuItemManagement();
     void menuItemManagerStats();
@@ -92,7 +96,7 @@ private:
     void menuItemOptions();
 
     wstring getSortTitle(int sort);
-    wstring getTrenningDayName(int dayNumber);
+    wstring getTrainingDayName(int dayNumber);
     wstring getFilterByPosition(int pos);
     void setFilterColors(int bar, int barValue);
     void setAssistantMessageAfterMatch();

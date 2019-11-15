@@ -17,7 +17,8 @@ Manager::Manager(
     Footballers *pFootballers,
     Table *pTable,
     Rounds *pRounds,
-    News *pNews
+    News *pNews,
+    Language *pLang
 ) {
     this->pClub = pClub;
     this->pColors = pColors;
@@ -26,10 +27,11 @@ Manager::Manager(
     this->pTable = pTable;
     this->pRounds = pRounds;
     this->pNews = pNews;
+    this->pLang = pLang;
 
-    pTactic = new Tactic(pColors);
-    pTeamComposition = new TeamComposition(pColors);
-    pTeamInstr = new TeamInstructions(pColors);
+    pTactic = new Tactic(pColors, pLang);
+    pSquad = new Squad(pColors, pLang);
+    pTeamInstr = new TeamInstructions(pColors, pLang);
 
     pMatch = new Match(
         pClub,
@@ -38,7 +40,8 @@ Manager::Manager(
         pFootballers,
         pTable,
         pRounds,
-        pTeamInstr
+        pTeamInstr,
+        pLang
     );
 
     pLogger = new Logger();
@@ -47,7 +50,7 @@ Manager::Manager(
     filterPosition = 0; // 0 = wszyscy
     filterGoalkeeper = 1;
     filterDefense = 1;
-    filterMiddlefield = 1;
+    filterMidfield = 1;
     filterAttact = 1;
     filterForm = 1;
     filterMinPrice = 0;
@@ -57,7 +60,7 @@ Manager::Manager(
 Manager::~Manager()
 {
     delete pTactic;
-    delete pTeamComposition;
+    delete pSquad;
     delete pLogger;
     delete pMatch;
     delete pTeamInstr;
@@ -79,16 +82,16 @@ void Manager::runManager()
                 menuItemContinue();
                 break;
             }
-            case 'A': { // taktyka
+            case 'A': { // tactics
                 menuItemTactics();
                 break;
             }
-            case 'S': { // skład
-                menuItemTeamComposition();
+            case 'S': { // team composition
+                menuItemTeamSquad();
                 break;
             }
             case 'R': { // trening
-                menuItemTrenning();
+                menuItemTraining();
                 break;
             }
             case 'O': { // ostatni mecz
@@ -137,10 +140,10 @@ void Manager::runManager()
             }
             case 'Q': { // wyjscie
                 pColors->textcolor(LIGHTRED);
-                wcout << endl << L"Czy chcesz wyjść z gry? (T/n): ";
+                wcout << endl << pLang->get(L"Do you want to exit the game? (Y/n): ");
 
                 wchar_t yn = pInput->getKeyBoardPressed();
-                mainMenu = (yn == L'T' || yn == L'\n') ? 'Q' : 0;
+                mainMenu = (yn == pLang->getYesKeyborad() || yn == L'\n') ? 'Q' : 0;
                 break;
             }
         }
@@ -153,7 +156,15 @@ void Manager::runManager()
 
 void Manager::info()
 {
-    wstring dniT[7] = {L"Pn", L"Wt", L"Śr", L"Cz", L"Pt", L"So", L"N"};
+    wstring dniT[7] = {
+        pLang->get(L"Mon"),
+        pLang->get(L"Tue"),
+        pLang->get(L"Wed"),
+        pLang->get(L"Thu"),
+        pLang->get(L"Fri"),
+        pLang->get(L"Sat"),
+        pLang->get(L"Sun")
+    };
     pInput->clrscr();
 
     pColors->textcolor(WHITE);
@@ -164,7 +175,7 @@ void Manager::info()
         wcout << L" " << pClub->getClubName(clubRef.clubId - 1);
     }
     else {
-        wcout << L" Bezrobotny";
+        wcout << pLang->get(L" Unemployed");
     }
     pColors->textcolor(GREEN);
 
@@ -175,10 +186,10 @@ void Manager::info()
     pColors->textcolor(WHITE);
 
     wprintf(
-        L" Data: %ls %02d.%02d.%d r.",
+        pLang->get(L" Date: %ls %02d/%02d/%d").c_str(),
         dniT[clubRef.weekNumber - 1].c_str(),
-        clubRef.day,
-        clubRef.month,
+        pLang->getLngCode() == "pl_PL" ? clubRef.day : clubRef.month,
+        pLang->getLngCode() == "pl_PL" ? clubRef.month : clubRef.month,
         clubRef.year
     );
 }
@@ -189,46 +200,45 @@ wchar_t Manager::displayMainMenu(const wstring *pTactics)
     int tablePos = pTable->getPositionInTable(clubRef.clubId);
     pColors->textcolor(LIGHTGRAY);
 
-    wcout << endl << endl << L" MENU" << endl;
+    wcout << endl << endl << pLang->get(L" MENU") << endl;
+
     pColors->textcolor(LIGHTGREEN);
+    wcout << endl << pLang->get(clubRef.isMatch ? L" C Match" : L" C Continue");
 
-    if (!clubRef.isMatch) {
-        wcout << endl << L" C Kontynuuj";
-    }
-    else {
-        wcout << endl << L" C Mecz";
-    }
     pColors->textcolor(GREEN);
+    wcout << endl << pLang->get(L" A Tactics: ") << pTactics[clubRef.teamSetting - 1];
+    wcout << endl << pLang->get(L" S Squad");
+    wcout << endl << pLang->get(L" R Training");
 
-    wcout << endl << L" A Taktyka: " << pTactics[clubRef.teamSetting - 1];
-    wcout << endl << L" S Skład";
-    wcout << endl << L" R Trening";
     pColors->textcolor(LIGHTBLUE);
-    wcout << endl << L" O Ostatni mecz - raport";
-    wcout << endl << L" P Przeciwnik: " << pClub->getClubName(clubRef.rivalData[0] - 1);
-    wcout << endl << L" K Kalendarz";
-    wcout << endl << L" T Tabela: " << tablePos << L" miejsce";
-    wcout << endl << L" L Lista transferowa";
+    wcout << endl << pLang->get(L" O Last match - report");
+    wcout << endl << pLang->get(L" P Opponent: ") << pClub->getClubName(clubRef.rivalData[0] - 1);
+    wcout << endl << pLang->get(L" K Calendar");
+    wcout << endl;
+    wprintf(pLang->get(L" T Table: %d place").c_str(), tablePos);
+    wcout << endl << pLang->get(L" L Transfer list");
+
     pColors->textcolor(YELLOW);
-    wcout << endl << L" F Finanse: " << std::fixed << std::setprecision(2) << clubRef.finances[11] << L" zł.";
-    wcout << endl << L" D Zarząd klubu";
-    wcout << endl << L" M Manager";
+    wcout << endl;
+    wprintf(pLang->get(L" F Finances: $%.2f").c_str(), clubRef.finances[11]);
+    wcout << endl << pLang->get(L" D Club management");
+    wcout << endl << pLang->get(L" M Manager");
     if (pNews->isMessage()) {
         pColors->startBlinking();
         pColors->textcolor(LIGHTRED);
-        wcout << endl << L" W Masz wiadomość";
+        wcout << endl << pLang->get(L" W You have a message");
         pColors->stopBlinking();
     }
     else {
         pColors->textcolor(LIGHTGRAY);
-        wcout << endl << L" E Stare wiadomości";
+        wcout << endl << pLang->get(L" E Old news");
     };
+
     pColors->textcolor(BROWN);
+    wcout << endl << endl << pLang->get(L" H Match options");
 
-    wcout << endl << endl << L" H Opcje dla meczu";
     pColors->textcolor(RED);
-
-    wcout << endl << L" Q Wyjście" << endl;
+    wcout << endl << pLang->get(L" Q Quit") << endl;
 
     return pInput->getKeyBoardPressed();
 }
@@ -240,7 +250,7 @@ void Manager::swapFootballers()
     size_t playersCount = pFootballers->getSizePlayerTeam();
 
     pColors->textcolor(LIGHTGRAY);
-    wcout << endl << L"Podaj numer Lp., spacja, drugi numer i Enter: ";
+    wcout << endl << pLang->get(L"Enter the number, space, second number and press Enter: ");
     pInput->getNumbersExchange(numer1, numer2);
 
     if (numer1 < 1 || numer1 > playersCount ||
@@ -263,7 +273,6 @@ void Manager::swapFootballers()
     }
 
     pFootballers->sortPlayersTeam();
-
     pFootballers->savePlayerTeam();
 }
 
@@ -309,8 +318,8 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
         if (clubRef.weekNumber == 8) {
             clubRef.weekNumber = 1;
             for (int i = 0; i < 28; i++) {
-                if (clubRef.training[i] == TRENNING_HOLIDAY) {
-                    holidaysCounter++; // zlicz ilosc dnu wolnych od treningu
+                if (clubRef.training[i] == TRAINING_HOLIDAY) {
+                    holidaysCounter++; // zlicz ilosc dni wolnych od treningu
                 }
             }
 
@@ -543,27 +552,39 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 if (cena > footballer.finances[3]) {
                     cena = footballer.finances[3];
                 }
+                wcout << endl;
                 wprintf(
-                    L"\n\r%ls jest zainteresowana kupnem %ls%ls" \
-                    L"\n\rWartość %ls wynosi %.2f zł." \
-                    L"\n\r%ls żąda %.2f zł." \
-                    L"\n\r%ls jest gotowa zapłacić %.2f zł.",
+                    pLang->get(L"%ls is interested in buying %ls%ls").c_str(),
                     pClub->getClubName(lata).c_str(),
                     footballer.name,
+                    footballer.surname
+                );
+                wcout << endl;
+                wprintf(
+                    pLang->get(L"The value of %ls is $%.2f.").c_str(),
                     footballer.surname,
-                    footballer.surname,
-                    footballer.finances[0], // wartosc $ zawodnika
+                    footballer.finances[0] // wartosc $ zawodnika
+                );
+                wcout << endl;
+                wprintf(
+                    pLang->get(L"%ls demands $%.2f.").c_str(),
                     pClub->getClubName(clubRef.clubId - 1).c_str(),
-                    footballer.finances[3], // ile jakiś klub $ żąda za kupno zawodnka
+                    footballer.finances[3] // ile jakiś klub $ żąda za kupno zawodnka
+                );
+                wcout << endl;
+                wprintf(
+                    pLang->get(L"%ls is ready to pay $%.2f.").c_str(),
                     pClub->getClubName(lata).c_str(),
                     cena
                 );
-                wcout << endl << endl << L"Czy akceptujesz propozycję? (T/n): ";
+
+                wcout << endl << endl << pLang->get(L"Do you accept the offer? (Y/n): ");
                 wchar_t yn = pInput->getKeyBoardPressed();
-                if (yn == L'T' || yn == L'\n') {
+                if (yn == pLang->getYesKeyborad() || yn == L'\n') {
                     pColors->textcolor(GREEN);
+                    wcout << endl << endl;
                     wprintf(
-                        L"\n\r\n\rKontrakt %ls wygasa. %ls zostaje sprzedany do %ls.",
+                        pLang->get(L"%ls's contract expires. %ls is sold to %ls.").c_str(),
                         footballer.surname,
                         footballer.surname,
                         pClub->getClubName(lata).c_str()
@@ -587,7 +608,8 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 }
                 else {
                     pColors->textcolor(RED);
-                    wcout << endl << endl << pClub->getClubName(clubRef.clubId - 1) << L" odrzuca propozycję.";
+                    wcout << endl << endl <<
+                        pClub->getClubName(clubRef.clubId - 1) << pLang->get(L" rejects the offer.");
                     pInput->getKeyBoardPressed();
                 }
             }//dla if
@@ -652,7 +674,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             if (footballer.data[15] > 0) {
                 // zmniejszam licznik ilosci dni do wyleczenia kontuzji
                 footballer.data[15]--;
-                footballer.data[1] = PLAYERS_TRENNING_NONE; //nie trenuje
+                footballer.data[1] = PLAYERS_TRAINING_NONE; //nie trenuje
 
                 if (footballer.data[15] > 7) {
                     footballer.data[11] = 0;
@@ -847,15 +869,16 @@ void Manager::menuItemContinueMatch(SClub &clubRef)
 
     if (!clubRef.isNotAllowedTeamPlayer) {
         pColors->textcolor(GREEN);
-        wcout << endl << endl << L"Czy chcesz przejść do meczu? (T/n): ";
+        wcout << endl << endl << pLang->get(L"Do you want to go to the match? (Y/n): ");
         wchar_t matchYN = pInput->getKeyBoardPressed();
-        if (matchYN == L'T' || matchYN == L'\n') {
+        if (matchYN == pLang->getYesKeyborad() || matchYN == L'\n') {
             pMatch->runMecz();
         }
     }
     else {
         pColors->textcolor(LIGHTRED);
-        wcout << endl << endl << L"Nie można rozegrać meczu! W składzie występują niedozwoleni zawodnicy!";
+        wcout << endl << endl <<
+            pLang->get(L"The match cannot be played! The squad contains prohibited players!");
         pInput->getKeyBoardPressed();
     }
 }
@@ -873,10 +896,10 @@ void Manager::menuItemContinueUnemployed(const SClub &clubRef)
 
     pColors->textcolor(LIGHTGRAY);
     wcout << endl << endl <<
-        L"Otrzymujesz dwie propozycje pracy na stanowisku managera od klubów:" << endl <<
+        pLang->get(L"You get two job offers from clubs:") << endl <<
         L"1. " << pClub->getClubName(club1 - 1) << endl <<
         L"2. " << pClub->getClubName(club2 - 1);
-    wcout << endl << endl << L"W którym klubie chcesz pracować (wpisz odpowiedni numer): ";
+    wcout << endl << endl << pLang->get(L"In which club do you want to work (enter the appropriate number): ");
     int select = pInput->getNumber();
     if (select == 1 || select == 2) {
         int clubId = (select == 1) ? club1 : club2;
@@ -895,11 +918,11 @@ void Manager::menuItemContinueUnemployed(const SClub &clubRef)
         pClub->save();
 
         pColors->textcolor(GREEN);
-        wcout << endl << L"Podjęto pracę w klubie " << pClub->getClubName(clubRef.clubId - 1);
+        wcout << endl << pLang->get(L"You took up a job at club ") << pClub->getClubName(clubRef.clubId - 1);
     }
     else {
         pColors->textcolor(RED);
-        wcout << endl << L"Wpisano zły numer!";
+        wcout << endl << pLang->get(L"You entered the wrong number!");
     }
 
     pInput->getKeyBoardPressed();
@@ -915,7 +938,7 @@ void Manager::menuItemTactics()
             info();
             pTactic->drawTeamSetting(clubRef.teamSetting);
             pTactic->drawChart(clubRef.teamSetting, clubRef.clubId, pFootballers->getPlayersTeam());
-            pTeamComposition->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, 11, clubRef.clubId);
+            pSquad->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, 11, clubRef.clubId);
 
             menu = pInput->getKeyBoardPressed();
             switch (menu) {
@@ -925,11 +948,10 @@ void Manager::menuItemTactics()
                         pInput->clrscr();
                         pColors->textbackground(BLACK);
                         pColors->textcolor(LIGHTRED);
+                        wcout << pLang->get(L"Current formation: ") << pTactic->getTeamSetting(clubRef.teamSetting - 1);
 
-                        wcout << L"Obecne ustawienie: " << pTactic->getTeamSetting(clubRef.teamSetting - 1);
                         pColors->textcolor(LIGHTGRAY);
-
-                        wcout << endl << L"Wybierz ustawienie zespołu:";
+                        wcout << endl << pLang->get(L"Choose a team formation:");
                         for (int i = 0; i < 14; i++) {
                             wcout << endl;
                             if (i < 9) {
@@ -937,7 +959,7 @@ void Manager::menuItemTactics()
                             }
                             wcout << i + 1 << L". " << pTactic->getTeamSetting(i);
                         }
-                        wcout << endl << endl << L"Wpisz odpowiednią cyfrę: ";
+                        wcout << endl << endl << pLang->get(L"Enter the appropriate number: ");
                         clubRef.teamSetting = pInput->getNumber();
                         if (clubRef.teamSetting > 0 && clubRef.teamSetting < 15) {
                             loop = true;
@@ -957,10 +979,10 @@ void Manager::menuItemTactics()
                 case 'R': {
                     info();
                     pColors->textcolor(WHITE);
-                    wcout << endl << L"REZERWOWI";
-                    pTeamComposition->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, 16, clubRef.clubId);
+                    wcout << endl << pLang->get(L"SUBSTITUTE'S BENCH");
+                    pSquad->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, 16, clubRef.clubId);
                     pColors->textcolor(LIGHTGRAY);
-                    wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+                    wcout << endl << endl << pLang->get(L"Press any key...");
                     pInput->getKeyBoardPressed();
                     break;
                 }
@@ -970,7 +992,7 @@ void Manager::menuItemTactics()
                     do {
                         info();
                         pColors->textcolor(WHITE);
-                        wcout << endl << endl << L"INSTRUKCJE DLA DRUŻYNY" << endl;
+                        wcout << endl << endl << pLang->get(L"TEAM INSTRUCTIONS") << endl;
 
                         pTeamInstr->draw(
                             clubRef.inst[0],
@@ -983,7 +1005,7 @@ void Manager::menuItemTactics()
                         );
 
                         pColors->textcolor(RED);
-                        wcout << endl << L" Q Powrót" << endl;
+                        wcout << endl << L" " << pLang->get(L"Q Back") << endl;
 
                         pColors->textcolor(GREEN);
                         pColors->textbackground(BLACK);
@@ -1080,7 +1102,7 @@ void Manager::menuItemTactics()
     }
 }
 
-void Manager::menuItemTeamComposition()
+void Manager::menuItemTeamSquad()
 {
     SClub &clubRef = pClub->get();
 
@@ -1092,14 +1114,14 @@ void Manager::menuItemTeamComposition()
         do {
             info();
             pColors->textcolor(WHITE);
-            wcout << endl << L"SKŁAD" << getSortTitle(sort);
+            wcout << endl << pLang->get(L"SQUAD") << getSortTitle(sort);
 
             pColors->textcolor(LIGHTGRAY);
             if (sort == 0) {
                 mode = isNext ? 40 : 20;
             }
 
-            pTeamComposition->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, mode, clubRef.clubId, false, sort);
+            pSquad->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, mode, clubRef.clubId, false, sort);
 
             size_t playersCount = pFootballers->getSizePlayerTeam();
 
@@ -1107,16 +1129,16 @@ void Manager::menuItemTeamComposition()
             wcout << endl;
             if (sort == 0) {
                 if (playersCount > 20) {
-                    wcout << L"D Dalej   ";
+                    wprintf(L"%-10ls", pLang->get(L"D Next").c_str());
                 }
-                wcout << L"P Zamiana zawodników   G Szczegóły   S Sortuj";
+                wcout << pLang->get(L"P Swap players         G Details     S Sort");
             }
             else {
-                wcout << L"T Tradycyjny widok   G Szszegóły   S Sortuj";
+                wcout << pLang->get(L"T Traditional view   G Details     S Sort");
             }
 
             pColors->textcolor(RED);
-            wcout << L"   Q Powrót do MENU";
+            wcout << L"   " << pLang->get(L"Q Back to MENU");
 
             pColors->textcolor(LIGHTGRAY);
             menu = pInput->getKeyBoardPressed();
@@ -1135,21 +1157,20 @@ void Manager::menuItemTeamComposition()
                     pInput->clrscr();
 
                     pColors->textcolor(GREEN);
-                    wprintf(
-                        L"\n\rSortuj według:" \
-                        L"\n\r B Umiejętności B" \
-                        L"\n\r O Umiejętności O" \
-                        L"\n\r P Umiejętności P" \
-                        L"\n\r N Umiejętności N" \
-                        L"\n\r M Morale" \
-                        L"\n\r F Formy" \
-                        L"\n\r K Kondycji" \
-                        L"\n\r G Goli" \
-                        L"\n\r W Kolejności wygaśnięcia kontraktu"
-                    ); //\n\r C Ceny\n\r E Pensji");
+                    wcout << endl << pLang->get(L"Sort by:")
+                        << endl << L" " << pLang->get(L"B Goalkeeper skills")
+                        << endl << L" " << pLang->get(L"O Defencs skills")
+                        << endl << L" " << pLang->get(L"P Midfield skills")
+                        << endl << L" " << pLang->get(L"N Attack skills")
+                        << endl << L" " << pLang->get(L"M Morale")
+                        << endl << L" " << pLang->get(L"F Form")
+                        << endl << L" " << pLang->get(L"K Condition")
+                        << endl << L" " << pLang->get(L"G Goals")
+                        << endl << L" " << pLang->get(L"W Contract expiry order");
+                    //\n\r C Ceny\n\r E Pensji");
 
                     pColors->textcolor(RED);
-                    wcout << endl << L" Q Powrót" << endl;
+                    wcout << endl << L" " << pLang->get(L"Q Back") << endl;
 
                     pColors->textcolor(GREEN);
                     wchar_t menuSort = pInput->getKeyBoardPressed();
@@ -1192,7 +1213,7 @@ void Manager::menuItemTeamComposition()
                     break;
                 }
                 case 'G': { // szczególy zawodnika
-                    menuItemTeamCompositionFootballerDetails();
+                    menuItemTeamSquadFootballerDetails();
                     break;
                 }
                 case 'P': {
@@ -1207,10 +1228,10 @@ void Manager::menuItemTeamComposition()
     }
 }
 
-void Manager::menuItemTeamCompositionFootballerDetails()
+void Manager::menuItemTeamSquadFootballerDetails()
 {
     pColors->textcolor(LIGHTGRAY);
-    wcout << endl << L"Podaj numer Lp.: ";
+    wcout << endl << pLang->get(L"Enter the No: ");
     int footballerId = pInput->getNumber();
 
     for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
@@ -1221,18 +1242,17 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                 info();
 
                 pColors->textcolor(LIGHTGRAY);
-                wcout << endl << endl << L"Nazwisko i imię: " << footballer.surname << L" " << footballer.name;
+                wcout << endl << endl << pLang->get(L"Surname and name: ") << footballer.surname << L" " << footballer.name;
                 wstring positionPlayer;
                 switch (footballer.data[2]) {
-                    case PLAYERS_POS_B: positionPlayer = L"Bramkarz"; break;
-                    case PLAYERS_POS_O: positionPlayer = L"Obrońca"; break;
-                    case PLAYERS_POS_P: positionPlayer = L"Pomocnik"; break;
-                    case PLAYERS_POS_N: positionPlayer = L"Napastnik"; break;
+                    case PLAYERS_POS_B: positionPlayer = L"Goalkeeper"; break;
+                    case PLAYERS_POS_O: positionPlayer = L"Defender"; break;
+                    case PLAYERS_POS_P: positionPlayer = L"Midfielder"; break;
+                    case PLAYERS_POS_N: positionPlayer = L"Striker"; break;
                 }
+                wcout << endl << endl << pLang->get(L"Position:") << L" " << pLang->get(positionPlayer) << endl;
                 wprintf(
-                    L"\n\r\n\rPozycja: %ls" \
-                    L"\n\rUmiejętności: B-%d, O-%d, P-%d, N-%d     Gole: %d",
-                    positionPlayer.c_str(),
+                    pLang->get(L"Skills: G-%d, D-%d, M-%d, A-%d     Goals: %d").c_str(),
                     footballer.data[3],
                     footballer.data[4],
                     footballer.data[5],
@@ -1240,66 +1260,76 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                     footballer.data[16]
                 );
 
-                wstring morale = pTeamComposition->getMorale(footballer.data[7]);
+                wcout << endl << endl;
+                const wstring morale = pSquad->getMorale(footballer.data[7]);
                 wprintf(
-                    L"\n\r\n\rMorale: %ls    Forma: %d    Kondycja: %d%%",
+                    pLang->get(L"Morale: %ls    Form: %d    Condition: %d%%").c_str(),
                     morale.c_str(),
                     footballer.data[9],
                     footballer.data[11]
                 );
                 wcout << endl << endl;
-                wcout << L"Żółte kartki: ";
+                wcout << pLang->get(L"Yellow cards:") << L" ";
                 pColors->textcolor(YELLOW);
                 wcout << footballer.data[13];
                 pColors->textcolor(LIGHTGRAY);
-                wcout << L"    Czerwone kartki: ";
+                wcout << L"    " << pLang->get(L"Red cards:") << L" ";
                 pColors->textcolor(RED);
                 wcout << footballer.data[14];
 
                 if (footballer.data[15] > 0) {
                     pColors->textcolor(LIGHTBLUE);
-                    wcout << endl << endl << L"Ilość dni do wyleczenia kontuzji: " << footballer.data[15];
+                    wcout << endl << endl << pLang->get(L"Number of days to heal the injury: ") << footballer.data[15];
                 }
                 pColors->textcolor(LIGHTGRAY);
-                wprintf(
-                    L"\n\r\n\rKontrakt wygaśnie za: %d dni(dzień)" \
-                    L"\n\rCena zawodnika: %.2f zł." \
-                    L"\n\rPłaca miesięczna: %.2f zł.",
-                    footballer.data[18],
-                    footballer.finances[0],
-                    footballer.finances[1]
-                );
+                wcout << endl << endl;
+                wprintf(pLang->get(L"The contract will expire in: %d day(s)").c_str(), footballer.data[18]);
+                wcout << endl;
+                wprintf(pLang->get(L"Footballer value: $%.2f").c_str(), footballer.finances[0]);
+                wcout << endl;
+                wprintf(pLang->get(L"Monthly wage: $%.2f").c_str(), footballer.finances[1]);
+
                 if (footballer.data[2] == PLAYERS_POS_P ||
                     footballer.data[2] == PLAYERS_POS_N
                 ) {
-                    wprintf(L"\n\rPremia za gola: %.2f zł.", footballer.finances[2]);
+                    wcout << endl;
+                    wprintf(pLang->get(L"Goal bonus:: $%.2f").c_str(), footballer.finances[2]);
                 }
                 if (footballer.data[17] == 1) {
                     pColors->textcolor(LIGHTBLUE);
-                    wprintf(L"\n\r\n\rZawodnik na sprzedaż za %.2f zł.", footballer.finances[3]);
+                    wcout << endl << endl;
+                    wprintf(pLang->get(L"Footballer for sale for $%.2f").c_str(), footballer.finances[3]);
                     pColors->textcolor(LIGHTGRAY);
                 }
                 pColors->textcolor(GREEN);
                 wcout << endl << endl <<
-                    L"K Nowy kontrakt" << endl <<
-                    L"T Na sprzedaż/Anuluj" << endl <<
-                    L"W Wydalenie z klubu";
+                    pLang->get(L"K New contract") << endl <<
+                    pLang->get(L"T For sale/Cancel") << endl <<
+                    pLang->get(L"W Expulsion from the club");
+
                 pColors->textcolor(RED);
-                wcout << endl << L"Q Powrót" << endl;
+                wcout << endl << pLang->get(L"Q Back") << endl;
+
                 pColors->textcolor(GREEN);
                 menuDetails = pInput->getKeyBoardPressed();
                 switch (menuDetails) {
                     case 'W': { // remove footballer from the club
                         info();
                         pColors->textcolor(LIGHTGRAY);
+                        wcout << endl << endl;
                         wprintf(
-                            L"\n\r\n\rCzy na pewno chcesz wyrzucić %ls%ls z klubu? (T/n): ",
+                            pLang->get(L"Are you sure you want to kick %ls%ls from the club? (Y/n): ").c_str(),
                             footballer.name,
                             footballer.surname
                         );
                         wchar_t yn = pInput->getKeyBoardPressed();
-                        if (yn == L'T' || yn == L'\n') {
-                            wprintf(L"\n\rJutro wygaśnie kontrakt %ls%ls.", footballer.name, footballer.surname);
+                        if (yn == pLang->getYesKeyborad() || yn == L'\n') {
+                            wcout << endl;
+                            wprintf(
+                                pLang->get(L"Tomorrow, the contract of %ls%ls will expire.").c_str(),
+                                footballer.name,
+                                footballer.surname
+                            );
                             footballer.data[18] = 1;
                             pInput->getKeyBoardPressed();
                         }
@@ -1308,10 +1338,15 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                     case 'T': { // footballer on sale or cancel it
                         if (footballer.data[17] == 0) {
                             info();
+
                             pColors->textcolor(WHITE);
-                            wprintf(L"\n\r\n\rSprzedaż: %ls %ls", footballer.name, footballer.surname);
+                            wcout << endl << endl;
+                            wprintf(pLang->get(L"Sales: %ls%ls").c_str(), footballer.name, footballer.surname);
+
                             pColors->textcolor(LIGHTGRAY);
-                            wprintf(L"\n\r\n\rPodaj cenę (%.2f): ", footballer.finances[0]);
+                            wcout << endl << endl;
+                            wprintf(pLang->get(L"Enter the price (%.2f): ").c_str(), footballer.finances[0]);
+
                             footballer.finances[3] = pInput->getFloat();
                             if (footballer.data[7] > 0) {
                                 footballer.data[7]--;
@@ -1332,19 +1367,24 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                         int mode = 0;
                         info();
                         pColors->textcolor(WHITE);
-                        wprintf(L"\n\r\n\rKontrakt dla: %ls %ls", footballer.name, footballer.surname);
+                        wcout << endl << endl;
+                        wprintf(pLang->get(L"Contract for: %ls%ls").c_str(), footballer.name, footballer.surname);
+
                         pColors->textcolor(LIGHTGRAY);
-                        wprintf(L"\n\r\n\rPodaj płacę miesięczną (%.2f): ", footballer.finances[1]);
+                        wcout << endl << endl;
+                        wprintf(pLang->get(L"Enter the monthly wage (%.2f): ").c_str(), footballer.finances[1]);
+
                         float placa = pInput->getFloat();
                         float premia = 0;
                         if (footballer.data[2] == PLAYERS_POS_P ||
                             footballer.data[2] == PLAYERS_POS_N
                         ) {
-                            wprintf(L"\n\rPodaj premię za gola (%.2f): ", footballer.finances[2]);
+                            wcout << endl;
+                            wprintf(pLang->get(L"Enter the goal bonus (%.2f): ").c_str(), footballer.finances[2]);
                             premia = pInput->getFloat();
                         }
 
-                        wprintf(L"\n\rPodaj przez ile lat ma obowiązywać kontrakt (1, 2 lub 3): ");
+                        wcout << endl << pLang->get(L"Enter for how many years the contract will apply (1, 2 or 3): ");
                         int lata = pInput->getNumber();
 
                         if (footballer.data[2] == PLAYERS_POS_P ||
@@ -1382,11 +1422,15 @@ void Manager::menuItemTeamCompositionFootballerDetails()
 
                         if (weight >= 4) {
                             pColors->textcolor(GREEN);
-                            wprintf(L"\n\r%ls: Zgadzam się na proponowane warunki kontraktu.", footballer.surname);
+                            wcout << endl;
+                            wprintf(
+                                pLang->get(L"%ls: I agree to the proposed terms of the contract.").c_str(),
+                                footballer.surname
+                            );
                             pColors->textcolor(LIGHTGRAY);
-                            wcout << endl << endl << L"Akceptujesz? (T/n): ";
+                            wcout << endl << endl << pLang->get(L"Do you accept? (Y/n): ");
                             wchar_t yn = pInput->getKeyBoardPressed();
-                            if (yn == L'T' || yn == L'\n') {
+                            if (yn == pLang->getYesKeyborad() || yn == L'\n') {
                                 footballer.finances[1] = placa;
                                 if (footballer.data[2] == PLAYERS_POS_P ||
                                     footballer.data[2] == PLAYERS_POS_N
@@ -1418,7 +1462,11 @@ void Manager::menuItemTeamCompositionFootballerDetails()
                         }
                         else {
                             pColors->textcolor(RED);
-                            wcout << endl << footballer.surname << L": Odrzucam proponowane warunki kontraktu.";
+                            wcout << endl;
+                            wprintf(
+                                pLang->get(L"%ls: I reject the proposed terms of the contract.").c_str(),
+                                footballer.surname
+                            );
                             pInput->getKeyBoardPressed();
                         }
                         break;
@@ -1432,23 +1480,32 @@ void Manager::menuItemTeamCompositionFootballerDetails()
     pFootballers->savePlayerTeam();
 }
 
-void Manager::menuItemTrenning()
+void Manager::menuItemTraining()
 {
     SClub &clubRef = pClub->get();
 
     if (clubRef.clubId > 0) {
-        wchar_t trenningMenu = 0;
-        wstring weekDays[7] = {L"Pn", L"Wt", L"Śr", L"Cz", L"Pt", L"So", L"N "};
-        wstring whatTrain[10] = {
-            L"Kondycja",
-            L"Podania",
-            L"Stałe fra.",
-            L"Taktyka",
-            L"Bramkarze",
-            L"Obrona",
-            L"Pomoc",
-            L"Atak",
-            L"Wolne",
+        wchar_t trainingMenu = 0;
+        const wstring weekDays[7] = {
+            pLang->get(L"Mon"),
+            pLang->get(L"Tue"),
+            pLang->get(L"Wed"),
+            pLang->get(L"Thu"),
+            pLang->get(L"Fri"),
+            pLang->get(L"Sat"),
+            pLang->get(L"Sun")
+        };
+        const int maxWhatTraning = 10;
+        const wstring whatTrain[10] = {
+            pLang->cut(pLang->get(L"Condition"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Passing"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Free kicks"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Tactics"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Goalkeeper"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Defence"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Midfield"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Attack"), maxWhatTraning),
+            pLang->cut(pLang->get(L"Day off"), maxWhatTraning),
             L" "
         };
 
@@ -1465,9 +1522,15 @@ void Manager::menuItemTrenning()
             }
             wcout << BOX_LIGHT_HORIZONTAL;
             pColors->textcolor(WHITE);
-            wcout << L"TRENING";
+            const int maxLabel = 8;
+            const wstring label = pLang->cut(pLang->get(L"TRAINING"), maxLabel);
+            wcout << label;
             pColors->textcolor(LIGHTGRAY);
-            wcout << BOX_LIGHT_HORIZONTAL << BOX_LIGHT_HORIZONTAL;
+            // draw extra horizontal line when "TRAINING" in another lanaguage is shorter
+            for (int i = label.length(); i < maxLabel; ++i) {
+                wcout << BOX_LIGHT_HORIZONTAL;
+            }
+            wcout << BOX_LIGHT_HORIZONTAL;
             wcout << BOX_LIGHT_DOWN_HORIZONTAL;
             for (int i = 0; i < 10; i++) {
                 wcout << BOX_LIGHT_HORIZONTAL;
@@ -1487,7 +1550,7 @@ void Manager::menuItemTrenning()
             wcout << BOX_LIGHT_VERTICAL;
             for (int i = 0; i < 7; i++) {
                 pColors->textcolor(GREEN);
-                wcout << L"  " << i + 1 << L" - " << weekDays[i] << L"  ";
+                wprintf(L"  %d %-5ls ", i + 1, weekDays[i].c_str());
                 pColors->textcolor(LIGHTGRAY);
                 wcout << BOX_LIGHT_VERTICAL;
             }
@@ -1533,30 +1596,29 @@ void Manager::menuItemTrenning()
             }
             wcout << BOX_LIGHT_UP_LEFT;
 
-            wprintf(
-                L"\n\rIntensywność:               Pkt:" \
-                L"\n\r B, O, P, N: .........%3d%% %5d" \
-                L"\n\r Kondycja: ...........%3d%% %5.1f" \
-                L"\n\r Podania: ............%3d%% %5.1f" \
-                L"\n\r Stałe fragmenty gry: %3d%% %5.1f" \
-                L"\n\r Taktyka: ............%3d%% %5.1f" \
-                L"\n\r Wolne: ..............%3d%%",
-                ilex[4] * 3 * 100 / 21, clubRef.treBOPN,
-                ilex[0] * 100 / 21, clubRef.trained[0],
-                ilex[1] * 100 / 21, clubRef.trained[1],
-                ilex[2] * 100 / 21, clubRef.trained[2],
-                ilex[3] * 100 / 21, clubRef.trained[3],
-                ilex[8] * 3 * 100 / 21
-            );
+            wcout << endl << pLang->get(L"Intensywność:               Pkt:");
+            wcout << endl;
+            wprintf(pLang->get(L" G, D, M, A: .........%3d%% %5d").c_str(), ilex[4] * 3 * 100 / 21, clubRef.treBOPN);
+            wcout << endl;
+            wprintf(pLang->get(L" Condition: ..........%3d%% %5.1f").c_str(), ilex[0] * 100 / 21, clubRef.trained[0]);
+            wcout << endl;
+            wprintf(pLang->get(L" Passing: ............%3d%% %5.1f").c_str(), ilex[1] * 100 / 21, clubRef.trained[1]);
+            wcout << endl;
+            wprintf(pLang->get(L" Free kicks: .........%3d%% %5.1f").c_str(), ilex[2] * 100 / 21, clubRef.trained[2]);
+            wcout << endl;
+            wprintf(pLang->get(L" Tactics: ............%3d%% %5.1f").c_str(), ilex[3] * 100 / 21, clubRef.trained[3]);
+            wcout << endl;
+            wprintf(pLang->get(L" Day off: ............%3d%%").c_str(), ilex[8] * 3 * 100 / 21);
+
             pColors->textcolor(GREEN);
             wcout << endl <<
-                L" 1-7 Zmiana planu dnia tygodnia" << endl <<
-                L" D   Dobór zawodników do treningu indywidualnego";
+                pLang->get(L" 1-7 Change of weekday schedule") << endl <<
+                pLang->get(L" D   Selection of players for individual training");
 
             pColors->textcolor(RED);
-            wcout << endl << L" Q Powrót do MENU" << endl;
-            trenningMenu = pInput->getKeyBoardPressed();
-            switch (trenningMenu) {
+            wcout << endl << L" " << pLang->get(L"Q Back to MENU") << endl;
+            trainingMenu = pInput->getKeyBoardPressed();
+            switch (trainingMenu) {
                 case L'1':
                 case L'2':
                 case L'3':
@@ -1564,50 +1626,48 @@ void Manager::menuItemTrenning()
                 case L'5':
                 case L'6':
                 case L'7': {
-                    menuItemTrenningWeekDay(trenningMenu, ilex);
+                    menuItemTrainingWeekDay(trainingMenu, ilex);
                     break;
                 }
                 case 'D': { // kto ma trenować B,O,P,N
-                    menuItemTrenningIndividual();
+                    menuItemTrainingIndividual();
                     break;
                 }
             }
         }
-        while (trenningMenu != 'Q');
+        while (trainingMenu != 'Q');
     }
 }
 
-void Manager::menuItemTrenningWeekDay(wchar_t trenningMenu, int *ilex)
+void Manager::menuItemTrainingWeekDay(wchar_t trainingMenu, int *ilex)
 {
     SClub &clubRef = pClub->get();
-    int day = wcstol(&trenningMenu, NULL, 10);
+    int day = wcstol(&trainingMenu, NULL, 10);
 
     pColors->textcolor(LIGHTGRAY);
-    wprintf(
-        L"Zmiana planu treningu dla %ls\n\r"\
-        L"1. Trening indywidualny (B, O, P, N)\n\r"\
-        L"2. Trening drużynowy\n\r"\
-        L"3. Dzień wolny\n\r",
-        getTrenningDayName(day).c_str()
-    );
+    wprintf(pLang->get(L"Change training plan for %ls").c_str(), getTrainingDayName(day).c_str());
+    wcout << endl << pLang->get(L"1. Individual training (G, D, M, A)");
+    wcout << endl << pLang->get(L"2. Team training");
+    wcout << endl << pLang->get(L"3. Day off") << endl;
+
     wchar_t tranningPlanMenu = pInput->getKeyBoardPressed();
     switch (tranningPlanMenu) {
         case '1': {//B,O,P,N
             for (int i = day - 1, j = 1; i < 28; i += 7, ++j) {
-                if (j == 1) clubRef.training[i] = TRENNING_B;
-                if (j == 2) clubRef.training[i] = TRENNING_O;
-                if (j == 3) clubRef.training[i] = TRENNING_P;
-                if (j == 4) clubRef.training[i] = TRENNING_N;
+                if (j == 1) clubRef.training[i] = TRAINING_B;
+                if (j == 2) clubRef.training[i] = TRAINING_O;
+                if (j == 3) clubRef.training[i] = TRAINING_P;
+                if (j == 4) clubRef.training[i] = TRAINING_N;
             }
             pClub->save();
             break;
         }
         case  '3': { //wolne
             for (int i = day - 1, j = 1; i < 28; i += 7, ++j) {
-                if (j == 1) clubRef.training[i] = TRENNING_HOLIDAY;
-                if (j == 2) clubRef.training[i] = TRENNING_EMPTY;
-                if (j == 3) clubRef.training[i] = TRENNING_EMPTY;
-                if (j == 4) clubRef.training[i] = TRENNING_EMPTY;
+                if (j == 1) clubRef.training[i] = TRAINING_HOLIDAY;
+                if (j == 2) clubRef.training[i] = TRAINING_EMPTY;
+                if (j == 3) clubRef.training[i] = TRAINING_EMPTY;
+                if (j == 4) clubRef.training[i] = TRAINING_EMPTY;
             }
             pClub->save();
             break;
@@ -1625,31 +1685,38 @@ void Manager::menuItemTrenningWeekDay(wchar_t trenningMenu, int *ilex)
                 if (slotNumber < 4) {
                     pInput->clrscr();
                     pColors->textcolor(WHITE);
-                    wcout << endl << L"TRENING DRUŻYNOWY";
+                    wcout << endl << pLang->get(L"TEAM TRAINING");
 
                     pColors->textcolor(LIGHTGRAY);
-                    wcout << endl << L"Musisz obsadzić 3 rodzaje treningu.";
+                    wcout << endl << pLang->get(L"You need to fill 3 types of training.");
 
                     pColors->textcolor(GREEN);
                     for (int i = 0; i < 4; i++) {
-                        if (ilex[i] == 1) wcout << endl << L"Wybrano: 1. Kondycja";
-                        if (ilex[i] == 2) wcout << endl << L"Wybrano: 2. Podania";
-                        if (ilex[i] == 3) wcout << endl << L"Wybrano: 3. Stałe fragmenty gry";
-                        if (ilex[i] == 4) wcout << endl << L"Wybrano: 4. Taktyka";
+                        if (ilex[i] == 1) {
+                            wcout << endl << pLang->get(L"Selected:") << L" " << 1 << L". " << pLang->get(L"Condition");
+                        }
+                        if (ilex[i] == 2) {
+                            wcout << endl << pLang->get(L"Selected:") << L" " << 2 << L". " << pLang->get(L"Passing");
+                        }
+                        if (ilex[i] == 3) {
+                            wcout << endl << pLang->get(L"Selected:") << L" " << 3 << L". " << pLang->get(L"Free kicks");
+                        }
+                        if (ilex[i] == 4) {
+                            wcout << endl << pLang->get(L"Selected:") << L" " << 4 << L". " << pLang->get(L"Tactics");
+                        }
                     }
                     pColors->textcolor(LIGHTGRAY);
-                    wprintf(
-                        L"\n\rCo chcesz trenować (ilość pozostałych: %d):" \
-                        L"\n\r1. Kondycja" \
-                        L"\n\r2. Podania" \
-                        L"\n\r3. Stałe fragmenty gry" \
-                        L"\n\r4. Taktyka\n\r",
-                        4 - slotNumber
-                    );
+                    wcout << endl;
+                    wprintf(pLang->get(L"What do you want to train? (%d remaining):").c_str(), 4 - slotNumber);
+                    wcout << endl << 1 << L". " << pLang->get(L"Condition");
+                    wcout << endl << 2 << L". " << pLang->get(L"Passing");
+                    wcout << endl << 3 << L". " << pLang->get(L"Free kicks");
+                    wcout << endl << 4 << L". " << pLang->get(L"Tactics") << endl;
+
                     pColors->textcolor(GREEN);
                     ilex[slotNumber - 1] = pInput->getNumber();
-                    if (ilex[slotNumber - 1] < TRENNING_CONDITIONS ||
-                        ilex[slotNumber - 1] > TRENNING_TACTICKS
+                    if (ilex[slotNumber - 1] < TRAINING_CONDITIONS ||
+                        ilex[slotNumber - 1] > TRAINING_TACTICKS
                     ) {
                         slotNumber--; // bledny wybor
                     }
@@ -1657,26 +1724,26 @@ void Manager::menuItemTrenningWeekDay(wchar_t trenningMenu, int *ilex)
 
                 int index = day - 1 + (7 * (slotNumber - 1));
                 switch (ilex[slotNumber - 1]) {
-                    case TRENNING_CONDITIONS: {
-                        clubRef.training[index] = TRENNING_CONDITIONS;
+                    case TRAINING_CONDITIONS: {
+                        clubRef.training[index] = TRAINING_CONDITIONS;
                         break;
                     }
-                    case TRENNING_PASSES: {
-                        clubRef.training[index] = TRENNING_PASSES;
+                    case TRAINING_PASSES: {
+                        clubRef.training[index] = TRAINING_PASSES;
                         break;
                     }
-                    case TRENNING_FREE_KICKS: {
-                        clubRef.training[index] = TRENNING_FREE_KICKS;
+                    case TRAINING_FREE_KICKS: {
+                        clubRef.training[index] = TRAINING_FREE_KICKS;
                         break;
                     }
-                    case TRENNING_TACTICKS: {
-                        clubRef.training[index] = TRENNING_TACTICKS;
+                    case TRAINING_TACTICKS: {
+                        clubRef.training[index] = TRAINING_TACTICKS;
                         break;
                     }
                 }
 
                 if (slotNumber == 4) {
-                    clubRef.training[day - 1 + (7 * 3)] = TRENNING_EMPTY;
+                    clubRef.training[day - 1 + (7 * 3)] = TRAINING_EMPTY;
                 }
             }//dla while
             pClub->save();
@@ -1685,7 +1752,7 @@ void Manager::menuItemTrenningWeekDay(wchar_t trenningMenu, int *ilex)
     }
 }
 
-void Manager::menuItemTrenningIndividual()
+void Manager::menuItemTrainingIndividual()
 {
     SClub &clubRef = pClub->get();
     wchar_t menuPersonalTrenning = 0;
@@ -1694,22 +1761,22 @@ void Manager::menuItemTrenningIndividual()
     do {
         info();
         pColors->textcolor(WHITE);
-        wcout << endl << L"DOBÓR ZAWODNIKÓW DO TRENINGU INDYWIDUALNEGO";
+        wcout << endl << pLang->get(L"SELECTION OF PLAYERS FOR INDIVIDUAL TRAINING");
         mode = isNext ? 40 : 20;
 
-        pTeamComposition->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, mode, clubRef.clubId, true);
+        pSquad->draw(pFootballers->getPlayersTeam(), clubRef.teamSetting, mode, clubRef.clubId, true);
 
         size_t playersCount = pFootballers->getSizePlayerTeam();
 
         pColors->textcolor(GREEN);
         wcout << endl;
         if (playersCount > 20) {
-            wcout << L"D Dalej  ";
+            wprintf(L"%-10ls", pLang->get(L"D Next").c_str());
         }
-        wcout << L"T Zmiana treningu";
+        wcout << pLang->get(L"T Change training");
 
         pColors->textcolor(RED);
-        wcout << L"  Q Powrót";
+        wcout << L"  " << pLang->get(L"Q Back");
         pColors->textcolor(GREEN);
 
         menuPersonalTrenning = pInput->getKeyBoardPressed();
@@ -1720,14 +1787,14 @@ void Manager::menuItemTrenningIndividual()
             }
             case 'T': { // zmiana treningu
                 pColors->textcolor(LIGHTGRAY);
-                wcout << L" Podaj nr. Lp.: ";
+                wcout << pLang->get(L" Enter No: ");
                 int footballerId = pInput->getNumber();
 
-                wcout << L" Jaki trening? (1-B, 2-O, 3-P, 4-N): ";
+                wcout << pLang->get(L" What training? (1-G, 2-D, 3-M, 4-A): ");
                 int trenning = pInput->getNumber();
 
-                if (trenning < PLAYERS_TRENNING_B ||
-                    trenning > PLAYERS_TRENNING_N
+                if (trenning < PLAYERS_TRAINING_B ||
+                    trenning > PLAYERS_TRAINING_N
                 ) {
                     break;
                 }
@@ -1738,7 +1805,7 @@ void Manager::menuItemTrenningIndividual()
                         footballer.data[1] = trenning;
                     }
                     if (footballer.data[15] > 0) {
-                        footballer.data[1] = PLAYERS_TRENNING_NONE;
+                        footballer.data[1] = PLAYERS_TRAINING_NONE;
                     }
                 }
                 pFootballers->savePlayerTeam();
@@ -1756,12 +1823,12 @@ void Manager::menuItemLastMatch()
         pInput->clrscr();
 
         pColors->textcolor(LIGHTGRAY);
-        wcout << L"RAPORT OSTATNIEGO MECZU";
+        wcout << pLang->get(L"LAST MATCH REPORT");
 
         pColors->textcolor(RED);
-        wcout << endl << endl << L"Nie rozegrano jeszcze żadnego meczu" << endl << endl;
+        wcout << endl << endl << pLang->get(L"There are no matches played yet") << endl << endl;
         pColors->textcolor(LIGHTGRAY);
-        wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+        wcout << endl << endl << pLang->get(L"Press any key...");
         pInput->getKeyBoardPressed();
         return;
     }
@@ -1777,7 +1844,7 @@ void Manager::menuItemLastMatch()
 
     // append end of match text
     lastMatch.textcolor = LIGHTGRAY;
-    wcscpy(lastMatch.text, L"Koniec meczu");
+    wcscpy(lastMatch.text, pLang->get(L"End of the match").c_str());
     lastMatchArray.push_back(lastMatch);
 
     int startFrom = 0;
@@ -1788,7 +1855,7 @@ void Manager::menuItemLastMatch()
     do {
         pInput->clrscr();
         pColors->textcolor(LIGHTGRAY);
-        wcout << L"RAPORT OSTATNIEGO MECZU: ";
+        wcout << pLang->get(L"LAST MATCH REPORT") << L": ";
         pColors->textcolor(LIGHTBLUE);
         wcout << L" " << pClub->getClubName(clubRef.clubId - 1) << L" " << clubRef.playerGoals << L" ";
         pColors->textcolor(RED);
@@ -1809,10 +1876,12 @@ void Manager::menuItemLastMatch()
 
         pColors->textbackground(BLACK);
         pColors->textcolor(GREEN);
-        wcout << endl << L"<- Poprzednia strona (" << (startFrom / maxCount) + 1 << "/" << pages << ") Następna strona ->";
+        wcout << endl << L"<- " << pLang->get(L"Prvious page")
+                << L" (" << (startFrom / maxCount) + 1 << "/" << pages << ") "
+                << pLang->get(L"Next page") << L" ->";
 
         pColors->textcolor(RED);
-        wcout << endl << L"Q Wyjście ";
+        wcout << endl << pLang->get(L"Q Quit") << L" ";
 
         pColors->textcolor(GREEN);
         keyPressed = pInput->getKeyBoardPressed();
@@ -1852,22 +1921,22 @@ void Manager::menuItemRival()
         do {
             pInput->clrscr();
             pColors->textcolor(WHITE);
-            wcout << L"NAJBLIŻSZY PRZECIWNIK - ";
+            wcout << pLang->get(L"THE NEAREST OPPONENT - ");
 
             int opponenClubId = pRounds->getNearestRivalId(clubRef.roundNumber, clubRef.clubId);
             wcout << pClub->getClubName(opponenClubId);
 
             int tablePos = pTable->getPositionInTable(clubRef.rivalData[0]);
 
-            wcout << L" " << tablePos << L" miejsce";
-            wcout << L" " << (clubRef.rivalData[1] == 0 ? L"(Dom)" : L"(Wyjazd)");
+            wcout << L" " << tablePos << L" " << pLang->get(L"place");
+            wcout << L" " << (clubRef.rivalData[1] == 0 ? pLang->get(L"(Home)") : pLang->get(L"(Away)"));
 
             pTactic->drawTeamSetting(clubRef.rivalData[2], false);
 
             pTactic->drawChart(clubRef.rivalData[2], clubRef.rivalData[0], pFootballers->getRivals(), true);
             pTactic->drawChart(clubRef.teamSetting, clubRef.clubId, pFootballers->getPlayersTeam());
 
-            pTeamComposition->draw(pFootballers->getRivals(), clubRef.rivalData[2], 11, clubRef.rivalData[0]);
+            pSquad->draw(pFootballers->getRivals(), clubRef.rivalData[2], 11, clubRef.rivalData[0]);
 
             menu = pInput->getKeyBoardPressed();
             switch (menu) {
@@ -1875,19 +1944,19 @@ void Manager::menuItemRival()
                     pInput->clrscr();
 
                     pColors->textcolor(WHITE);
-                    wcout << endl << L"REZERWOWI";
+                    wcout << endl << pLang->get(L"SUBSTITUTES' BENCH");
 
-                    pTeamComposition->draw(pFootballers->getRivals(), clubRef.rivalData[2], 16, clubRef.rivalData[0]);
+                    pSquad->draw(pFootballers->getRivals(), clubRef.rivalData[2], 16, clubRef.rivalData[0]);
 
                     pColors->textcolor(LIGHTGRAY);
-                    wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+                    wcout << endl << endl << pLang->get(L"Press any key...");
                     pInput->getKeyBoardPressed();
                     break;
                 }
                 case 'I': {
                     pInput->clrscr();
                     pColors->textcolor(WHITE);
-                    wcout << endl << L"Instrukcje dla drużyny:";
+                    wcout << endl << pLang->get(L"Team instructions:");
 
                     pTeamInstr->draw(
                         clubRef.rivalInst[0],
@@ -1900,7 +1969,7 @@ void Manager::menuItemRival()
                     );
 
                     pColors->textcolor(LIGHTGRAY);
-                    wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+                    wcout << endl << endl << pLang->get(L"Press any key...");
                     pInput->getKeyBoardPressed();
                     break;
                 }
@@ -1946,7 +2015,7 @@ void Manager::menuItemCalendar()
             info();
 
             pColors->textcolor(WHITE);
-            wcout << endl << L"KALENDARZ - " << (isSpring ? L"runda wosenna" : L"runda jesienna");
+            wcout << endl << pLang->get(L"CALENDAR") << L" - " << pLang->get(isSpring ? L"spring round" : L"autumn round");
 
             pColors->textcolor(LIGHTGRAY);
             if (clubRef.controlMatchesAmount <= 0 && !isSpring) {
@@ -1974,10 +2043,11 @@ void Manager::menuItemCalendar()
                 for (size_t index = 0; index < pRounds->getSize(); index++) {
                     const SRound &round = pRounds->get(index);
                     if (round.number == roundNum) {
+                        wcout << endl;
                         wprintf(
-                            L"\n\r%02d.%02d.%dr. %-19ls",
-                            round.day,
-                            round.month,
+                            L"%02d/%02d/%d %-19ls",
+                            pLang->getLngCode() == "pl_PL" ? round.day : round.month,
+                            pLang->getLngCode() == "pl_PL" ? round.month : round.day,
                             round.year + clubRef.season,
                             pClub->getClubName(round.clubNumbers[oponentIndex] - 1).c_str()
                         );
@@ -1985,8 +2055,8 @@ void Manager::menuItemCalendar()
                     }
                 }
 
-                wprintf(L" %-9ls", (isHome) ? L"Dom" : L"Wyjazd");
-                wprintf(L" %-11ls", (roundNum <= 0) ? L"Kontrolny" : L"I liga");
+                wprintf(L" %-9ls", pLang->get(isHome ? L"Home" : L"Away"));
+                wprintf(L" %-11ls", pLang->get(roundNum <= 0 ? L"Friendly" : L"I league"));
 
                 int kk = clubRef.isMatch ? 1 : 0;
 
@@ -2050,17 +2120,11 @@ void Manager::menuItemCalendar()
                 }
             }
             pColors->textcolor(GREEN);
-            if (isSpring) {
-                wcout << endl << endl << L"D Pokaż rundę jesienną";
-            }
-            else {
-                wcout << endl << endl << L"D Pokaż rundę wiosenną";
-            }
-
-            wcout << L"   M Mecze kontrolne";
+            wcout << endl << endl << pLang->get(isSpring ? L"D Show the autumn round" : L"D Show the spring round");
+            wcout << L"   " << pLang->get(L"M Friendly matches");
 
             pColors->textcolor(RED);
-            wcout << L"   Q Powrót do MENU";
+            wcout << L"   " << pLang->get(L"Q Back to MENU");
 
             pColors->textcolor(GREEN);
             menu = pInput->getKeyBoardPressed();
@@ -2085,7 +2149,7 @@ void Manager::menuItemCalendarControlMatch()
 
     if (clubRef.month == 7) { // 7 miesiac
         pColors->textcolor(LIGHTGRAY);
-        wcout << endl << L"Podaj dzień, spacja, miesiąc - meczu kontrolnego: ";
+        wcout << endl << pLang->get(L"Enter the day, space, month - friendly match: ");
         int wishDay = 0;
         int wishMonth = 0;
         pInput->getNumbersExchange(wishDay, wishMonth);
@@ -2112,13 +2176,13 @@ void Manager::menuItemCalendarControlMatch()
         info();
 
         pColors->textcolor(LIGHTGRAY);
-        wcout << endl << endl << L"Wybierz sparringpartnera:";
+        wcout << endl << endl << pLang->get(L"Choose a sparring partner:");
         for (int i = 0; i < MAX_CLUBS; i++) {
             if (i + 1 != clubRef.clubId) {
                 wprintf(L"\n\r%2d. %ls", i + 1, pClub->getClubName(i).c_str());
             }
         }
-        wcout << endl << endl << L"Wpisz odpowiedni numer: ";
+        wcout << endl << endl << pLang->get(L"Enter the appropriate number: ");
         int rivalClubId = pInput->getNumber();
         if (rivalClubId < 0 ||
             rivalClubId > 16 ||
@@ -2130,7 +2194,7 @@ void Manager::menuItemCalendarControlMatch()
 
         if (!canPlayControlMatch) {
             pColors->textcolor(RED);
-            wcout << endl << L"Odrzucono propozycję.";
+            wcout << endl << pLang->get(L"The offer has been rejected.");
             pInput->getKeyBoardPressed();
         }
         else if (canPlayControlMatch) {
@@ -2160,7 +2224,7 @@ void Manager::menuItemCalendarControlMatch()
     } // dla miesiąca 7
     else {
         pColors->textcolor(LIGHTRED);
-        wcout << endl << L"Nie można rozegrać meczu kontrolnego." << endl;
+        wcout << endl << pLang->get(L"A friendly match cannot be played.") << endl;
         sleep(2);
     }
 }
@@ -2174,10 +2238,10 @@ void Manager::menuItemTable()
         pTable->drawTable(clubRef.clubId, pClub);
 
         pColors->textcolor(GREEN);
-        wcout << endl << L" W Wyniki    P Pozostałe mecze";
+        wcout << endl << pLang->get(L" W Results   P Remaining matches");
 
         pColors->textcolor(RED);
-        wcout << L"    Q Powrót do MENU";
+        wcout << L"    " << pLang->get(L"Q Back to MENU") << L" ";
 
         bool isShowPlayed = false; // 0 - tryb mecze nie rozegrane, 1 - rozegrane
         int kk = clubRef.isMatch ? 1 : 0;
@@ -2226,12 +2290,12 @@ void Manager::menuItemTable()
 
                     wcout << endl << endl;
                     if (isShowPlayed) {
-                        wcout << L"  Wyniki meczów I ligi - ";
+                        wcout << pLang->get(L"  Matches results of the I League - ");
                     }
                     else {
-                        wcout << L"  Pozostałe mecze I ligi - ";
+                        wcout << pLang->get(L"  Remaining matches of the I League - ");
                     }
-                    wcout << roundNumber << L" kolejka";
+                    wcout << roundNumber << pLang->get(L" round");
 
                     pColors->textcolor(LIGHTGRAY);
 
@@ -2272,10 +2336,10 @@ void Manager::menuItemTable()
                         }
                     }
                     pColors->textcolor(GREEN);
-                    wcout << endl << endl << L" Dalej - dowolny klawisz";
+                    wcout << endl << endl << pLang->get(L" Next - any key");
 
                     pColors->textcolor(RED);
-                    wcout << endl << L" Q Wyjście ";
+                    wcout << endl << L" " << pLang->get(L"Q Quit") << L" ";
 
                     wchar_t yn = pInput->getKeyBoardPressed();
                     if (yn == 'Q') {
@@ -2303,32 +2367,29 @@ void Manager::menuItemTransfersList()
 
             info();
 
-            wcout << endl << L"LISTA TRANSFEROWA";
-            if (clubRef.finances[13] > 0) {
-                pColors->textcolor(LIGHTGREEN);
-            }
-            else {
-                pColors->textcolor(LIGHTRED);
-            }
-            wprintf(L"   Fundusze na transfery: %.2f zł.", clubRef.finances[13]);
+            wcout << endl << pLang->get(L"TRANSFER LIST");
+
+            pColors->textcolor(clubRef.finances[13] > 0 ? LIGHTGREEN : LIGHTRED);
+            wcout << L"   ";
+            wprintf(pLang->get(L"Funds for transfers: $%.2f").c_str(), clubRef.finances[13]);
 
             pColors->textcolor(GREEN);
-            wcout << endl << L" Lp.   Zawodnik         Po.  ";
+            wcout << endl << pLang->get(L" No    Footballer       Po.  ");
 
             pColors->textcolor(LIGHTBLUE);
-            wcout << L"B  ";
+            wcout << pLang->get(L"G") << L"  ";
 
             pColors->textcolor(MAGENTA);
-            wcout << L"O  ";
+            wcout << pLang->get(L"D") << L"  ";
 
             pColors->textcolor(LIGHTCYAN);
-            wcout << L"P  ";
+            wcout << pLang->get(L"M") << L"  ";
 
             pColors->textcolor(LIGHTGREEN);
-            wcout << L"N  ";
+            wcout << pLang->get(L"A") << L"  ";
 
             pColors->textcolor(GREEN);
-            wcout << L"Morale  For. Kon.    Cena";
+            wcout << pLang->get(L"Morale  For. Con.    Price");
 
             if (loop >= transferPlayersCount) {
                 loop = 0;
@@ -2345,7 +2406,7 @@ void Manager::menuItemTransfersList()
                         if (isFilterPosistion &&
                             (footballer.data[3] >= filterGoalkeeper &&
                             footballer.data[4] >= filterDefense &&
-                            footballer.data[5] >= filterMiddlefield &&
+                            footballer.data[5] >= filterMidfield &&
                             footballer.data[6] >= filterAttact &&
                             footballer.data[9] >= filterForm &&
                             footballer.finances[0] >= filterMinPrice &&
@@ -2360,15 +2421,15 @@ void Manager::menuItemTransfersList()
                         }
                         wprintf(L"\n\r%3d.  ", footballer.data[0]);
                         wprintf(
-                            L"%3ls%-15ls %lc  %2d %2d %2d %2d  %-7ls  %2d  %3d%% %8.0f zł.",
+                            pLang->get(L"%3ls%-15ls %ls  %2d %2d %2d %2d  %-7ls  %2d  %3d%% $%8.0f").c_str(),
                             footballer.name,
                             footballer.surname,
-                            pTeamComposition->getFootballerPosition(footballer.data[2]),
+                            pSquad->getFootballerPosition(footballer.data[2]).c_str(),
                             footballer.data[3],
                             footballer.data[4],
                             footballer.data[5],
                             footballer.data[6],
-                            pTeamComposition->getMorale(footballer.data[7]).c_str(),
+                            pSquad->getMorale(footballer.data[7]).c_str(),
                             footballer.data[9],
                             footballer.data[11],
                             footballer.finances[0]
@@ -2382,9 +2443,9 @@ void Manager::menuItemTransfersList()
             }
             pColors->textcolor(GREEN);
 
-            wcout << endl << L"D Dalej   F Filrty   K Kupno zawodnika   ";
+            wcout << endl << pLang->get(L"D Next    F Filters  K Player purchase   ");
             pColors->textcolor(RED);
-            wcout << L"Q Powrót do MENU";
+            wcout << pLang->get(L"Q Back to MENU");
             pColors->textcolor(GREEN);
 
             menu = pInput->getKeyBoardPressed();
@@ -2426,7 +2487,7 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
 
         pColors->textcolor(LIGHTGRAY);
 
-        wcout << endl << L"Podaj numer Lp.: ";
+        wcout << endl << pLang->get(L"Enter the No: ");
         int footballerId = pInput->getNumber();
 
         for (size_t index = 0; index < pFootballers->getSizeTransfers(); index++) {
@@ -2435,27 +2496,25 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
                 pInput->clrscr();
                 int weight = 0;
                 float cena = 0;
-                wprintf(
-                    L"\n\rFUNDUSZE NA TRANSFERY: %.2f zł." \
-                    L"\n\r\n\rKupno zawodnika: %ls%ls",
-                    clubRef.finances[13],
-                    footballer.name,
-                    footballer.surname
-                );
 
-                wcout << endl << L"Klub: " ;
+                wcout << endl;
+                wprintf(pLang->get(L"TRANSFERS FUNDS: $%.2f").c_str(), clubRef.finances[13]);
+                wcout << endl << endl;
+                wprintf(pLang->get(L"Player purchase: %ls%ls").c_str(), footballer.name, footballer.surname);
+
+                wcout << endl << pLang->get(L"Club: ");
                 if (footballer.data[22] > 0) {
                     wcout << pClub->getClubName(footballer.data[22] - 1);
                 }
                 else {
-                    wcout << L"żaden";
+                    wcout << pLang->get(L"none");
                 }
 
                 if (footballer.data[22] > 0) {
                     // podaj cene tylko wtedy gdy zawodnik nalezy do jakiegos klubu
                     // bo to kasa dla klubu za wypupienie
                     wcout << endl << endl;
-                    wprintf(L"Podaj cenę (%.2f): ", footballer.finances[0]);
+                    wprintf(pLang->get(L"Enter the price (%.2f): ").c_str(), footballer.finances[0]);
                     cena = pInput->getFloat();
                     if (cena > clubRef.finances[13] || cena < 0) {
                         weight -= 10;
@@ -2464,16 +2523,19 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
                 else {
                     wcout << endl;
                 }
-                wprintf(L"\n\rPodaj płacę miesięczną (%.2f): ", footballer.finances[1]);
+
+                wcout << endl;
+                wprintf(pLang->get(L"Enter the monthly wage (%.2f): ").c_str(), footballer.finances[1]);
                 float placa = pInput->getFloat();
                 float premia = 0;
                 if (footballer.data[2] == PLAYERS_POS_P ||
                     footballer.data[2] == PLAYERS_POS_N
                 ) {
-                    wprintf(L"\n\rPodaj premię za gola (%.2f): ", footballer.finances[2]);
+                    wcout << endl;
+                    wprintf(pLang->get(L"Enter the goal bonus (%.2f): ").c_str(), footballer.finances[2]);
                     premia = pInput->getFloat();
                 }
-                wcout << endl << L"Podaj przez ile lat ma obowiązywać kontrakt (1,2 lub 3): ";
+                wcout << endl << pLang->get(L"Enter for how many years the contract will apply (1, 2 or 3): ");
                 int lata = pInput->getNumber();
                 if (footballer.data[22] > 0) {
                     float transfer = cena - footballer.finances[0];
@@ -2524,12 +2586,13 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
                 if (weight >= 6) {
                     pColors->textcolor(GREEN);
 
-                    wcout << endl << footballer.surname << L": Zgadzam się na proponowane warunki kontraktu.";
-                    pColors->textcolor(LIGHTGRAY);
+                    wcout << endl;
+                    wprintf(pLang->get(L"%ls: I agree to the proposed terms of the contract.").c_str(), footballer.surname);
 
-                    wcout << endl << endl << L"Akceptujesz? (T/n): ";
+                    pColors->textcolor(LIGHTGRAY);
+                    wcout << endl << endl << pLang->get(L"Do you accept? (Y/n): ");
                     wchar_t yn = pInput->getKeyBoardPressed();
-                    if (yn == L'T' || yn == L'\n') {
+                    if (yn == pLang->getYesKeyborad() || yn == L'\n') {
                         footballer.data[22] = clubRef.clubId;
                         footballer.finances[1] = placa;
                         footballer.finances[0] = cena;
@@ -2579,7 +2642,8 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
                 }
                 else {
                     pColors->textcolor(RED);
-                    wcout << endl << footballer.surname << L": Odrzucam proponowane warunki kontraktu.";
+                    wcout << endl;
+                    wprintf(pLang->get(L"%ls: I reject the proposed terms of the contract.").c_str(), footballer.surname);
                     pInput->getKeyBoardPressed();
                 }
 
@@ -2590,7 +2654,7 @@ void Manager::menuItemTransfersListBuyFootballer(int mode)
     }
     else { // brak funduszy
         pColors->textcolor(LIGHTRED);
-        wcout << endl << L"Brak funduszy na transfery!" << endl;
+        wcout << endl << pLang->get(L"No funds for transfers!") << endl;
         sleep(2);
     }
 }
@@ -2604,42 +2668,52 @@ void Manager::menuItemTransfersListFilters()
     do {
         pInput->clrscr();
         pColors->textcolor(WHITE);
-        wcout << endl << L"FILTRY DLA LISTY TRANSFEROWEJ";
+        wcout << endl << pLang->get(L"FILTERS FOR TRANSFER LIST");
 
         pColors->textcolor(LIGHTGRAY);
-        wprintf(L"\n\rFundusze na transfery: %.2f zł.", clubRef.finances[13]);
+        wcout << endl;
+        wprintf(pLang->get(L"Funds for transfers: $%.2f").c_str(), clubRef.finances[13]);
 
         pColors->textcolor(GREEN);
 
-        wstring pozycja = getFilterByPosition(filterPosition);
+        const wstring position = getFilterByPosition(filterPosition);
 
         setFilterColors(belka, 1);
-        wprintf(L"\n\r\n\r   Względem pozycji: %ls ", pozycja.c_str());
+        wcout << endl << endl;
+        wprintf(pLang->get(L"   Relative to position: %ls ").c_str(), position.c_str());
 
         setFilterColors(belka, 2);
-        wprintf(L"\n\r   Względem umiejętności: B: %d ", filterGoalkeeper);
+        wcout << endl;
+        const wchar_t *pTemplateText = pLang->get(L"   Relative to skill: %ls: %d ").c_str();
+        wprintf(pTemplateText, pLang->get(L"G").c_str(), filterGoalkeeper);
 
         setFilterColors(belka, 3);
-        wprintf(L"\n\r   Względem umiejętności: O: %d ", filterDefense);
+        wcout << endl;
+        wprintf(pTemplateText, pLang->get(L"D").c_str(), filterDefense);
 
         setFilterColors(belka, 4);
-        wprintf(L"\n\r   Względem umiejętności: P: %d ", filterMiddlefield);
+        wcout << endl;
+        wprintf(pTemplateText, pLang->get(L"M").c_str(), filterMidfield);
 
         setFilterColors(belka, 5);
-        wprintf(L"\n\r   Względem umiejętności: N: %d ", filterAttact);
+        wcout << endl;
+        wprintf(pTemplateText, pLang->get(L"A").c_str(), filterAttact);
 
         setFilterColors(belka, 6);
-        wprintf(L"\n\r   Względem formy: %d ", filterForm);
+        wcout << endl;
+        wprintf(L"   Relative to form: %d ", filterForm);
 
         setFilterColors(belka, 7);
-        wprintf(L"\n\r M Względem ceny minimalnej:  od %.2f zł. ", filterMinPrice);
+        wcout << endl;
+        wprintf(pLang->get(L" M Relative to the minimum price: from $%.2f ").c_str(), filterMinPrice);
 
         setFilterColors(belka, 8);
-        wprintf(L"\n\r X Względem ceny maksymalnej: do %.2f zł. ", filterMaxPrice);
+        wcout << endl;
+        wprintf(pLang->get(L" X Relative to the maximum price: from $%.2f ").c_str(), filterMaxPrice);
 
         pColors->textcolor(RED);
         pColors->textbackground(BLACK);
-        wcout << endl << L" Q Powrót" << endl;
+        wcout << endl << L" " << pLang->get(L"Q Back") << endl;
 
         menuFilters = pInput->getKeyBoardPressed();
         switch (menuFilters) {
@@ -2672,8 +2746,8 @@ void Manager::menuItemTransfersListFilters()
                     }
                 }
                 else if (belka == 4) {
-                    if (++filterMiddlefield == 21) {
-                        filterMiddlefield = 1;
+                    if (++filterMidfield == 21) {
+                        filterMidfield = 1;
                     }
                 }
                 else if (belka == 5) {
@@ -2717,8 +2791,8 @@ void Manager::menuItemTransfersListFilters()
                     }
                 }
                 else if (belka == 4) {
-                    if (--filterMiddlefield == 0) {
-                        filterMiddlefield = 20;
+                    if (--filterMidfield == 0) {
+                        filterMidfield = 20;
                     }
                 }
                 else if (belka == 5) {
@@ -2747,13 +2821,13 @@ void Manager::menuItemTransfersListFilters()
             }
             case 'M': {
                 pColors->textcolor(LIGHTGRAY);
-                wprintf(L"\n\rPodaj minimalną cenę zawodnika: ");
+                wcout << endl << pLang->get(L"Enter the minimum player price: ");
                 filterMinPrice = pInput->getFloat();
                 break;
             }
             case 'X': {
                 pColors->textcolor(LIGHTGRAY);
-                wprintf(L"\n\rPodaj maksymalną cenę zawodnika: ");
+                wcout << endl << pLang->get(L"Enter the maximum player price: ");
                 filterMaxPrice = pInput->getFloat();
                 break;
             }
@@ -2766,65 +2840,71 @@ void Manager::menuItemTransfersListFilters()
     }
 }
 
+void Manager::printFinancesValues(int financesIndex, const wstring label)
+{
+    SClub &clubRef = pClub->get();
+
+    const int maxBuffer = 128;
+    wchar_t amountThis[maxBuffer];
+    wchar_t bufferThisMonth[maxBuffer];
+
+    wchar_t amountLast[maxBuffer];
+    wchar_t bufferLastMonth[maxBuffer];
+
+    swprintf(amountThis, maxBuffer, pLang->get(L"$%.2f").c_str(), clubRef.finances[financesIndex]);
+    swprintf(bufferThisMonth, maxBuffer, L"%16ls - %ls", amountThis, pLang->get(label).c_str());
+
+    swprintf(amountLast, maxBuffer, pLang->get(L"$%.2f").c_str(), clubRef.financesLastMonth[financesIndex]);
+    swprintf(bufferLastMonth, maxBuffer, L"%13ls - %ls", amountThis, pLang->get(label).c_str());
+
+    wcout << endl;
+    wprintf(L"%-42ls %-42ls", bufferThisMonth, bufferLastMonth);
+}
+
 void Manager::menuItemFinance()
 {
     SClub &clubRef = pClub->get();
     if (clubRef.clubId > 0) {
         info();
         pColors->textcolor(YELLOW);
-        wcout << endl << L"FINANSE";
+        wcout << endl << pLang->get(L"FINANCES");
+
         pColors->textcolor(LIGHTGREEN);
-        wprintf(
-            L"\n\rPrzychody w tym miesiącu:                  Przychody w zeszłym miesiącu:" \
-            L"\n\r%12.2f zł. - Bilety               %12.2f zł. - Bilety" \
-            L"\n\r%12.2f zł. - Dochód z TV          %12.2f zł. - Dochód z TV" \
-            L"\n\r%12.2f zł. - Handel               %12.2f zł. - Handel" \
-            L"\n\r%12.2f zł. - Sprzedaż zawodników  %12.2f zł. - Sprzedaż zawodników" \
-            L"\n\r%12.2f zł. - Reklamy              %12.2f zł. - Reklamy" \
-            L"\n\r%12.2f zł. - RAZEM                %12.2f zł. - RAZEM",
-            clubRef.finances[0],
-            clubRef.financesLastMonth[0],
-            clubRef.finances[1],
-            clubRef.financesLastMonth[1],
-            clubRef.finances[2],
-            clubRef.financesLastMonth[2],
-            clubRef.finances[3],
-            clubRef.financesLastMonth[3],
-            clubRef.finances[4],
-            clubRef.financesLastMonth[4],
-            clubRef.finances[5],
-            clubRef.financesLastMonth[5]
-        );
+        wcout << endl;
+        wprintf(L"%-42ls %-42ls", pLang->get(L"Income this month:").c_str(), pLang->get(L"Income last month:").c_str());
+        printFinancesValues(0, L"Tickets");
+        printFinancesValues(1, L"TV income");
+        printFinancesValues(2, L"Shops");
+        printFinancesValues(3, L"Sale of players");
+        printFinancesValues(4, L"Ads");
+        printFinancesValues(5, L"TOTAL");
+
         pColors->textcolor(LIGHTRED);
-        wprintf(
-            L"\n\rStraty w tym miesiącu:                     Straty w zeszłym miesiącu:" \
-            L"\n\r%12.2f zł. - Płace                %12.2f zł. - Płace" \
-            L"\n\r%12.2f zł. - Premie               %12.2f zł. - Premie" \
-            L"\n\r%12.2f zł. - Kupno zawodników     %12.2f zł. - Kupno zawodników" \
-            L"\n\r%12.2f zł. - Kary ligowe          %12.2f zł. - Kary ligowe" \
-            L"\n\r%12.2f zł. - RAZEM                %12.2f zł. - RAZEM",
-            clubRef.finances[6],
-            clubRef.financesLastMonth[6],
-            clubRef.finances[7],
-            clubRef.financesLastMonth[7],
-            clubRef.finances[8],
-            clubRef.financesLastMonth[8],
-            clubRef.finances[9],
-            clubRef.financesLastMonth[9],
-            clubRef.finances[10],
-            clubRef.financesLastMonth[10]
-        );
+        wcout << endl;
+        wprintf(L"%-42ls %-42ls", pLang->get(L"Losses this month:").c_str(), pLang->get(L"Losses last month:").c_str());
+        printFinancesValues(6, L"Salaries");
+        printFinancesValues(7, L"Bonuses");
+        printFinancesValues(8, L"Purchase of players");
+        printFinancesValues(9, L"League penalties");
+        printFinancesValues(10, L"TOTAL");
+
+        wchar_t profitThisMonth[128];
+        wchar_t profitLastMonth[128];
+        swprintf(profitThisMonth, 128, pLang->get(L"Profit this month: $%.2f").c_str(), clubRef.finances[11]);
+        swprintf(profitLastMonth, 128, pLang->get(L"Profit last month: $%.2f").c_str(), clubRef.financesLastMonth[11]);
+
         pColors->textcolor(clubRef.finances[11] > 0 ? GREEN : RED);
-        wprintf(L"\n\r\n\rZysk w tym miesiącu: %.2f zł.", clubRef.finances[11]);
+        wcout << endl << endl;
+        wprintf(L"%-39ls", profitThisMonth);
         pColors->textcolor(LIGHTGRAY);
-        wprintf(L"   Zysk w zeszłym miesiącu: %.2f zł.", clubRef.financesLastMonth[11]);
-        wprintf(
-            L"\n\r\n\rKasa klubu: %.2f zł." \
-            "\n\rFundusze na transfery: %.2f zł.",
-            clubRef.finances[12],
-            clubRef.finances[13]
-        );
-        wcout << endl << endl << L"Powrót do MENU - dowolny klawisz...";
+        wprintf(L"%-39ls", profitLastMonth);
+
+        wcout << endl << endl;
+        wprintf(pLang->get(L"Club finances: $%.2f").c_str(), clubRef.finances[12]);
+        wcout << endl;
+        wprintf(pLang->get(L"Funds for transfers: $%.2f").c_str(), clubRef.finances[13]);
+
+        wcout << endl << endl << pLang->get(L"Back to MENU - press any key...");
         pInput->getKeyBoardPressed();
     }
 }
@@ -2836,7 +2916,7 @@ void Manager::menuItemManagement()
         wchar_t menu = 0;
         do {
             info();
-            wcout << endl << endl << L"ZARZĄD KLUBU";
+            wcout << endl << endl << pLang->get(L"CLUB MANAGEMENT");
             pColors->textcolor(LIGHTGRAY);
 
             int tablePos = pTable->getPositionInTable(clubRef.clubId);
@@ -2880,10 +2960,10 @@ void Manager::menuItemManagement()
             }
 
             pColors->textcolor(GREEN);
-            wcout << endl << endl << L" T Prośba o dodatkowe fundusze na transfery";
+            wcout << endl << endl << L" " <<  pLang->get(L"T Request for additional funds for transfers");
 
             pColors->textcolor(RED);
-            wcout << endl << L" Q Powrót do MENU" << endl;
+            wcout << endl << L" " << pLang->get(L"Q Back to MENU") << endl;
             menu = pInput->getKeyBoardPressed();
             switch (menu) {
                 case 'T': {
@@ -2897,7 +2977,7 @@ void Manager::menuItemManagement()
                     if (chance == 0 && !clubRef.isBlockTransferFunds) {
                         pColors->textcolor(GREEN);
                         wcout << endl << endl <<
-                            L"Zarząd: Zgadzamy się na pańską prośbę. Mamy nadzieję, iż rozsądnie wykorzysta pan fundusze i wzmocni zespół.";
+                            pLang->get(L"Management: We agree at your request. We hope you will use the funds wisely and strengthen our team.");
                         clubRef.finances[13] = clubRef.finances[12];
                         clubRef.isBlockTransferFunds = 1;
 
@@ -2906,7 +2986,7 @@ void Manager::menuItemManagement()
                     else {
                         pColors->textcolor(RED);
                         clubRef.isBlockTransferFunds = 1;
-                        wcout << endl << endl << L"Zarząd: Odrzucamy pańską prośbę.";
+                        wcout << endl << endl << pLang->get(L"Management: We reject your request.");
 
                         pClub->save();
                     }
@@ -2924,36 +3004,33 @@ void Manager::menuItemManagerStats()
     const SClub &clubRef = pClub->get();
 
     info();
-    wcout << endl << endl << L"MANAGER - STAYSTKI";
-    pColors->textcolor(LIGHTGRAY);
-    wprintf(
-        L"\n\r" \
-        L"\n\rWygrane ligi:           %4d"\
-        L"\n\rPrzyznane nagrody:      %4d"\
-        L"\n\rPunkty managera:        %4d"\
-        L"\n\rRozegrane mecze:        %4d"\
-        L"\n\rMecze wygrane:          %4d"\
-        L"\n\rMecze zremisowane:      %4d" \
-        L"\n\rMecze przegrane:        %4d" \
-        L"\n\rGole zdobyte:           %4d" \
-        L"\n\rGole stracone:          %4d" \
-        L"\n\rKupionych zawodników:   %4d - łącznie %.2f zł." \
-        L"\n\rSprzedanych zawodników: %4d - łącznie %.2f zł.",
-        clubRef.managerStats[0],
-        clubRef.managerStats[2],
-        clubRef.managerStats[3],
-        clubRef.managerStats[4],
-        clubRef.managerStats[5],
-        clubRef.managerStats[6],
-        clubRef.managerStats[7],
-        clubRef.managerStats[8],
-        clubRef.managerStats[9],
-        clubRef.managerStats[10],
-        clubRef.totalExpensesTransfers,
-        clubRef.managerStats[11],
-        clubRef.totalRevenuesTransfers);
+    wcout << endl << endl << L"MANAGER STATISTICS";
 
-    wcout << endl << endl << L"Powrót do MENU - dowolny klawisz...";
+    pColors->textcolor(LIGHTGRAY);
+    wcout << endl << endl;
+    wprintf(pLang->get(L"Leagues won:            %4d").c_str(), clubRef.managerStats[0]);
+    wcout << endl;
+    wprintf(pLang->get(L"Prizes awarded:         %4d").c_str(), clubRef.managerStats[2]);
+    wcout << endl;
+    wprintf(pLang->get(L"Manager points:         %4d").c_str(), clubRef.managerStats[3]);
+    wcout << endl;
+    wprintf(pLang->get(L"Matches played:         %4d").c_str(), clubRef.managerStats[4]);
+    wcout << endl;
+    wprintf(pLang->get(L"Matches won:            %4d").c_str(), clubRef.managerStats[5]);
+    wcout << endl;
+    wprintf(pLang->get(L"Matches draws:          %4d").c_str(), clubRef.managerStats[6]);
+    wcout << endl;
+    wprintf(pLang->get(L"Matches lost:           %4d").c_str(), clubRef.managerStats[7]);
+    wcout << endl;
+    wprintf(pLang->get(L"Goals scored:           %4d").c_str(), clubRef.managerStats[8]);
+    wcout << endl;
+    wprintf(pLang->get(L"Goals lost:             %4d").c_str(), clubRef.managerStats[9]);
+    wcout << endl;
+    wprintf(pLang->get(L"Bought players:         %4d - total $%.2f").c_str(), clubRef.managerStats[10], clubRef.totalExpensesTransfers);
+    wcout << endl;
+    wprintf(pLang->get(L"Sold players:           %4d - total $%.2f").c_str(), clubRef.managerStats[11], clubRef.totalRevenuesTransfers);
+
+    wcout << endl << endl << pLang->get(L"Back to MENU - press any key...");
 
     pInput->getKeyBoardPressed();
 }
@@ -2969,7 +3046,7 @@ void Manager::menuItemNewsOld()
         pInput->clrscr();
         info();
         pColors->textcolor(GREEN);
-        wcout << endl << endl << L"STARE WIADOMOŚCI" << endl;
+        wcout << endl << endl << pLang->get(L"OLD NEWS") << endl;
 
         pColors->textcolor(LIGHTGRAY);
         // wczytujemy maxCount wiadomosci
@@ -2984,10 +3061,12 @@ void Manager::menuItemNewsOld()
 
         pColors->textbackground(BLACK);
         pColors->textcolor(GREEN);
-        wcout << endl << L"<- Nowsze wiadomości (" << (startFrom / maxCount) + 1 << "/" << pages << ") Starsze wiadomości ->";
+        wcout << endl << L"<- " << pLang->get(L"Newer messages")
+                << L" (" << (startFrom / maxCount) + 1 << "/" << pages << ") "
+                << pLang->get(L"Older messages") << L" ->";
 
         pColors->textcolor(RED);
-        wcout << endl << L"Q Wyjście ";
+        wcout << endl << pLang->get(L"Q Quit") << L" ";
 
         pColors->textcolor(GREEN);
         ch = pInput->getKeyBoardPressed();
@@ -3023,7 +3102,7 @@ void Manager::menuItemNews()
 {
     info();
     pColors->textcolor(GREEN);
-    wcout << endl << endl << L"WIADOMOŚCI";
+    wcout << endl << endl << pLang->get(L"NEWS");
 
     pColors->textcolor(LIGHTGRAY);
     if (pNews->isMessage()) { //czy wogóle jest jakaś wiadomość
@@ -3044,17 +3123,17 @@ void Manager::menuItemOptions()
 
         if (count > 0) {
             pColors->textcolor(RED);
-            wcout << L"Błąd. Niepoprawna cyfra. Wpisz 1 lub 2.";
+            wcout << pLang->get(L"Error. Invalid number. Enter 1 or 2.");
         }
 
         pColors->textcolor(LIGHTGRAY);
         wcout << endl
-            << L"Jeżeli czas wyświetlania komunikatów w czasie meczu jest nieadekwatny do" << endl
-            << L"ustawień Szybkości, zmień poniższą opcję na Ręczne." << endl << endl
-            << L"Wyświetlanie kolejnych komunikatów w czasie meczu odbywać ma się:" << endl
-            << L"1. Automatycznie (zalecane)" << endl
-            << L"2. Ręcznie (w razie problemów)" << endl << endl
-            << L"Wpisz odpowiednią cyfrę (1 lub 2): ";
+            << pLang->get(L"If the display time of messages during the match is not adequate to the Speed settings, change the option below to Manual.") << endl
+            << endl
+            << pLang->get(L"Displaying subsequent messages during the match is to take place:") << endl
+            << pLang->get(L"1. Automatic (recommended)") << endl
+            << pLang->get(L"2. Manually (in case of problems)") << endl << endl
+            << pLang->get(L"Enter the appropriate number (1 or 2):") << L" ";
 
         int option = pInput->getNumber();
         isOptionCorrect = option == 1 || option == 2;
@@ -3070,29 +3149,29 @@ void Manager::menuItemOptions()
 wstring Manager::getSortTitle(int sort)
 {
     switch (sort) {
-        case 3:     return L" - sortowany wg umiejętności B";
-        case 4:     return L" - sortowany wg umiejętności O";
-        case 5:     return L" - sortowany wg umiejętności P";
-        case 6:     return L" - sortowany wg umiejętności N";
-        case 7:     return L" - sortowany wg morale";
-        case 9:     return L" - sortowany wg formy";
-        case 11:    return L" - sortowany wg kondycji";
-        case 16:    return L" - sortowany wg goli";
-        case 18:    return L" - sortowany wg kolejności wygaśnięcia kontraktu";
+        case 3:     return pLang->get(L" - sorted by Goalkeepers skill");
+        case 4:     return pLang->get(L" - sorder by Defenses skill");
+        case 5:     return pLang->get(L" - sorted by Midfields skill");
+        case 6:     return pLang->get(L" - sorted by Attacks skill");
+        case 7:     return pLang->get(L" - sorted by morale");
+        case 9:     return pLang->get(L" - sorted by forms");
+        case 11:    return pLang->get(L" - sorted by conditions");
+        case 16:    return pLang->get(L" - sorted by goals");
+        case 18:    return pLang->get(L" - sorted by contract expiry order");
         default:    return L"";
     }
 }
 
-wstring Manager::getTrenningDayName(int dayNumber)
+wstring Manager::getTrainingDayName(int dayNumber)
 {
     switch (dayNumber) {
-        case 1:  return L"Poniedziałku";
-        case 2:  return L"Wtorku";
-        case 3:  return L"Środy";
-        case 4:  return L"Czwartku";
-        case 5:  return L"Piątku";
-        case 6:  return L"Soboty";
-        case 7:  return L"Niedzieli";
+        case 1:  return pLang->get(L"Monday");
+        case 2:  return pLang->get(L"Tuesday");
+        case 3:  return pLang->get(L"Wednesday");
+        case 4:  return pLang->get(L"Thursday");
+        case 5:  return pLang->get(L"Friday");
+        case 6:  return pLang->get(L"Saturday");
+        case 7:  return pLang->get(L"Sunday");
         default: return L"";
     }
 }
@@ -3100,12 +3179,12 @@ wstring Manager::getTrenningDayName(int dayNumber)
 wstring Manager::getFilterByPosition(int pos)
 {
     switch (pos) {
-        case 0:  return L"Wszyscy";
-        case 1:  return L"Bramkarze";
-        case 2:  return L"Obrońcy";
-        case 3:  return L"Pomocnicy";
-        case 4:  return L"Napastnicy";
-        default: return L"Błąd";
+        case 0:  return pLang->get(L"All");
+        case 1:  return pLang->get(L"Goalkeepers");
+        case 2:  return pLang->get(L"Defenders");
+        case 3:  return pLang->get(L"Midfielders");
+        case 4:  return pLang->get(L"Strikers");
+        default: return pLang->get(L"Error");
     }
 }
 
@@ -3270,15 +3349,16 @@ int Manager::getRivalOffsideTrap(int rivalSetting)
         case T4_4_2:
         case T3_5_2:
         case T4_4_2_ATT:
-        case T4_3_3:
+        case T4_3_3: {
             return 1; //pułapki ofsajdowe tak
-
+        }
         case T5_3_2:
-        case T5_3_2_ATT:
+        case T5_3_2_ATT: {
             return rand() % 2; // losowo tak/nie
-
-        default:
+        }
+        default: {
             return 0; //pułapki ofsajdowe nie
+        }
     }
 }
 
@@ -3286,16 +3366,17 @@ int Manager::getRivalContra(int rivalSetting)
 {
     switch (rivalSetting) {
         case T4_4_2_DEF:
-        case T5_3_2_DEF:
+        case T5_3_2_DEF: {
             return 1; // counter-game yes
-
+        }
         case T4_4_2_ATT:
         case T4_3_3:
-        case T5_3_2_ATT:
+        case T5_3_2_ATT: {
             return 0; // counter-game no
-
-        default:
+        }
+        default: {
             return rand() % 2; // random 50/50
+        }
     }
 }
 
@@ -3303,14 +3384,14 @@ int Manager::getRivalAttitude(int rivalSetting)
 {
     switch (rivalSetting) {
         case T4_4_2_DEF:
-        case T5_3_2_DEF:
+        case T5_3_2_DEF: {
             return (rand() % 3 == 0) ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_DEFENSIVE; // 2/3 że obronne, atak wcale
-
+        }
         case T4_4_2_ATT:
         case T4_3_3:
-        case T5_3_2_ATT:
+        case T5_3_2_ATT: {
             return (rand() % 3 == 0) ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_ATTACK; //2/3 że atak, obronne wcale
-
+        }
         case T3_5_2:
         case T5_3_2:  {
             switch ((rand() % 4)) {
@@ -3319,7 +3400,8 @@ int Manager::getRivalAttitude(int rivalSetting)
                 default:    return INSTR_ATTIT_NORMAL; // 2/4 że normalne
             }
         }
-        default:
+        default: {
             return (rand() % 3 == 0) ? INSTR_ATTIT_ATTACK : INSTR_ATTIT_NORMAL; // 2/3 że normalne, obronne wcale
+        }
     }
 }
