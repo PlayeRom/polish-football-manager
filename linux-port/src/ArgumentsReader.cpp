@@ -74,7 +74,7 @@ void ArgumentsReader::printHelp()
  */
 void ArgumentsReader::printVersion()
 {
-    cout << "Manager of the Polish League 2002 version 1.04" << endl;
+    cout << "Manager of the Polish League 2002 version 1.05" << endl;
 }
 
 /**

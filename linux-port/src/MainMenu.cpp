@@ -82,18 +82,16 @@ void MainMenu::draw()
 
     pColors->textbackground(WHITE);
     pColors->textcolor(RED);
-    //wcout << endl << endl << L" MANAGER LIGI  ";
     wcout << endl << endl << pLang->get(L"   MANAGER of the   ");
 
     pColors->textbackground(RED);
     pColors->textcolor(LIGHTGRAY);
-    //wcout << endl << L" POLSKIEJ 2002 ";
     wcout << endl << pLang->get(L" POLISH LEAGUE 2002 ");
 
     pColors->textbackground(BLACK);
 
     pColors->textcolor(DARKGRAY);
-    wcout << L"  v.1.04";
+    wcout << L"  v.1.05";
 
     pColors->textcolor(GREEN);
     wcout << endl << endl <<
