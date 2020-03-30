@@ -2682,20 +2682,20 @@ void Manager::menuItemTransfersListFilters()
 
         setFilterColors(belka, 2);
         wcout << endl;
-        const wchar_t *pTemplateText = pLang->get(L"   Relative to skill: %ls: %d ").c_str();
-        wprintf(pTemplateText, pLang->get(L"G").c_str(), filterGoalkeeper);
+        const wstring strTemplateText = pLang->get(L"   Relative to skill: %ls: %d ");
+        wprintf(strTemplateText.c_str(), pLang->get(L"G").c_str(), filterGoalkeeper);
 
         setFilterColors(belka, 3);
         wcout << endl;
-        wprintf(pTemplateText, pLang->get(L"D").c_str(), filterDefense);
+        wprintf(strTemplateText.c_str(), pLang->get(L"D").c_str(), filterDefense);
 
         setFilterColors(belka, 4);
         wcout << endl;
-        wprintf(pTemplateText, pLang->get(L"M").c_str(), filterMidfield);
+        wprintf(strTemplateText.c_str(), pLang->get(L"M").c_str(), filterMidfield);
 
         setFilterColors(belka, 5);
         wcout << endl;
-        wprintf(pTemplateText, pLang->get(L"A").c_str(), filterAttact);
+        wprintf(strTemplateText.c_str(), pLang->get(L"A").c_str(), filterAttact);
 
         setFilterColors(belka, 6);
         wcout << endl;
