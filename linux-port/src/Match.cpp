@@ -59,7 +59,10 @@ void Match::loadMatchMessages()
 {
     matchMsgs.clear();
 
-    FILE *f = fopen(FILE_MSG_MATCH, "rb");
+    char bufferFileName[1024];
+    sprintf(bufferFileName, FILE_MSG_MATCH, pLang->getLngCode().c_str());
+
+    FILE *f = fopen(bufferFileName, "rb");
     if (!f) {
         char message[512];
         snprintf(message, 512, ERROR_OPEN_FILE, FILE_MSG_MATCH);

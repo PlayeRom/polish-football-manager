@@ -9,8 +9,8 @@
 #define FILE_FOOTBALLERS_RIVALS     "data/footballers-rival.cfg" // old name Rywal2.cfg
 #define FILE_FOOTBALLERS_TRANSFER   "data/footballers-transfer.cfg" // old name Transfer.cfg
 #define FILE_ROUNDS                 "data/rounds.cfg" // old name Kolejka.cfg
-#define FILE_MSG_MANAGER            "data/msg-manager.cfg" // old name News.cfg
-#define FILE_MSG_MATCH              "data/msg-match.cfg" // old name Mecz.cfg
+#define FILE_MSG_MANAGER            "data/%s-msg-manager.cfg" // old name News.cfg
+#define FILE_MSG_MATCH              "data/%s-msg-match.cfg" // old name Mecz.cfg
 // Save file names:
 #define FILE_SAVE_FOOTBALLERS_MANAGER   "save/footballers_manager.cfg" // old name Gra_mana.cfg
 #define FILE_SAVE_FOOTBALLERS_RIVAL     "save/footballers_rival.cfg" // old name Rywal.cfg

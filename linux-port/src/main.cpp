@@ -26,14 +26,14 @@ int main(int argc, char** argv)
 
         Language lang;
         lang.load(argsReader.getLanguage());
-        
+
         Input input;
         Colors colors;
         Footballers footballers;
         Table table(&colors, &lang);
         Rounds rounds;
         PlayerClub club;
-        News news;
+        News news(&lang);
 
         MainMenu mainMenu(
             &colors,

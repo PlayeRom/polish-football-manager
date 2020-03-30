@@ -5,12 +5,13 @@
 #include <vector>
 #include <string>
 #include "Structs.h"
+#include "Language.h"
 
 using namespace std;
 
 class News {
 public:
-    News();
+    News(Language *pLang);
     virtual ~News();
 
     void init();
@@ -34,6 +35,7 @@ private:
     vector<SNews> allManagerMessages; // all manager messages, loaded once during boot app
     vector<wstring> managerMessages; // manager messages incoming duriong the game
     const SNews *pEmptyNews;
+    Language *pLang;
 
     struct STmpMessage {
         int messageId;

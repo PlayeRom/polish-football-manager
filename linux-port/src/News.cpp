@@ -4,9 +4,10 @@
 #include <fstream>
 #include "News.h"
 
-News::News()
+News::News(Language *pLang)
 {
     pEmptyNews = new SNews();
+    this->pLang = pLang;
 
     init();
 }
@@ -20,7 +21,10 @@ void News::init()
 {
     allManagerMessages.clear();
 
-    FILE *f = fopen(FILE_MSG_MANAGER, "rb");
+    char bufferFileName[1024];
+    sprintf(bufferFileName, FILE_MSG_MANAGER, pLang->getLngCode().c_str());
+
+    FILE *f = fopen(bufferFileName, "rb");
     if (!f) {
         char message[512];
         snprintf(message, 512, ERROR_OPEN_FILE, FILE_MSG_MANAGER);
