@@ -10,7 +10,16 @@ You can find this original DOS version (sources and binaries) in *dos-original* 
 
 17 years later, when I found my old sources files in backup stored in CD-ROM, I decided to porting this game to Linux console with refactoring the code. In this repo you will find results of my porting.
 
-At the moment, the game is in Polish language only.
+### Supported langauges
+
+* English (en_US, default)
+* Polish (pl_PL)
+
+For run the game with another language than English, add `-l` flag with language code, e.g.
+
+```
+./managerligipolskiej2002 -l pl_PL
+```
 
 ## Images
 
