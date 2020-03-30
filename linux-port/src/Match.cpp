@@ -98,18 +98,18 @@ bool Match::runMecz() {
     if (!clubRef.isMatch || clubRef.isNotAllowedTeamPlayer) {
         pInput->clrscr();
         pColors->textcolor(LIGHTRED);
-        wcout << endl << L"Teraz nie można rozegrać meczu!";
+        wcout << endl << pLang->get(L"Now you can't play a match!");
         return false;
     }
 
     loadMatchMessages();
 
     wstring speed[5] = {
-        L"B.szybko",
-        L"Szybko",
-        L"Średnio",
-        L"Wolno",
-        L"B.wolno"
+        pLang->get(L"V.fast"),
+        pLang->get(L"Fast"),
+        pLang->get(L"Medium"),
+        pLang->get(L"Slow"),
+        pLang->get(L"V.slow")
     };
 
     wstring dlagol1[10], dlagol2[10];
@@ -181,7 +181,7 @@ bool Match::runMecz() {
             wprintf(L" %d %-19ls ", playerGoals, pClub->getClubName(clubRef.clubId - 1).c_str());
         }
         pColors->textbackground(BLACK);
-        wprintf(L" Czas:%3d", minuta);
+        wprintf(pLang->get(L" Time:%3d").c_str(), minuta);
         pColors->textcolor(LIGHTGRAY);
 
         drawWhoScored(
@@ -245,11 +245,12 @@ bool Match::runMecz() {
             pColors->textcolor(GREEN);
             wcout << endl;
             wprintf(
-                L"A Taktyka-%ls  P Taktyka-%ls  C Szybkość-%ls\n\r",
+                pLang->get(L"A Tactics-%ls  P Tactics-%ls  C Speed-%ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
                 pClub->getClubName(clubRef.rivalData[0] - 1).c_str(),
                 speed[czas].c_str()
             );
+            wcout << endl;
         }
         if (start == 1 && koniec < 3) { //mecz się rozpoczął
             co = whatHappened(
@@ -1773,38 +1774,40 @@ bool Match::runMecz() {
         }
 
         if (koniec == 4) {
-            wcout << endl << L"KONIEC MECZU";
+            wcout << endl << pLang->get(L"END OF THE MATCH");
         }
         pColors->textcolor(GREEN);
         wcout << endl;
         if (start == 0) {
-            wcout << endl << L"S Start mecz" << endl;
+            wcout << endl << pLang->get(L"S Start a match") << endl;
         }
 
         if (clubRef.isMatchAutoMsg && (koniec == 0 || koniec == 2 || koniec == 1 || koniec == 4)) {
             wcout << endl;
             wprintf(
-                L"A Taktyka-%ls  P Taktyka-%ls  C Szybkość-%ls\n\r",
+                pLang->get(L"A Tactics-%ls  P Tactics-%ls  C Speed-%ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
                 pClub->getClubName(clubRef.rivalData[0] - 1).c_str(),
                 speed[czas].c_str()
             );
+            wcout << endl;
         }
 
         if (!clubRef.isMatchAutoMsg) {
             if (start && koniec < 4) {
-                wcout << L"S Kontynuuj    ";
+                wcout << pLang->get(L"S Continue     ");
             }
             wprintf(
-                L"A Taktyka - %ls    P Taktyka - %ls\n\r",
+                pLang->get(L"A Tactics - %ls    P Tactics - %ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
                 pClub->getClubName(clubRef.rivalData[0] - 1).c_str()
             );
+            wcout << endl;
         }
 
         if (koniec == 4) {
             pColors->textcolor(RED);
-            wcout << endl << L"Q Wyjście";
+            wcout << endl << pLang->get(L"Q Quit");
         }
 
         wchar_t menu = L'y';
@@ -1826,7 +1829,7 @@ bool Match::runMecz() {
         if (walkower < 11) {
             endMenuMatch = L'Q';
             pColors->textcolor(LIGHTRED);
-            wcout << endl << L"Przegrywasz walkowerem 0-3";
+            wcout << endl << pLang->get(L"You lose by default 0-3");
             playerGoals = 0;
             rivalGoals = 3;
         }
@@ -1836,12 +1839,12 @@ bool Match::runMecz() {
                 pInput->clrscr();
                 pColors->textcolor(GREEN);
                 wcout << endl <<
-                    L"Podaj szybkość wyświetlania napisów:" << endl <<
-                    L"0. Bardzo szybko" << endl <<
-                    L"1. Szybko" << endl <<
-                    L"2. Średnio" << endl <<
-                    L"3. Wolno" << endl <<
-                    L"4. Bardzo wolno" << endl;
+                    pLang->get(L"Enter the subtitle display speed:") << endl <<
+                    pLang->get(L"0. Very fast") << endl <<
+                    pLang->get(L"1. Fast") << endl <<
+                    pLang->get(L"2. Medium") << endl <<
+                    pLang->get(L"3. Slow") << endl <<
+                    pLang->get(L"4. Very Slow") << endl;
                 czas = pInput->getNumber();
                 if (czas < 0 || czas > 4) {
                     czas = 2;
@@ -1884,7 +1887,7 @@ bool Match::runMecz() {
     while (endMenuMatch != 'Q');
 
     pColors->textcolor(LIGHTGRAY);
-    wcout << endl << L"Proszę czekać...";
+    wcout << endl << pLang->get(L"Please wait...");
     if (clubRef.rivalData[1] == 0) { // player home
         float tickets = ((rand() % 30) + 30) * 5000.0;
         clubRef.finances[0] += tickets; //bilety
@@ -2185,22 +2188,22 @@ void Match::drawTeam(int usta, int tryb, int kto)
     int i = 0;
 
     pColors->textcolor(GREEN);
-    wcout << endl << L"Lp.   Zawodnik         Po.  ";
+    wcout << endl << pLang->get(L"No    Footballer       Po.  ");
 
     pColors->textcolor(LIGHTBLUE);
-    wcout << L"B  ";
+    wcout << pLang->get(L"G") << L"  ";
 
     pColors->textcolor(MAGENTA);
-    wcout << L"O  ";
+    wcout << pLang->get(L"D") << L"  ";
 
     pColors->textcolor(LIGHTCYAN);
-    wcout << L"P  ";
+    wcout << pLang->get(L"M") << L"  ";
     pColors->textcolor(LIGHTGREEN);
 
-    wcout << L"N  ";
+    wcout << pLang->get(L"A") << L"  ";
     pColors->textcolor(GREEN);
 
-    wcout << L"Morale  For. ForM Kon. Gole";
+    wcout << pLang->get(L"Morale  For. ForM Con. Goals");
     pColors->textcolor(LIGHTBLUE);
     int color = LIGHTBLUE;
     if (tryb == 16) {
@@ -2228,12 +2231,13 @@ void Match::drawTeam(int usta, int tryb, int kto)
             SFootballer &footballer = tmpFoorballers[index];
 
             if (i == footballer.data[0] && clubId == footballer.data[22]) {
-                wprintf(L"\n\r%2d.", footballer.data[0]);
+                wcout << endl;
+                wprintf(L"%2d.", footballer.data[0]);
 
                 if (footballer.data[15] > 0 || footballer.data[19]) {
                     pColors->textbackground(RED);
                     pColors->textcolor(LIGHTGRAY);
-                    wcout << L"Ko";
+                    wcout << pLang->get(L"In");
                     pColors->textbackground(BLACK);
                     pColors->textcolor(color);
                 }
@@ -2248,7 +2252,7 @@ void Match::drawTeam(int usta, int tryb, int kto)
                     pColors->textcolor(color);
                 }
                 else {
-                    wprintf(L"  ");
+                    wcout << L"  ";
                 }
 
                 wprintf(
@@ -2928,49 +2932,49 @@ void Match::drawBoard(
 
 
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d     Strzały     %2d", shootHome, shootAway);
+    wprintf(pLang->get(L"     %2d     Shots       %2d").c_str(), shootHome, shootAway);
 
     pColors->textbackground(GREEN);
     wcout << endl << BOX_LIGHT_VERTICAL;
 
     pColors->textcolor(isHome ? BLUE : RED);
-    wcout << L"   O";
+    wcout << L"   " << pLang->get(L"D");
 
     pColors->textcolor(WHITE);
     wcout << L"/";
 
     pColors->textcolor(isHome ? RED : BLUE);
-    wcout << L"A   ";
+    wcout << pLang->get(L"A") << L"   ";
 
     pColors->textcolor(WHITE);
-    wcout << BOX_LIGHT_DASH_VERTICAL;//L"|";
+    wcout << BOX_LIGHT_DASH_VERTICAL;
 
     pColors->textcolor(isHome ? BLUE : RED);
-    wcout << L"     P";
+    wcout << L"     " << pLang->get(L"M");
 
     pColors->textcolor(WHITE);
     wcout << L"/";
 
     pColors->textcolor(isHome ? RED : BLUE);
-    wcout << L"P     ";
+    wcout << pLang->get(L"M") << L"     ";
 
     pColors->textcolor(WHITE);
-    wcout << BOX_LIGHT_DASH_VERTICAL;//L"|";
+    wcout << BOX_LIGHT_DASH_VERTICAL;
 
     pColors->textcolor(isHome ? BLUE : RED);
-    wcout << L"   A";
+    wcout << L"   " << pLang->get(L"A");
 
     pColors->textcolor(WHITE);
     wcout << L"/";
 
     pColors->textcolor(isHome ? RED : BLUE);
-    wcout << L"O   ";
+    wcout << pLang->get(L"D") << L"   ";
 
     pColors->textcolor(WHITE);
     wcout << BOX_LIGHT_VERTICAL;
 
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d  Strzały celne  %2d", accurateShootHome, accurateShootAway);
+    wprintf(pLang->get(L"     %2d Shots on target %2d").c_str(), accurateShootHome, accurateShootAway);
 
     pColors->textbackground(GREEN);
     wcout << endl <<
@@ -2991,7 +2995,7 @@ void Match::drawBoard(
             BOX_LIGHT_VERTICAL_LEFT;
 
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d   Rzuty rożne   %2d", cornersHome, cornersAway);
+    wprintf(pLang->get(L"     %2d     Corners     %2d").c_str(), cornersHome, cornersAway);
 
     pColors->textbackground(GREEN);
     wcout << endl <<
@@ -3007,7 +3011,7 @@ void Match::drawBoard(
             BOX_LIGHT_VERTICAL_LEFT;
 
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d     Spalone     %2d", offsidesHome, offsidesAway);
+    wprintf(pLang->get(L"     %2d     Offsides    %2d").c_str(), offsidesHome, offsidesAway);
 
     pColors->textbackground(GREEN);
     wcout << endl <<
@@ -3024,7 +3028,7 @@ void Match::drawBoard(
             BOX_LIGHT_VERTICAL;
 
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d      Faule      %2d", faulsHome, faulsAway);
+    wprintf(pLang->get(L"     %2d      Fouls      %2d").c_str(), faulsHome, faulsAway);
 
     pColors->textbackground(GREEN);
     wcout << endl <<
@@ -3041,7 +3045,7 @@ void Match::drawBoard(
             BOX_LIGHT_VERTICAL_LEFT;
 
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d   Rzuty karne   %2d", paneltiesHome, paneltiesAway);
+    wprintf(pLang->get(L"     %2d    Penalties    %2d").c_str(), paneltiesHome, paneltiesAway);
 
     pColors->textbackground(GREEN);
     wcout << endl <<
@@ -3063,7 +3067,7 @@ void Match::drawBoard(
 
     pColors->textbackground(BLACK);
     pColors->textcolor(YELLOW);
-    wprintf(L"     %2d   żółte kartki  %2d", yellowsHome, yellowsAway);
+    wprintf(pLang->get(L"     %2d   Yellow cards  %2d").c_str(), yellowsHome, yellowsAway);
 
     pColors->textcolor(WHITE);
     pColors->textbackground(GREEN);
@@ -3137,7 +3141,7 @@ void Match::drawBoard(
 
     pColors->textcolor(LIGHTRED);
     pColors->textbackground(BLACK);
-    wprintf(L"     %2d Czerwone kartki %2d", redsHome, redsAway);
+    wprintf(pLang->get(L"     %2d    Red cards    %2d").c_str(), redsHome, redsAway);
 
     pColors->textcolor(WHITE);
     pColors->textbackground(GREEN);
@@ -3174,7 +3178,7 @@ void Match::drawBoard(
     wcout << BOX_LIGHT_HORIZONTAL << BOX_LIGHT_HORIZONTAL << BOX_LIGHT_UP_LEFT;
 
     pColors->textbackground(BLACK);
-    wprintf(L"   %3d%% Posiadanie piłki %d%%", ballPossHome, ballPossAway);
+    wprintf(pLang->get(L"   %3d%%  Ball possession %d%%").c_str(), ballPossHome, ballPossAway);
 
     pColors->textbackground(BLACK);
     pColors->textcolor(WHITE);
@@ -3305,7 +3309,8 @@ void Match::drawWhoScored(int mingol1[], int mingol2[], wstring dlagol1[], wstri
     int i = 3;
     for (int k = 0; k < 10; k++) {
         if (mingol1[k] != 0) {
-            wprintf(L"\n\r%19ls %2d ", dlagol1[k].c_str(), mingol1[k]);
+            wcout << endl;
+            wprintf(L"%19ls %2d ", dlagol1[k].c_str(), mingol1[k]);
             i--;
         }
 
@@ -3313,7 +3318,8 @@ void Match::drawWhoScored(int mingol1[], int mingol2[], wstring dlagol1[], wstri
             wprintf(L" %2d %-19ls", mingol2[k], dlagol2[k].c_str());
         }
         else if (mingol2[k] != 0 && mingol1[k] == 0) {
-            wprintf(L"\n\r                        %2d %-19ls", mingol2[k], dlagol2[k].c_str());
+            wcout << endl;
+            wprintf(L"                        %2d %-19ls", mingol2[k], dlagol2[k].c_str());
             i--;
         }
     }
@@ -3334,7 +3340,7 @@ void Match::saveMatchMessageToFile(int bkgcolor, int minuta, const wchar_t *mess
     SLastMatch lastMatch;
     lastMatch.textcolor = bkgcolor == BLUE ? LIGHTBLUE : RED;
 
-    swprintf(lastMatch.text, MAX_NEWS_LENGTH, L"%02d min. %ls", minuta + 2, message);
+    swprintf(lastMatch.text, MAX_NEWS_LENGTH, pLang->get(L"%02d min. %ls").c_str(), minuta + 2, message);
 
     FILE *f = fopen(FILE_SAVE_LAST_MATCH_REPORTS, "aw");
     fwrite(&lastMatch, sizeof(SLastMatch), 1, f);
@@ -3364,9 +3370,9 @@ void Match::playerTactics()
                     pInput->clrscr();
                     pColors->textbackground(BLACK);
                     pColors->textcolor(LIGHTRED);
-                    wcout << L"Obecne ustawienie: " << settings[clubRef.teamSetting - 1];
+                    wcout << pLang->get(L"Current formation: ") << settings[clubRef.teamSetting - 1];
                     pColors->textcolor(LIGHTGRAY);
-                    wcout << endl << L"Wybierz ustawienie zespołu:" << endl;
+                    wcout << endl << pLang->get(L"Choose a team formation:") << endl;
                     for (int i = 0; i < 14; i++) {
                         wcout << endl;
                         if (i < 9) {
@@ -3374,7 +3380,7 @@ void Match::playerTactics()
                         }
                         wcout << i + 1 << L". " << settings[i];
                     }
-                    wcout << endl << endl << L"Wpisz odpowiednią cyfrę: ";
+                    wcout << endl << endl << pLang->get(L"Enter the appropriate number: ");
                     clubRef.teamSetting = pInput->getNumber();
                     if (clubRef.teamSetting > 0 && clubRef.teamSetting < 15) {
                         isDone = true;
@@ -3390,7 +3396,7 @@ void Match::playerTactics()
                 int footballer1;
                 int footballer2;
                 pColors->textcolor(LIGHTGRAY);
-                wcout << endl << L"Podaj numer Lp., spacja, drugi numer i Enter: ";
+                wcout << endl << pLang->get(L"Enter the number, space, second number and press Enter: ");
                 pInput->getNumbersExchange(footballer1, footballer2);
 
                 for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
@@ -3451,12 +3457,12 @@ void Match::playerTactics()
             case 'R': {
                 pInput->clrscr();
                 pColors->textcolor(WHITE);
-                wcout << L"REZERWOWI - " << pClub->getClubName(clubRef.clubId - 1);
+                wcout << pLang->get(L"SUBSTITUTE'S BENCH") << L" - " << pClub->getClubName(clubRef.clubId - 1);
 
                 drawTeam(clubRef.teamSetting, 16, 0);
 
                 pColors->textcolor(LIGHTGRAY);
-                wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+                wcout << endl << endl << pLang->get(L"Press any key...");
                 pInput->getKeyBoardPressed();
                 break;
             }
@@ -3466,7 +3472,7 @@ void Match::playerTactics()
                 do {
                     pInput->clrscr();
                     pColors->textcolor(WHITE);
-                    wcout << L"INSTRUKCJE DLA DRUŻYNY - " << pClub->getClubName(clubRef.clubId - 1);
+                    wcout << pLang->get(L"TEAM INSTRUCTIONS") << L" - " << pClub->getClubName(clubRef.clubId - 1);
 
                     pTeamInstruction->draw(
                         clubRef.inst[0],
@@ -3479,7 +3485,7 @@ void Match::playerTactics()
                     );
 
                     pColors->textcolor(RED);
-                    wcout << endl << L" Q Powrót" << endl;
+                    wcout << endl << L" " << pLang->get(L"Q Back") << endl;
 
                     pColors->textcolor(GREEN);
                     menuInstructions = pInput->getKeyBoardPressed();
@@ -3583,19 +3589,19 @@ void Match::rivalTactics()
             case 'R': {
                 pInput->clrscr();
                 pColors->textcolor(WHITE);
-                wcout << L"REZERWOWI - " << pClub->getClubName(clubRef.rivalData[0] - 1);
+                wcout << pLang->get(L"SUBSTITUTE'S BENCH") << L" - " << pClub->getClubName(clubRef.rivalData[0] - 1);
 
                 drawTeam(clubRef.rivalData[2], 16, clubRef.rivalData[0]);
 
                 pColors->textcolor(LIGHTGRAY);
-                wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+                wcout << endl << endl << pLang->get(L"Press any key...");
                 pInput->getKeyBoardPressed();
                 break;
             }
             case 'I': {
                 pInput->clrscr();
                 pColors->textcolor(WHITE);
-                wcout << L"INSTRUKCJE DLA DRUŻYNY - " << pClub->getClubName(clubRef.rivalData[0] - 1);
+                wcout << pLang->get(L"TEAM INSTRUCTIONS") << L" - " << pClub->getClubName(clubRef.rivalData[0] - 1);
 
                 pTeamInstruction->draw(
                     clubRef.rivalInst[0],
@@ -3608,7 +3614,7 @@ void Match::rivalTactics()
                 );
 
                 pColors->textcolor(LIGHTGRAY);
-                wcout << endl << endl << L"Naciśnij dowolny klawisz...";
+                wcout << endl << endl << pLang->get(L"Press any key...");
                 pInput->getKeyBoardPressed();
                 break;
             }
