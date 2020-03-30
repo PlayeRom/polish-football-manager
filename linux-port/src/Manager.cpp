@@ -2055,8 +2055,8 @@ void Manager::menuItemCalendar()
                     }
                 }
 
-                wprintf(L" %-9ls", pLang->get(isHome ? L"Home" : L"Away"));
-                wprintf(L" %-11ls", pLang->get(roundNum <= 0 ? L"Friendly" : L"I league"));
+                wprintf(L" %-9ls", pLang->get(isHome ? L"Home" : L"Away").c_str());
+                wprintf(L" %-11ls", pLang->get(roundNum <= 0 ? L"Friendly" : L"I league").c_str());
 
                 int kk = clubRef.isMatch ? 1 : 0;
 
@@ -2202,19 +2202,17 @@ void Manager::menuItemCalendarControlMatch()
             clubRef.roundNumber--;
             clubRef.isRivalSet = 0;
 
-            SRound round;
+            SRound round = {0};
             round.day = wishDay;
             round.month = wishMonth;
             round.year = 2002;
             round.number = clubRef.controlMatchesAmount; //numer kolejki, liczba ujemna
-            memset(round.clubNumbers, 0, MAX_CLUBS * sizeof(int));
             round.clubNumbers[0] = rivalClubId;
             round.clubNumbers[1] = clubRef.clubId;
 
-            for (int i = 0; i < MAX_CLUBS; i++) {
-                for (int j = 0; j < 19; j++) {
-                    round.kol1[i][j] = pClub->getClubName(round.clubNumbers[i] - 1)[j];
-                }
+            for (int i = 0; i < 2; i++) {
+                const wstring clubName = pClub->getClubName(round.clubNumbers[i] - 1);
+                wcscpy(round.kol1[i], clubName.c_str());
             }
 
             pRounds->insert(round);
