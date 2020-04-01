@@ -129,10 +129,10 @@
 "T Traditional view   G Details     S Sort","T Tradycyjny widok   G Szszegóły   S Sortuj"
 "Q Back to MENU","Q Powrót do MENU"
 "Sort by:","Sortuj według:"
-"B Goalkeeper skills","B Umiejętności Bramkarza",
+"B Goalkeeper skills","B Umiejętności Bramkarza"
 "O Defencs skills","O Umiejętności Obrony"
 "P Midfield skills","P Umiejętności Pomocy"
-"N Attack skills","N Umiejętności Napastnika",
+"N Attack skills","N Umiejętności Napastnika"
 "M Morale","M Morale"
 "F Form","F Formy"
 "K Condition","K Kondycji"
@@ -335,9 +335,9 @@
 
 "Now you can't play a match!","Teraz nie można rozegrać meczu!"
 "V.fast","B.szybko"
-"Fast","Szybko",
-"Medium","Średnio",
-"Slow","Wolno",
+"Fast","Szybko"
+"Medium","Średnio"
+"Slow","Wolno"
 "V.slow","B.wolno"
 " Time:%3d"," Czas:%3d"
 "A Tactics-%ls  P Tactics-%ls  C Speed-%ls","A Taktyka-%ls  P Taktyka-%ls  C Szybkość-%ls"
@@ -350,7 +350,7 @@
 "0. Very fast","0. Bardzo szybko"
 "1. Fast","1. Szybko"
 "2. Medium","2. Średnio"
-"3. Slow","3. Wolno",
+"3. Slow","3. Wolno"
 "4. Very slow","4. Bardzo wolno"
 "Please wait...","Proszę czekać..."
 "Morale  For. ForM Con. Goals","Morale  For. ForM Kon. Gole","Comments: For. = Form, ForM = Form in match"
