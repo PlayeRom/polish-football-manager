@@ -21,8 +21,8 @@ void News::init()
 {
     allManagerMessages.clear();
 
-    char bufferFileName[1024];
-    sprintf(bufferFileName, FILE_MSG_MANAGER, pLang->getLngCode().c_str());
+    char bufferFileName[32];
+    snprintf(bufferFileName, 32, FILE_MSG_MANAGER, pLang->getLngCode().c_str());
 
     FILE *f = fopen(bufferFileName, "rb");
     if (!f) {

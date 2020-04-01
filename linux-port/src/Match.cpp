@@ -59,8 +59,8 @@ void Match::loadMatchMessages()
 {
     matchMsgs.clear();
 
-    char bufferFileName[1024];
-    sprintf(bufferFileName, FILE_MSG_MATCH, pLang->getLngCode().c_str());
+    char bufferFileName[32];
+    snprintf(bufferFileName, 32, FILE_MSG_MATCH, pLang->getLngCode().c_str());
 
     FILE *f = fopen(bufferFileName, "rb");
     if (!f) {
@@ -95,7 +95,8 @@ void Match::loadMatchMessages()
     fclose(f);
 }
 
-bool Match::runMecz() {
+bool Match::runMatch()
+{
     SClub &clubRef = pClub->get();
 
     if (!clubRef.isMatch || clubRef.isNotAllowedTeamPlayer) {
@@ -107,7 +108,7 @@ bool Match::runMecz() {
 
     loadMatchMessages();
 
-    wstring speed[5] = {
+    const wstring speed[MAX_SPEED_OPTIONS] = {
         pLang->get(L"V.fast"),
         pLang->get(L"Fast"),
         pLang->get(L"Medium"),
@@ -115,42 +116,60 @@ bool Match::runMecz() {
         pLang->get(L"V.slow")
     };
 
-    wstring dlagol1[10], dlagol2[10];
-    int mingol1[10], mingol2[10], minuta2 = 0, juzzmienil[3] = {0, 0, 0};
+    int juzzmienil[3] = {0};
     bool isOpenTacticsMenu = false;
     bool isPossibleGoToTactics = true;
-    int koniec = 0; // 0 - poczatek meczu, 1 - koniec 1 polowy, 2 - poczatek 2 polowy, 3 - koniec meczu, 4 - wyjscie z meczu
-    int playerGoals = 0, rivalGoals = 0; // playerGoals - gole gracza, rivalGoals - gole przeciwnika
-    bool isPlayerBall = false; // true - player team has ball, false - rival team has a ball
-    int ktoZacz = 0, minuta = 0, start = 0, k, czas = 2;
+    MatchStatus matchStatus = START_MATCH;
+    bool isPlayerBall = false; // true - player team has a ball, false - rival team has a ball
+    int whoStartedMatch = 0; // 1 - player, 2 - opponent
+    int start = 0;
+    SpeedOptions speedSelected = MEDIUM;
+    int matchMinute = 0; // from 0 to 45 and from 45 to 90
+    int trueMinute = 0; // true minute of match (it's always continuous counting)
     SFormationsSum playerFormationsSum;
     SFormationsSum rivalFormationsSum;
 
     // where is ball/action
     int whereIsAction = ACTION_IN_MIDDLEFIELD;
 
-    int los = 0, co = 0, x1 = 0, x2 = 0, x3 = 0, pos1 = 0, pos2 = 0, pos = 0;
+    int los = 0, x1 = 0, x2 = 0, x3 = 0;
+    int playerBallPossessionCounter = 0;
+    int ballPossessionPlayer = 0;
+    int ballPossessionRival = 0;
 
     // remembers the number of the player who needs to be moved to the next message,
     // eg. "%s shoots!", footballerMemory = %s, "%s has scored!"
     int footballerMemory;
 
-    int str[8] = {0, 0, 0, 0, 0, 0, 0, 0}, str2[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    int statPlayer[MAX_STATISTICS] = {0}; // match statistics for player
+    int statRival[MAX_STATISTICS] = {0}; // match statistics for rival
     bool isShotFromDistance = false;
     bool endHalfMatch = false;
-    float strefa[6] = {0, 0, 0, 0, 0, 0};
+
+    /**
+     * zone[0] - ball possession counter for rival
+     * zone[1] - ball possession counter for middlefield
+     * zone[2] - ball possession counter for player
+     * zone[3] - ball possession % for rival
+     * zone[4] - ball possession % for middlefield
+     * zone[5] - ball possession % for player
+     */
+    float zonePossessionCounter[MAX_ZONES] = {0};
+    float zonePossession[MAX_ZONES] = {0};
 
     howManyPlayerChanges = 0;
     isPlayerChanges = true;
     whoPlayerChanges = 0;
+    memset(msg, 0, MAX_MESSAGES * sizeof(int));
+    memset(msgWhoBall, 0, MAX_MESSAGES * sizeof(bool));
+    goalsInfoPlayer.clear();
+    goalsInfoRival.clear();
 
     //time_t tmptime = time(NULL);
     //struct tm t = *localtime(&tmptime);
 
-    int walkower = pFootballers->getSizePlayerTeam();
-
-    memset(mingol1, 0, 10 * sizeof(int));
-    memset(mingol2, 0, 10 * sizeof(int));
+    bool isWalkover = pFootballers->getSizePlayerTeam() < 11;
+    clubRef.isWalkover = isWalkover ? 1 : 0;
 
     FILE *f = fopen(FILE_SAVE_LAST_MATCH_REPORTS, "w");
     fclose(f);
@@ -173,33 +192,31 @@ bool Match::runMecz() {
         pColors->textcolor(WHITE);
         if (isHome) { //w domu
             pColors->textbackground(BLUE);
-            wprintf(L" %19ls %d ", pClub->getClubName(clubRef.clubId - 1).c_str(), playerGoals);
+            wprintf(L" %19ls %d ", pClub->getClubName(clubRef.clubId - 1).c_str(), goalsInfoPlayer.size());
             pColors->textbackground(RED);
-            wprintf(L" %d %-19ls ", rivalGoals, pClub->getClubName(clubRef.rivalData[0] - 1).c_str());
+            wprintf(L" %d %-19ls ", goalsInfoRival.size(), pClub->getClubName(clubRef.rivalData[0] - 1).c_str());
         }
         else { //wyjazd
             pColors->textbackground(RED);
-            wprintf(L" %19ls %d ", pClub->getClubName(clubRef.rivalData[0] - 1).c_str(), rivalGoals);
+            wprintf(L" %19ls %d ", pClub->getClubName(clubRef.rivalData[0] - 1).c_str(), goalsInfoRival.size());
             pColors->textbackground(BLUE);
-            wprintf(L" %d %-19ls ", playerGoals, pClub->getClubName(clubRef.clubId - 1).c_str());
+            wprintf(L" %d %-19ls ", goalsInfoPlayer.size(), pClub->getClubName(clubRef.clubId - 1).c_str());
         }
         pColors->textbackground(BLACK);
-        wprintf(pLang->get(L" Time:%3d").c_str(), minuta);
+        wprintf(pLang->get(L" Time:%3d").c_str(), matchMinute);
         pColors->textcolor(LIGHTGRAY);
 
         drawWhoScored(
-            isHome ? mingol1 : mingol2,
-            isHome ? mingol2 : mingol1,
-            isHome ? dlagol1 : dlagol2,
-            isHome ? dlagol2 : dlagol1
+            isHome ? goalsInfoPlayer : goalsInfoRival,
+            isHome ? goalsInfoRival : goalsInfoPlayer
         );
 
         playerFormationsSum = getPlayerFormationsSum(clubRef);
         rivalFormationsSum = getRivalFormationsSum(clubRef);
 
-        OnaA = playerFormationsSum.sumDef - rivalFormationsSum.sumAtt;
-        PnaP = playerFormationsSum.sumMid - rivalFormationsSum.sumMid;
-        AnaO = playerFormationsSum.sumAtt - rivalFormationsSum.sumDef;
+        DonA = playerFormationsSum.sumDef - rivalFormationsSum.sumAtt;
+        MonM = playerFormationsSum.sumMid - rivalFormationsSum.sumMid;
+        AonD = playerFormationsSum.sumAtt - rivalFormationsSum.sumDef;
         if (isShotFromDistance) {
             // increase the chance of defending a shot from a distance
             playerFormationsSum.sumGol += 50;
@@ -210,17 +227,19 @@ bool Match::runMecz() {
         if (isHome) { // gracz gra w domu
             drawBoard(
                 true,
-                str[0], str2[0],
-                str[1], str2[1],
-                str[2], str2[2],
-                strefa[3], strefa[4], strefa[5],
-                str[3], str2[3],
-                str[7], str2[7],
-                str[6], str2[6],
-                str[4], str2[4],
-                str[5], str2[5],
-                pos1, pos2,
-                OnaA, PnaP, AnaO,
+                statPlayer[SHOOTS], statRival[SHOOTS], // shoots
+                statPlayer[SHOOTS_ON_TARGET], statRival[SHOOTS_ON_TARGET], // shoots on target
+                statPlayer[CORNERS], statRival[CORNERS], // corners
+                zonePossession[ZONE_LEFT],
+                zonePossession[ZONE_MIDDLE],
+                zonePossession[ZONE_RIGHT],
+                statPlayer[OFFSIDES], statRival[OFFSIDES], // offsides
+                statPlayer[FOULS], statRival[FOULS], // fouls
+                statPlayer[PENALTIES], statRival[PENALTIES], // penalties
+                statPlayer[YELLOW_CARDS], statRival[YELLOW_CARDS], // yellow cards
+                statPlayer[RED_CARDS], statRival[RED_CARDS], // red cards
+                ballPossessionPlayer, ballPossessionRival,
+                DonA, MonM, AonD,
                 whereIsAction,
                 isPlayerBall
             );
@@ -228,46 +247,48 @@ bool Match::runMecz() {
         else { // gracz gra na wyjezdzie
             drawBoard(
                 false,
-                str2[0], str[0],
-                str2[1], str[1],
-                str2[2], str[2],
-                strefa[5], strefa[4], strefa[3],
-                str2[3], str[3],
-                str2[7], str[7],
-                str2[6], str[6],
-                str2[4], str[4],
-                str2[5], str[5],
-                pos2, pos1,
-                OnaA, PnaP, AnaO,
+                statRival[SHOOTS], statPlayer[SHOOTS], // shoots
+                statRival[SHOOTS_ON_TARGET], statPlayer[SHOOTS_ON_TARGET], // shoots on target
+                statRival[CORNERS], statPlayer[CORNERS], // corners
+                zonePossession[ZONE_RIGHT],
+                zonePossession[ZONE_MIDDLE],
+                zonePossession[ZONE_LEFT],
+                statRival[OFFSIDES], statPlayer[OFFSIDES], // offsides
+                statRival[FOULS], statPlayer[FOULS], // fouls
+                statRival[PENALTIES], statPlayer[PENALTIES], // panelties
+                statRival[YELLOW_CARDS], statPlayer[YELLOW_CARDS], // yellow cards
+                statRival[RED_CARDS], statPlayer[RED_CARDS], // red cards
+                ballPossessionRival, ballPossessionPlayer,
+                DonA, MonM, AonD,
                 whereIsAction,
                 isPlayerBall
             );
         }
 
-        if (start == 1 && !isOpenTacticsMenu && koniec != 4 && koniec != 1 && clubRef.isMatchAutoMsg) {
+        if (start == 1 && !isOpenTacticsMenu && matchStatus != EXIT_MATCH && matchStatus != END_1ST_HALF && clubRef.isMatchAutoMsg) {
             pColors->textcolor(GREEN);
             wcout << endl;
             wprintf(
                 pLang->get(L"A Tactics-%ls  P Tactics-%ls  C Speed-%ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
                 pClub->getClubName(clubRef.rivalData[0] - 1).c_str(),
-                speed[czas].c_str()
+                speed[speedSelected].c_str()
             );
             wcout << endl;
         }
-        if (start == 1 && koniec < 3) { //mecz się rozpoczął
-            co = whatHappened(
+        if (start == 1 && matchStatus < END_MATCH) { // the match has started
+            int what = whatHappened(
                 isPlayerBall,
-                PnaP,
-                OnaA,
-                AnaO,
+                MonM,
+                DonA,
+                AonD,
                 playerFormationsSum.sumGol,
                 rivalFormationsSum.sumGol,
                 whereIsAction,
                 clubRef
             );
             //************ whereIsAction = ACTION_IN_MIDDLEFIELD *******************
-            if (co == 9) {
+            if (what == 9) {
                 isShotFromDistance = true;
             }
 
@@ -276,8 +297,8 @@ bool Match::runMecz() {
                 msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                 msgFootballers[1] = getFootballerSurname(isPlayerBall, 6); //czyli 7
 
-                if (co == 1) {
-                    wiado[0] = 8;
+                if (what == 1) {
+                    msg[0] = 8;
                     los = (rand() % 3); //blokada=1;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
@@ -285,37 +306,37 @@ bool Match::runMecz() {
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
 
                     if (los == 0) { //na lewe skrzydło
-                        wiado[1] = 9;
+                        msg[1] = 9;
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getLefttWingerFootballerId(teamSetting);
                         msgFootballers[3] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 1) { // podanie na prawe skrzydło
-                        wiado[1] = 10;
+                        msg[1] = 10;
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getRightWingerFootballerId(teamSetting);
                         msgFootballers[3] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 2) {
-                        wiado[1] = 11; // %ls podaje do przodu.
+                        msg[1] = 11; // %ls podaje do przodu.
                         whereIsAction = ACTION_IN_PANELTY_AREA;
                         msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
                     }
-                }//co=1
-                else if (co == 2) {
-                    wiado[0] = 12;
+                }
+                else if (what == 2) {
+                    msg[0] = 12;
                     whereIsAction = ACTION_IN_PANELTY_AREA;
                     msgWhoBall[0] = isPlayerBall;
-                }//co=2
-                else if (co == 3 || co == 4) {
-                    wiado[0] = 12;
+                }
+                else if (what == 3 || what == 4) {
+                    msg[0] = 12;
                     msgWhoBall[0] = isPlayerBall;
-                    if (co == 4) {
-                        wiado[0] = 8;
+                    if (what == 4) {
+                        msg[0] = 8;
                     }
-                    wiado[1] = 13;
-                    if (co == 4) {
-                        wiado[1] = 14;
+                    msg[1] = 13;
+                    if (what == 4) {
+                        msg[1] = 14;
                     }
 
                     // zamiana pilki
@@ -325,13 +346,13 @@ bool Match::runMecz() {
                     msgFootballers[3] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
 
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//co=3||co=4
-                else if (co == 5) {
-                    wiado[0] = 8;
+                }
+                else if (what == 5) {
+                    msg[0] = 8;
                     msgWhoBall[0] = isPlayerBall;
-                    wiado[1] = 15;
+                    msg[1] = 15;
                     msgWhoBall[1] = isPlayerBall;
-                    wiado[2] = 16;
+                    msg[2] = 16;
 
                     // zamiana pilki
                     isPlayerBall = !isPlayerBall;
@@ -339,12 +360,12 @@ bool Match::runMecz() {
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
 
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//co=5
-                else if (co == 6) {
-                    wiado[0] = 8;
+                }
+                else if (what == 6) {
+                    msg[0] = 8;
                     msgWhoBall[0] = isPlayerBall;
-                    wiado[1] = 17;
-                    wiado[2] = 18;
+                    msg[1] = 17;
+                    msg[2] = 18;
 
                     // zamiana pilki
                     isPlayerBall = !isPlayerBall;
@@ -355,18 +376,18 @@ bool Match::runMecz() {
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
 
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//co=6
-                else if (co == 7) { //faul przeciwnika
-                    wiado[0] = 8;
+                }
+                else if (what == 7) { //faul przeciwnika
+                    msg[0] = 8;
                     msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    wiado[1] = 14;
-                    wiado[2] = 19;
+                    msg[1] = 14;
+                    msg[2] = 19;
                     int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
                     int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
-                    isPlayerBall ? str2[7]++ : str[7]++;
+                    isPlayerBall ? statRival[FOULS]++ : statPlayer[FOULS]++;
 
-                    co = getArbiterDecision(instrTreatment);
+                    what = getArbiterDecision(instrTreatment);
 
                     // losuje pomocnika, ktory otrzyma zolta kartke
                     los = getMiddlefieldFootballerIdWhoFouled(teamSetting);
@@ -376,7 +397,7 @@ bool Match::runMecz() {
                     msgWhoBall[1] = !isPlayerBall;
                     msgWhoBall[2] = !isPlayerBall;
 
-                    if (co == 3) { //jest żółta
+                    if (what == 3) { //jest żółta
                         vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
@@ -404,36 +425,36 @@ bool Match::runMecz() {
                         }
 
                         if (is2ndYellow) {
-                            wiado[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                            msg[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
                             if (isPlayerBall) {
-                                str2[5]++;
-                                str2[4]++;
+                                statRival[RED_CARDS]++;
+                                statRival[YELLOW_CARDS]++;
                             }
                             else {
-                                str[5]++;
-                                str[4]++;
+                                statPlayer[RED_CARDS]++;
+                                statPlayer[YELLOW_CARDS]++;
                             }
                         }
                         else {
-                            wiado[3] = 20; // %ls otrzymuje żółtą kartkę!
+                            msg[3] = 20; // %ls otrzymuje żółtą kartkę!
                             if (isPlayerBall) {
-                                str2[4]++;
+                                statRival[YELLOW_CARDS]++;
                             }
                             else {
-                                str[4]++;
+                                statPlayer[YELLOW_CARDS]++;
                             }
                         }
 
                         msgFootballers[6] = getFootballerSurname(!isPlayerBall, los - 1);
                         msgWhoBall[3] = !isPlayerBall;
-                    }// jest żółta end
-                    else if (co == 2) { // upomnienie slowne
-                        wiado[3] = 21;
+                    }
+                    else if (what == 2) { // upomnienie slowne
+                        msg[3] = 21;
                         msgFootballers[6] = getFootballerSurname(!isPlayerBall, los - 1);
                         msgWhoBall[3] = !isPlayerBall;
                     }
 
-                    wiado[4] = 22; // %ls wznawia grę.
+                    msg[4] = 22; // %ls wznawia grę.
                     msgWhoBall[4] = isPlayerBall;
                     msgWhoBall[5] = isPlayerBall;
 
@@ -443,29 +464,29 @@ bool Match::runMecz() {
 
                     los = (rand() % 3);
                     if (los == 0) { //na lewe skrzydło
-                        wiado[5] = 9; // %ls podaje na lewe skrzydło do %ls.
+                        msg[5] = 9; // %ls podaje na lewe skrzydło do %ls.
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getLefttWingerFootballerId(teamSetting);
                         msgFootballers[11] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 1) { //podanie na prawe skrzydło
-                        wiado[5] = 10; // %ls podaje na prawe skrzydło do %ls.
+                        msg[5] = 10; // %ls podaje na prawe skrzydło do %ls.
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getRightWingerFootballerId(teamSetting);
                         msgFootballers[11] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
                     else if (los == 2) {
-                        wiado[5] = 11; // %ls podaje do przodu.
+                        msg[5] = 11; // %ls podaje do przodu.
                         whereIsAction = ACTION_IN_PANELTY_AREA;
                     }
-                }//co=7
-                else if (co == 8) { //aut dla przeciwnika
-                    wiado[0] = 8;
+                }
+                else if (what == 8) { //aut dla przeciwnika
+                    msg[0] = 8;
                     msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    wiado[1] = 23;
+                    msg[1] = 23;
                     msgWhoBall[1] = isPlayerBall;
-                    wiado[2] = (rand() % 2) == 0 ? 24 : 25;
+                    msg[2] = (rand() % 2) == 0 ? 24 : 25;
 
                     los = (rand() % 3) + 2;
 
@@ -474,16 +495,16 @@ bool Match::runMecz() {
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, los - 1);
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
                     msgWhoBall[2] = isPlayerBall;
-                }//co=8
-                else if (co == 9) { //strzał z dystansu
-                    wiado[0] = 8;
+                }
+                else if (what == 9) { //strzał z dystansu
+                    msg[0] = 8;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    wiado[1] = 26;
+                    msg[1] = 26;
                     msgWhoBall[1] = isPlayerBall;
-                    wiado[2] = (rand() % 2) == 0 ? 27 : 28;
+                    msg[2] = (rand() % 2) == 0 ? 27 : 28;
 
-                    isPlayerBall ? str[0]++ : str2[0]++;
+                    isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
                     los = getFootballerIdWhoShootDistance(teamSetting);
@@ -493,16 +514,16 @@ bool Match::runMecz() {
                     msgFootballers[4] = msgFootballers[2];
                     whereIsAction = ACTION_IN_GOAL_SITUATION;
                     footballerMemory = los - 1;
-                }//co=9
-            } // dla blokada==1 whereIsAction == ACTION_IN_MIDDLEFIELD
+                }
+            }
             else if (whereIsAction == ACTION_IN_WINGER) {
                 //************** Skrzydłowy przy piłce ******************
-                wiado[0] = 29; // %ls biegnie wzdłuż bocznej linii boiska.
+                msg[0] = 29; // %ls biegnie wzdłuż bocznej linii boiska.
                 msgWhoBall[0] = isPlayerBall;
                 msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
 
-                if (co == 10) { //udane dośrodkowanie
-                    wiado[1] = 30; //  %ls mija %ls i biegnie dalej...
+                if (what == 10) { //udane dośrodkowanie
+                    msg[1] = 30; //  %ls mija %ls i biegnie dalej...
                     msgWhoBall[1] = isPlayerBall;
                     msgFootballers[2] = msgFootballers[0];
 
@@ -527,12 +548,12 @@ bool Match::runMecz() {
                         pFootballers->saveRivals();
                     }
 
-                    wiado[2] = (rand() % 2) == 0 ? 31 : 32;
+                    msg[2] = (rand() % 2) == 0 ? 31 : 32;
 
                     msgWhoBall[2] = isPlayerBall;
                     whereIsAction = ACTION_IN_PANELTY_AREA;
                 }
-                else if (co == 11) { //faul
+                else if (what == 11) { //faul
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
@@ -554,27 +575,27 @@ bool Match::runMecz() {
                         pFootballers->saveRivals();
                     }
 
-                    wiado[1] = 30; //  %ls mija %ls i biegnie dalej...
+                    msg[1] = 30; //  %ls mija %ls i biegnie dalej...
                     msgWhoBall[1] = isPlayerBall;
                     msgFootballers[2] = msgFootballers[0];
                     isPossibleGoToTactics = true;
 
                     int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
-                    isPlayerBall ? str2[7]++ : str[7]++;
+                    isPlayerBall ? statRival[FOULS]++ : statPlayer[FOULS]++;
 
                     los = getDefFootballerId(teamSetting);
 
                     msgFootballers[3] = getFootballerSurname(!isPlayerBall, los - 1);
 
-                    wiado[2] = 33;
+                    msg[2] = 33;
                     msgFootballers[4] = msgFootballers[3];
                     msgFootballers[5] = msgFootballers[2];
                     msgWhoBall[2] = !isPlayerBall;
                     msgWhoBall[3] = !isPlayerBall;
                     int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
-                    co = getArbiterDecision(instrTreatment);
+                    what = getArbiterDecision(instrTreatment);
 
-                    if (co == 3) { //jest żółta
+                    if (what == 3) { //jest żółta
                         vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
@@ -604,52 +625,52 @@ bool Match::runMecz() {
 
                         msgFootballers[6] = msgFootballers[3];
                         if (is2ndYellow) {
-                            wiado[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                            msg[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
                             if (isPlayerBall) {
-                                str2[5]++;
-                                str2[4]++;
+                                statRival[RED_CARDS]++;
+                                statRival[YELLOW_CARDS]++;
                             }
                             else {
-                                str[5]++;
-                                str[4]++;
+                                statPlayer[RED_CARDS]++;
+                                statPlayer[YELLOW_CARDS]++;
                             }
                         }
                         else {
-                            wiado[3] = 20; // %ls otrzymuje żółtą kartkę!
+                            msg[3] = 20; // %ls otrzymuje żółtą kartkę!
                             if (isPlayerBall) {
-                                str2[4]++;
+                                statRival[YELLOW_CARDS]++;
                             }
                             else {
-                                str[4]++;
+                                statPlayer[YELLOW_CARDS]++;
                             }
                         }
-                    }// jest żółta end
-                    else if (co == 2) { //słownie
-                        wiado[3] = 21;
+                    }
+                    else if (what == 2) { //słownie
+                        msg[3] = 21;
                         msgFootballers[6] = msgFootballers[3];
                         msgWhoBall[3] = !isPlayerBall;
-                    }//słownie end
+                    }
 
-                    wiado[4] = 85; // %ls będzie uderzał z wolnego.
+                    msg[4] = 85; // %ls będzie uderzał z wolnego.
                     msgWhoBall[4] = isPlayerBall;
 
                     footballerMemory = ((rand() % 10) + 2) - 1;
                     msgFootballers[8] = getFootballerSurname(isPlayerBall, footballerMemory);
-                    isPlayerBall ? str[0]++ : str2[0]++;
+                    isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
-                    wiado[5] = 63; // Sędzia jeszcze ustawia mur.
+                    msg[5] = 63; // Sędzia jeszcze ustawia mur.
                     msgWhoBall[5] = isPlayerBall;
 
-                    wiado[6] = 64; // %ls uderza z wolnego...
+                    msg[6] = 64; // %ls uderza z wolnego...
                     msgWhoBall[6] = isPlayerBall;
                     msgFootballers[12] = msgFootballers[8];
                     whereIsAction = ACTION_IN_DIRECT_FREE_KICK;
-                }//end faul
-                else if (co == 12) { //aut
-                    wiado[1] = 34;
+                }
+                else if (what == 12) { // out
+                    msg[1] = 34;
                     msgWhoBall[1] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    wiado[2] = (rand() % 2) == 0 ? 24 : 25;
+                    msg[2] = (rand() % 2) == 0 ? 24 : 25;
 
                     los = (rand() % 3) + 2;
                     isPlayerBall = !isPlayerBall;
@@ -657,8 +678,8 @@ bool Match::runMecz() {
                     msgWhoBall[2] = isPlayerBall;
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }
-                else if (co == 13) { //nie dośrodkował
-                    wiado[1] = 35;
+                else if (what == 13) { //nie dośrodkował
+                    msg[1] = 35;
                     los = (rand() % 3) + 2;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
@@ -692,72 +713,73 @@ bool Match::runMecz() {
                         case INSTR_PASSES_LONG: { //długie podania
                             if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
                                 // %ls wykonuje długie podanie do przodu.
-                                wiado[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
+                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             else {
                                 // %ls podaje do przodu.
-                                wiado[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
+                                msg[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             break;
                         }
                         case INSTR_PASSES_MIXES:
                         case INSTR_PASSES_MIDDLE: { //mieszane, średnie
                             if (los == 1 || los == 2 || los == 5) {
-                                wiado[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
+                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             else {
-                                wiado[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
+                                msg[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             break;
                         }
                         case INSTR_PASSES_SHORT: //któtkie podania
                         default: {
                             if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
-                                wiado[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
+                                msg[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             else {
-                                wiado[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
+                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             break;
                         }
                     }
 
-                    whereIsAction = wiado[2] == 11 ? ACTION_IN_MIDDLEFIELD : ACTION_IN_PANELTY_AREA;
-                }//nie dośrodkował
-            }//dla skrzydłowy przy piłce
-            else if (whereIsAction == ACTION_IN_PANELTY_AREA) { //****************** Pole karne ********
-                if (co == 14) { //spalony
-                    wiado[0] = 37;
+                    whereIsAction = msg[2] == 11 ? ACTION_IN_MIDDLEFIELD : ACTION_IN_PANELTY_AREA;
+                }
+            }
+            else if (whereIsAction == ACTION_IN_PANELTY_AREA) {
+                //****************** penalty area ********
+                if (what == 14) { // offside
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
 
                     los = (rand() % 3);
                     if (los == 0) {
-                        wiado[1] = 38; // %ls na spalonym!
+                        msg[1] = 38; // %ls na spalonym!
                     }
                     else if (los == 1) {
-                        wiado[1] = 39; // %ls ruszył za wcześnie. Spalony.
+                        msg[1] = 39; // %ls ruszył za wcześnie. Spalony.
                     }
                     else {
-                        wiado[1] = 40; // Chorągiewka w górze! %ls na spalonym.
+                        msg[1] = 40; // Chorągiewka w górze! %ls na spalonym.
                     }
 
                     msgFootballers[2] = msgFootballers[0];
                     msgWhoBall[1] = isPlayerBall;
-                    wiado[2] = 41;
-                    isPlayerBall ? str[3]++ : str2[3]++;
+                    msg[2] = 41;
+                    isPlayerBall ? statPlayer[OFFSIDES]++ : statRival[OFFSIDES]++;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[2] = isPlayerBall;
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//spalony
-                else if (co == 15) { //spalony nieudany
-                    wiado[0] = 37;
+                }
+                else if (what == 15) { //spalony nieudany
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
-                    wiado[1] = 42;
+                    msg[1] = 42;
                     msgWhoBall[1] = isPlayerBall;
-                    wiado[2] = 43;
+                    msg[2] = 43;
                     msgWhoBall[2] = isPlayerBall;
 
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
@@ -779,13 +801,13 @@ bool Match::runMecz() {
 
                     footballerMemory = los - 1;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
-                    isPlayerBall ? str[0]++ : str2[0]++;
+                    isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
                     msgFootballers[2] = msgFootballers[0];
                     msgFootballers[4] = msgFootballers[0];
                     whereIsAction = ACTION_IN_PANELTY_OR_1ON1;
-                }//sam na sam
-                else if (co == 16) { //obrona wykopuje
+                }
+                else if (what == 16) { // defence kick off
                     int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
 
                     los = (rand() % 6);
@@ -793,33 +815,33 @@ bool Match::runMecz() {
                         case INSTR_PASSES_LONG: { //długie
                             if (los == 0) {
                                 whereIsAction = ACTION_IN_MIDDLEFIELD;
-                                wiado[0] = (rand() % 2) == 0 ? 44 : 45;
+                                msg[0] = (rand() % 2) == 0 ? 44 : 45;
                             }
                             else {
                                 whereIsAction = ACTION_IN_PANELTY_AREA;
-                                wiado[0] = (rand() % 2) == 0 ? 46 : 47;
+                                msg[0] = (rand() % 2) == 0 ? 46 : 47;
                             }
                             break;
                         }
                         case INSTR_PASSES_SHORT: { //krótkie
                             if (los == 0) {
                                 whereIsAction = ACTION_IN_PANELTY_AREA;
-                                wiado[0] = (rand() % 2) == 0 ? 46 : 47;
+                                msg[0] = (rand() % 2) == 0 ? 46 : 47;
                             }
                             else {
                                 whereIsAction = ACTION_IN_MIDDLEFIELD;
-                                wiado[0] = (rand() % 2) == 0 ? 44 : 45;
+                                msg[0] = (rand() % 2) == 0 ? 44 : 45;
                             }
                             break;
                         }
                         default: { //pozostałe
                             if (los == 0 || los == 1 || los == 2) {
                                 whereIsAction = ACTION_IN_PANELTY_AREA;
-                                wiado[0] = (rand() % 2) == 0 ? 46 : 47;
+                                msg[0] = (rand() % 2) == 0 ? 46 : 47;
                             }
                             else {
                                 whereIsAction = ACTION_IN_MIDDLEFIELD;
-                                wiado[0] = (rand() % 2) == 0 ? 44 : 45;
+                                msg[0] = (rand() % 2) == 0 ? 44 : 45;
                             }
                             break;
                         }
@@ -828,30 +850,30 @@ bool Match::runMecz() {
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[0] = isPlayerBall;
-                }//obrona wykopuje
-                else if (co == 17) { //B łapie
-                    wiado[0] = 48;
-                    wiado[1] = 49;
+                }
+                else if (what == 17) { // Gollkeeper catch
+                    msg[0] = 48;
+                    msg[1] = 49;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//B łapie
-                else if (co == 18) { //karny
-                    wiado[0] = 37;
+                }
+                else if (what == 18) { // penalty kick
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
-                    wiado[1] = 50;
+                    msg[1] = 50;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     msgWhoBall[1] = !isPlayerBall;
                     int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
                     if (isPlayerBall) {
-                        str2[7]++;
-                        str[6]++;
+                        statRival[FOULS]++;
+                        statPlayer[PENALTIES]++;
                     }
                     else {
-                        str[7]++;
-                        str2[6]++;
+                        statPlayer[FOULS]++;
+                        statRival[PENALTIES]++;
                     }
 
                     los = getDefFootballerId(teamSetting);
@@ -859,16 +881,16 @@ bool Match::runMecz() {
                     msgFootballers[3] = msgFootballers[0];
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
 
-                    wiado[2] = (rand() % 2) == 0 ? 51 : 52;
+                    msg[2] = (rand() % 2) == 0 ? 51 : 52;
 
                     int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
                     msgWhoBall[2] = !isPlayerBall;
                     msgWhoBall[3] = !isPlayerBall;
-                    isPlayerBall ? str[0]++ : str2[0]++;
+                    isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
-                    co = getArbiterDecision(instrTreatment);
+                    what = getArbiterDecision(instrTreatment);
 
-                    if (co == 3) { //jest żółta
+                    if (what == 3) { // yellow card
                         vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
@@ -898,35 +920,35 @@ bool Match::runMecz() {
 
                         msgFootballers[6] = msgFootballers[2];
                         if (is2ndYellow) {
-                            wiado[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                            msg[3] = 60; // %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
                             if (isPlayerBall) {
-                                str2[5]++;
-                                str2[4]++;
+                                statRival[RED_CARDS]++;
+                                statRival[YELLOW_CARDS]++;
                             }
                             else {
-                                str[5]++;
-                                str[4]++;
+                                statPlayer[RED_CARDS]++;
+                                statPlayer[YELLOW_CARDS]++;
                             }
                         }
                         else {
-                            wiado[3] = 20; // %ls otrzymuje żółtą kartkę!
-                            isPlayerBall ? str2[4]++ : str[4]++;
+                            msg[3] = 20; // %ls otrzymuje żółtą kartkę!
+                            isPlayerBall ? statRival[YELLOW_CARDS]++ : statPlayer[YELLOW_CARDS]++;
                         }
-                    }// jest żółta end
-                    else if (co == 2) { //słownie
-                        wiado[3] = 21;
+                    }
+                    else if (what == 2) { // verbal
+                        msg[3] = 21;
                         msgFootballers[6] = msgFootballers[2];
                         msgWhoBall[3] = !isPlayerBall;
                     }
 
-                    wiado[4] = (rand() % 2) == 0 ? 53 : 54;
+                    msg[4] = (rand() % 2) == 0 ? 53 : 54;
                     footballerMemory = ((rand() % 4) + 8) - 1;
                     msgFootballers[8] = getFootballerSurname(isPlayerBall, footballerMemory);
                     whereIsAction = ACTION_IN_PANELTY_OR_1ON1;
                     msgWhoBall[4] = isPlayerBall;
-                }//karny
-                else if (co == 19) { //symulowany
-                    wiado[0] = 37; // %ls przyjmuje piłkę w polu karnym...
+                }
+                else if (what == 19) { // sim foul
+                    msg[0] = 37; // %ls przyjmuje piłkę w polu karnym...
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
@@ -938,18 +960,18 @@ bool Match::runMecz() {
 
                     msgFootballers[3] = msgFootballers[0];
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
-                    wiado[1] = 50; // %ls wślizgiem atakuje %ls...
-                    wiado[2] = 55; // %ls pada na murawę, ale sędzia nie dał się nabrać.
+                    msg[1] = 50; // %ls wślizgiem atakuje %ls...
+                    msg[2] = 55; // %ls pada na murawę, ale sędzia nie dał się nabrać.
                     msgWhoBall[2] = isPlayerBall;
                     msgFootballers[4] = msgFootballers[0];
-                    wiado[3] = ((rand() % 2) == 0) ? 44 : 45;
+                    msg[3] = ((rand() % 2) == 0) ? 44 : 45;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[6] = msgFootballers[2];
                     msgWhoBall[3] = isPlayerBall;
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//faul symulowany
-                else if (co == 20) { //róg
-                    wiado[0] = 37;
+                }
+                else if (what == 20) { // corner
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
                     msgWhoBall[3] = isPlayerBall;
@@ -957,24 +979,24 @@ bool Match::runMecz() {
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     msgWhoBall[1] = !isPlayerBall;
                     int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
-                    isPlayerBall ? str[2]++ : str2[2]++;
+                    isPlayerBall ? statPlayer[CORNERS]++ : statRival[CORNERS]++;
 
                     los = getDefFootballerId(teamSetting);
 
                     msgFootballers[3] = msgFootballers[0];
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
-                    wiado[1] = 50;
-                    wiado[2] = 56;
-                    wiado[3] = 78;
+                    msg[1] = 50;
+                    msg[2] = 56;
+                    msg[3] = 78;
                     msgFootballers[6] = getFootballerSurname(isPlayerBall, 6);
                     whereIsAction = ACTION_IN_PANELTY_AREA;
-                }//róg
-                else if (co == 21) { //strzał
-                    wiado[0] = 37;
+                }
+                else if (what == 21) { // shoot
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
                     los = (rand() % 2);
-                    wiado[1] = (los == 0) ? 43 : 57;
+                    msg[1] = (los == 0) ? 43 : 57;
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
                     if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
                         los = (rand() % 3) + 9;
@@ -987,29 +1009,29 @@ bool Match::runMecz() {
                     }
 
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
-                    isPlayerBall ? str[0]++ : str2[0]++;
+                    isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
                     msgFootballers[2] = msgFootballers[0];
                     footballerMemory = los - 1;
                     whereIsAction = ACTION_IN_GOAL_SITUATION;
-                }//strzał
-                else if (co == 22) { //podanie i strzał
-                    wiado[0] = 37;
+                }
+                else if (what == 22) { // pass and shoot
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
-                    wiado[1] = 58;
+                    msg[1] = 58;
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
                     los = (rand() % 2);
-                    wiado[2] = (los == 0) ? 59 : 57;
+                    msg[2] = (los == 0) ? 59 : 57;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     los = (rand() % 4) + 7;
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
-                    isPlayerBall ? str[0]++ : str2[0]++;
+                    isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
                     msgFootballers[4] = msgFootballers[2];
                     footballerMemory = los - 1;
                     whereIsAction = ACTION_IN_GOAL_SITUATION;
-                }//podanie i strzał
-                else if (co == 23) { // faul napastnika
-                    wiado[0] = 37;
+                }
+                else if (what == 23) { // attacker foul
+                    msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
                     isPossibleGoToTactics = true;
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, 1);
@@ -1018,7 +1040,7 @@ bool Match::runMecz() {
                     int instrTreatment = isPlayerBall ? clubRef.inst[1] : clubRef.rivalInst[1];
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
 
-                    isPlayerBall ? str[7]++ : str2[7]++;
+                    isPlayerBall ? statPlayer[FOULS]++ : statRival[FOULS]++;
 
                     if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
                         los = (rand() % 3) + 9;
@@ -1032,17 +1054,17 @@ bool Match::runMecz() {
 
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                     msgFootballers[3] = msgFootballers[0];
-                    wiado[1] = 50;
-                    wiado[2] = 61;
-                    wiado[3] = 62;
+                    msg[1] = 50;
+                    msg[2] = 61;
+                    msg[3] = 62;
                     msgWhoBall[3] = isPlayerBall;
                     msgFootballers[6] = msgFootballers[0];
-                    wiado[4] = 19;
+                    msg[4] = 19;
                     msgWhoBall[4] = isPlayerBall;
 
-                    co = getArbiterDecision(instrTreatment);
+                    what = getArbiterDecision(instrTreatment);
 
-                    if (co == 3) { //jest żółta
+                    if (what == 3) { // yellow card
                         vector<SFootballer> &tmpFootballers = isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
@@ -1074,48 +1096,48 @@ bool Match::runMecz() {
                         msgWhoBall[5] = isPlayerBall;
 
                         if (is2ndYellow) {
-                            wiado[5] = 60;
+                            msg[5] = 60;
                             if (isPlayerBall) {
-                                str[4]++;
-                                str[5]++;
+                                statPlayer[YELLOW_CARDS]++;
+                                statPlayer[RED_CARDS]++;
                             }
                             else {
-                                str2[4]++;
-                                str2[5]++;
+                                statRival[YELLOW_CARDS]++;
+                                statRival[RED_CARDS]++;
                             }
                         }
                         else {
-                            wiado[5] = 20;
+                            msg[5] = 20;
                             if (isPlayerBall) {
-                                str[4]++;
+                                statPlayer[YELLOW_CARDS]++;
                             }
                             else {
-                                str2[4]++;
+                                statRival[YELLOW_CARDS]++;
                             }
                         }
-                    }// jest żółta end
-                    else if (co == 2) { //słownie
-                        wiado[5] = 21;
+                    }
+                    else if (what == 2) { // verbal
+                        msg[5] = 21;
                         msgFootballers[10] = msgFootballers[3];
                         msgWhoBall[5] = isPlayerBall;
                     }
-                    wiado[6] = 41;
+                    msg[6] = 41;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[12] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[6] = isPlayerBall;
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//faul napastnika
-            }//whereIsAction = ACTION_IN_PANELTY_AREA, blokada=1, pole karne
+                }
+            }
             //*********************** obron B ***********************************
             else if (whereIsAction == ACTION_IN_GOAL_SITUATION ||
                      whereIsAction == ACTION_IN_PANELTY_OR_1ON1 ||
                      whereIsAction == ACTION_IN_DIRECT_FREE_KICK
             ) { //obrona B
-                if (co == 24) { // udana
-                    wiado[0] = (rand() % 2) == 0 ? 65 : 66;
-                    wiado[1] = 67; // I łapie piłkę! Dobra obrona.
-                    wiado[2] = 49; // Bramkarz wykopuje piłkę.
-                    isPlayerBall ? str[1]++ : str2[1]++;
+                if (what == 24) { // udana
+                    msg[0] = (rand() % 2) == 0 ? 65 : 66;
+                    msg[1] = 67; // I łapie piłkę! Dobra obrona.
+                    msg[2] = 49; // Bramkarz wykopuje piłkę.
+                    isPlayerBall ? statPlayer[SHOOTS_ON_TARGET]++ : statRival[SHOOTS_ON_TARGET]++;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[0] = isPlayerBall;
@@ -1148,14 +1170,14 @@ bool Match::runMecz() {
                     else {
                         pFootballers->saveRivals();
                     }
-                }//udana
-                else if (co == 25) { //no problem
+                }
+                else if (what == 25) { //no problem
                     //68. Dobrze ustawiony %ls, bez trudu łapie piłkę.
                     //69. %ls spokojnie łapie piłkę.
-                    wiado[0] = (rand() % 2 == 0) ? 68 : 69;
-                    wiado[1] = 49; // Bramkarz wykopuje piłkę.
+                    msg[0] = (rand() % 2 == 0) ? 68 : 69;
+                    msg[1] = 49; // Bramkarz wykopuje piłkę.
 
-                    isPlayerBall ? str[1]++ : str2[1]++;
+                    isPlayerBall ? statPlayer[SHOOTS_ON_TARGET]++ : statRival[SHOOTS_ON_TARGET]++;
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 0);
                     msgWhoBall[0] = isPlayerBall;
@@ -1185,66 +1207,62 @@ bool Match::runMecz() {
                     else {
                         pFootballers->saveRivals();
                     }
-                }//no problem
-                else if (co == 26) { //niepewnie
+                }
+                else if (what == 26) { //niepewnie
                     los = (rand() % 4);
                     if (los == 0) {
-                        wiado[0] = 70; // %ls z trudem broni, ale nie zdołał złapać piłki...
-                        msgWhoBall[0] = 1;
+                        msg[0] = 70; // %ls z trudem broni, ale nie zdołał złapać piłki...
+                        msgWhoBall[0] = !isPlayerBall;
                         if (isPlayerBall) {
-                            msgWhoBall[0] = 2;
-                            str[1]++;
+                            statPlayer[SHOOTS_ON_TARGET]++;
                         }
                         else {
-                            str2[1]++;
+                            statRival[SHOOTS_ON_TARGET]++;
                         }
                     }
                     else if (los == 1) {
-                        wiado[0] = 71; // Piłka uderza w słupek!!
+                        msg[0] = 71; // Piłka uderza w słupek!!
                         msgWhoBall[0] = isPlayerBall;
                     }
                     else if (los == 2) {
-                        wiado[0] = 72; // Piłka uderza w poprzeczkę!!
+                        msg[0] = 72; // Piłka uderza w poprzeczkę!!
                         msgWhoBall[0] = isPlayerBall;
                     }
                     else {
-                        wiado[0] = 73; // Piłka uderza w któregoś z obrońców!
-                        msgWhoBall[0] = 1;
-                        if (isPlayerBall) {
-                            msgWhoBall[0] = 2;
-                        }
+                        msg[0] = 73; // Piłka uderza w któregoś z obrońców!
+                        msgWhoBall[0] = !isPlayerBall;
                     }
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
                     whereIsAction = ACTION_IN_PANELTY_AREA;
-                }//niepewnie
-                else if (co == 27) { //róg
+                }
+                else if (what == 27) { // corner
                     isPossibleGoToTactics = true;
                     if (rand() % 2 == 0) {
-                        wiado[0] = 70;
-                        isPlayerBall ? str[1]++ : str2[1]++;
+                        msg[0] = 70; // %ls hardly defends but fails to catch the ball ...
+                        isPlayerBall ? statPlayer[SHOOTS_ON_TARGET]++ : statRival[SHOOTS_ON_TARGET]++;
                     }
                     else {
-                        wiado[0] = 73;
+                        msg[0] = 73; // The ball hits one of the defenders!
                     }
 
                     msgWhoBall[0] = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, 6);
-                    isPlayerBall ? str[2]++ : str2[2]++;
-                    wiado[1] = 56;
+                    isPlayerBall ? statPlayer[CORNERS]++ : statRival[CORNERS]++;
+                    msg[1] = 56;
                     msgWhoBall[1] = isPlayerBall;
-                    wiado[2] = 78;
+                    msg[2] = 78;
                     msgWhoBall[2] = isPlayerBall;
                     whereIsAction = ACTION_IN_PANELTY_AREA;
-                }//róg
-                else if (co == 28) { // GOOL
+                }
+                else if (what == 28) { // GOOL
                     isPossibleGoToTactics = true;
-                    wiado[0] = (rand() % 2 == 0) ? 65 : 66;
-                    wiado[1] = 74;
+                    msg[0] = (rand() % 2 == 0) ? 65 : 66;
+                    msg[1] = 74;
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    wiado[2] = (rand() % 2 == 0) ? 75 : 76;
-                    wiado[3] = 22;
+                    msg[2] = (rand() % 2 == 0) ? 75 : 76;
+                    msg[3] = 22;
                     los = (rand() % 11) + 1;
 
                     vector<SFootballer> &tmpFootballers = isPlayerBall
@@ -1283,17 +1301,18 @@ bool Match::runMecz() {
                         pFootballers->saveRivals();
                     }
 
+                    SGoalsInfo goalInfo;
+                    goalInfo.minute = getGoooalMinute(matchMinute, matchStatus);
+
                     if (isPlayerBall) {
-                        str[1]++;
-                        playerGoals++;
-                        dlagol1[playerGoals - 1] = msgPlayerSurnames[footballerMemory];
-                        mingol1[playerGoals - 1] = getGoooalMinute(minuta, koniec);
+                        statPlayer[SHOOTS_ON_TARGET]++;
+                        goalInfo.footballerName = msgPlayerSurnames[footballerMemory];
+                        goalsInfoPlayer.push_back(goalInfo);
                     }
                     else {
-                        str2[1]++;
-                        rivalGoals++;
-                        dlagol2[rivalGoals - 1] = msgRivalSurnames[footballerMemory];
-                        mingol2[rivalGoals - 1] = getGoooalMinute(minuta, koniec);
+                        statRival[SHOOTS_ON_TARGET]++;
+                        goalInfo.footballerName = msgRivalSurnames[footballerMemory];
+                        goalsInfoRival.push_back(goalInfo);
                     }
 
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
@@ -1340,19 +1359,19 @@ bool Match::runMecz() {
                     else {
                         pFootballers->saveRivals();
                     }
-                }//gool
-                else if (co == 29) { //nieuznany
+                }
+                else if (what == 29) { // goal not recognized
                     isPossibleGoToTactics = true;
-                    wiado[0] = (rand() % 2 == 0) ? 65 : 66;
-                    wiado[1] = 74;
+                    msg[0] = (rand() % 2 == 0) ? 65 : 66;
+                    msg[1] = 74;
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    wiado[2] = (rand() % 2 == 0) ? 75 : 76;
-                    wiado[3] = 77;
+                    msg[2] = (rand() % 2 == 0) ? 75 : 76;
+                    msg[3] = 77;
                     msgWhoBall[3] = isPlayerBall;
-                    wiado[4] = 41;
+                    msg[4] = 41;
 
-                    isPlayerBall ? str[0]-- : str2[0]--;
+                    isPlayerBall ? statPlayer[SHOOTS]-- : statRival[SHOOTS]--;
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
                     msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, footballerMemory);
@@ -1362,102 +1381,98 @@ bool Match::runMecz() {
                     msgWhoBall[0] = isPlayerBall;
 
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//gool
-                else if (co == 30) { //niecelnie
+                }
+                else if (what == 30) { // shot off target
                     los = (rand() % 4);
                     isPossibleGoToTactics = true;
                     if (los == 0) {
-                        wiado[0] = 79; // %ls walnął nad poprzeczką!
+                        msg[0] = 79; // %ls walnął nad poprzeczką!
                     }
                     else if (los == 1) {
-                        wiado[0] = 80; // Ale strzelił fatalnie!
+                        msg[0] = 80; // Ale strzelił fatalnie!
                     }
                     else if (los == 2) {
-                        wiado[0] = 81; // %ls minimalnie chybił!
+                        msg[0] = 81; // %ls minimalnie chybił!
                     }
                     else {
-                        wiado[0] = 82; // Poszło w trybuny! Fatalny strzał.
+                        msg[0] = 82; // Poszło w trybuny! Fatalny strzał.
                     }
 
                     msgWhoBall[0] = isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, 0);
-                    wiado[1] = 41;
+                    msg[1] = 41; // %ls resumes the game.
                     msgWhoBall[1] = isPlayerBall;
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                }//niecelnie
-            }//obrona B whereIsAction = ACTION_IN_GOAL_SITUATION;
-
-            pColors->textcolor(LIGHTGRAY);
-            if (minuta == 0 && koniec == 0) { //początek meczu
-                memset(wiado, 0, 10 * sizeof(int));
-                wiado[0] = 1; //mecz się rozpoczął
-                ktoZacz = (rand() % 2) + 1;
-                if (ktoZacz == 1) { //zaczyna gracz
-                    msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
-                    isPlayerBall = true;
                 }
-                else { //zaczyna przeciwnik
-                    msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                    isPlayerBall = false;
-                }
-                whereIsAction = ACTION_IN_MIDDLEFIELD;
-                msgWhoBall[0] = isPlayerBall;
-            }//dla minuta=0 początek meczu
-            else if (minuta == 45 && koniec == 2) { //początek 2 połowy
-                if (ktoZacz == 1) { //zaczyna rywal
-                    msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                    isPlayerBall = false;
-                }
-                else { // zaczyna gracz
-                    msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
-                    isPlayerBall = true;
-                }
-                whereIsAction = ACTION_IN_MIDDLEFIELD;
-                msgWhoBall[0] = isPlayerBall;
-                memset(wiado, 0, 10 * sizeof(int));
-                wiado[0] = 2;
-            }//dla początek 2 połowy
-            else if (koniec == 1) { //koniec 1 połowy
-                isPossibleGoToTactics = true;
-                minuta = 43;
-                koniec = 2; // poczatek 2 polowy
-                start = 0;
-                whereIsAction = ACTION_IN_MIDDLEFIELD;
-                memset(wiado, 0, 10 * sizeof(int));
-                wiado[0] = 3; // "Koniec pierwszej połowy."
             }
 
-            //************************ kontuzja *************************
-            los = (rand() % 100); // losuj czy kontuzja 1/100
-            if (los == 0) {
-                x1 = (rand() % 2); // losuj ktory zespol 50/50
-                los = (rand() % 11) + 1; // losuj ktory zawodnik
+            pColors->textcolor(LIGHTGRAY);
+            if (matchMinute == 0 && matchStatus == START_MATCH) { // The beginning of the match.
+                memset(msg, 0, 10 * sizeof(int));
+                msg[0] = 1; // %ls starts the match.
+                whoStartedMatch = (rand() % 2) + 1;
+                if (whoStartedMatch == 1) { // player starts the match
+                    msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
+                    isPlayerBall = true;
+                }
+                else { // opponent start the match
+                    msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
+                    isPlayerBall = false;
+                }
+                whereIsAction = ACTION_IN_MIDDLEFIELD;
+                msgWhoBall[0] = isPlayerBall;
+            }
+            else if (matchMinute == 45 && matchStatus == START_2ND_HALF) { // The beginning of the 2nd half
+                if (whoStartedMatch == 1) { // started played so 2nd half starts rival
+                    msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
+                    isPlayerBall = false;
+                }
+                else { // started rival so 2nd half starts player
+                    msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
+                    isPlayerBall = true;
+                }
+                whereIsAction = ACTION_IN_MIDDLEFIELD;
+                msgWhoBall[0] = isPlayerBall;
+                memset(msg, 0, 10 * sizeof(int));
+                msg[0] = 2; // %ls starts the second half.
+            }
+            else if (matchStatus == END_1ST_HALF) {
+                isPossibleGoToTactics = true;
+                matchMinute = 43;
+                matchStatus = START_2ND_HALF; // poczatek 2 polowy
+                start = 0;
+                whereIsAction = ACTION_IN_MIDDLEFIELD;
+                memset(msg, 0, 10 * sizeof(int));
+                msg[0] = 3; // End of first half.
+            }
 
-                vector<SFootballer> &tmpFootballers = (x1 == 0)
+            //************************ injury *************************
+            if ((rand() % 100) == 0) { // lottery for injury 1/100
+                bool isPlayerInjury = (rand() % 2) == 0; // lottery which team 50/50
+                los = (rand() % 11) + 1; // lottery which player
+
+                vector<SFootballer> &tmpFootballers = isPlayerInjury
                     ? pFootballers->getPlayersTeam()
                     : pFootballers->getRivals();
-                int clubId = (x1 == 0) ? clubRef.clubId : clubRef.rivalData[0];
+                int clubId = isPlayerInjury ? clubRef.clubId : clubRef.rivalData[0];
 
                 for (size_t index = 0; index < tmpFootballers.size(); index++) {
                     SFootballer &footballer = tmpFootballers[index];
                     if (footballer.data[0] == los && footballer.data[22] == clubId && footballer.data[12] < 2) {
                         footballer.data[11] = 0;
                         footballer.data[19] = 1;
-                        for (int i = MAX_MESSAGES; i > 0; i--) {
-                            if (wiado[i] == 0) {
-                                k = i;
-                            }
-                        }
-                        wiado[k] = (rand() % 2 == 0) ? 83 : 84; // %ls doznaje kontuzji! / %ls kontuzjowany!
 
-                        if (x1 == 0) {
-                            msgWhoBall[k] = 1;
+                        int k = getEmptyMsgSlot();
+                        msg[k] = (rand() % 2 == 0) ? 83 : 84; // %ls doznaje kontuzji! / %ls kontuzjowany!
+
+                        if (isPlayerInjury) {
+                            msgWhoBall[k] = true;
                             msgFootballers[k * 2] = msgPlayerSurnames[los - 1];
                         }
                         else {
-                            msgWhoBall[k] = 2;
+                            msgWhoBall[k] = false;
                             msgFootballers[k * 2] = msgRivalSurnames[los - 1];
                         }
 
@@ -1465,16 +1480,16 @@ bool Match::runMecz() {
                     }
                 }
 
-                if (x1 == 0) {
+                if (isPlayerInjury) {
                     pFootballers->savePlayerTeam();
                 }
                 else {
                     pFootballers->saveRivals();
                 }
             }
-            //************************ kontuzja end *************************
+            //************************ injury end *************************
 
-            //******************** rywal - zamina zawonika kontuzjowanego ***********
+            //******************** rival - exchange injured footballer ***********
             if (isPossibleGoToTactics) {
                 x1 = 0;
                 x3 = 0;
@@ -1484,8 +1499,8 @@ bool Match::runMecz() {
                         clubRef.rivalData[0] == footballer.data[22] &&
                         footballer.data[0] < 12
                     ) {
-                        x1 = footballer.data[0];
-                        x2 = footballer.data[2]; // formacja na jakiej gra
+                        x1 = footballer.data[0]; // footballer number
+                        x2 = footballer.data[2]; // the formation he's playing on
                     }
                 }
 
@@ -1539,80 +1554,72 @@ bool Match::runMecz() {
                     whoPlayerChanges = 2;
                     isPlayerChanges = true;
                 }
-            }//dla if isPossibleGoToTactics
+            }
             //************************************************
-            if (whoPlayerChanges > 0) { //zmiana zawodnika**************
-                for (int i = MAX_MESSAGES; i > 0; i--) {
-                    if (wiado[i] == 0) {
-                        k = i;
-                    }
-                }
-                wiado[k] = 5; // %ls dokonuje zmiany...
-                if (whoPlayerChanges == 1) { // zmiana gracza
-                    msgWhoBall[k] = 1;
+            if (whoPlayerChanges > 0) { // exchange the footballer
+                int k = getEmptyMsgSlot();
+                msg[k] = 5; // %ls makes a change...
+                if (whoPlayerChanges == 1) { // player exchange
+                    msgWhoBall[k] = true;
                     msgFootballers[k * 2] = pClub->getClubName(clubRef.clubId - 1);
                 }
-                else { // zmiana dla rywala
-                    msgWhoBall[k] = 2;
+                else { // rival exchange
+                    msgWhoBall[k] = false;
                     msgFootballers[k * 2] = pClub->getClubName(clubRef.rivalData[0] - 1);
-                    wiado[k + 1] = 7;
-                    msgWhoBall[k + 1] = 2;
+                    msg[k + 1] = 7;
+                    msgWhoBall[k + 1] = false;
                     msgFootballers[(k + 1) * 2] = msgRivalSurnames[x3 - 1];
                     msgFootballers[(k + 1) * 2 + 1] = msgRivalSurnames[x1 - 1];
                 }
                 whoPlayerChanges = 0;
             }
             //*************** zadyma **********************
-            x1 = (rand() % 100);
-            if (x1 == 1 && whereIsAction == ACTION_IN_MIDDLEFIELD) {
-                for (int i = MAX_MESSAGES; i > 0; i--) {
-                    if (wiado[i] == 0) {
-                        k = i;
-                    }
-                }
-                wiado[k] = 86;
-                wiado[k + 1] = 87;
-                wiado[k + 2] = 88;
-                wiado[k + 3] = 89;
-                if (clubRef.rivalData[1] == 0) { // home
-                    msgWhoBall[k] = 1;
-                    msgWhoBall[k + 1] = 1;
-                    msgWhoBall[k + 2] = 1;
-                    msgWhoBall[k + 3] = 1;
+            if ((rand() % 100) == 1 && whereIsAction == ACTION_IN_MIDDLEFIELD) {
+                int k = getEmptyMsgSlot();
+                msg[k] = 86;
+                msg[k + 1] = 87;
+                msg[k + 2] = 88;
+                msg[k + 3] = 89;
+                if (clubRef.rivalData[1] == 0) { // player play in home
+                    msgWhoBall[k] = true;
+                    msgWhoBall[k + 1] = true;
+                    msgWhoBall[k + 2] = true;
+                    msgWhoBall[k + 3] = true;
                     clubRef.isRiot = 1;
 
                     pClub->save();
                 }
                 else {
-                    msgWhoBall[k] = 2;
-                    msgWhoBall[k + 1] = 2;
-                    msgWhoBall[k + 2] = 2;
-                    msgWhoBall[k + 3] = 2;
+                    msgWhoBall[k] = false;
+                    msgWhoBall[k + 1] = false;
+                    msgWhoBall[k + 2] = false;
+                    msgWhoBall[k + 3] = false;
                 }
             }
             //*********************************
+            wchar_t tmpMessage[MAX_NEWS_LENGTH];
             for (int i = 0; i < MAX_MESSAGES; i++) {
-                k = i * 2;
-                if (wiado[i] != 0) {
+                int k = i * 2;
+                if (msg[i] != 0) {
                     wcout << endl;
                 }
 
                 for (int index = 0; index < matchMsgs.size(); index++) {
-                    const SNews &meczs = matchMsgs[index];
-                    if (wiado[i] == meczs.num) {
+                    const SNews &matchMasgItem = matchMsgs[index];
+                    if (msg[i] == matchMasgItem.num) {
                         int color = 0;
-                        bool isGoal = wiado[i] == 74; // GOOOL dla %ls!!!
+                        bool isGoal = msg[i] == 74; // GOOOL dla %ls!!!
                         if (isGoal) {
                             color = 143;
                         }
-                        else if (wiado[i] == 20) { // %ls otrzymuje żółtą kartkę!
+                        else if (msg[i] == 20) { // %ls otrzymuje żółtą kartkę!
                             color = YELLOW;
                         }
-                        else if (wiado[i] == 60) { //  %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
+                        else if (msg[i] == 60) { //  %ls otrzymuje drugą żółtą kartkę i w konsekwencji czerwoną!
                             color = LIGHTRED;
                         }
-                        else if (wiado[i] == 83 || wiado[i] == 84 ||
-                                 wiado[i] == 86 || wiado[i] == 87 || wiado[i] == 88 || wiado[i] == 89
+                        else if (msg[i] == 83 || msg[i] == 84 ||
+                                 msg[i] == 86 || msg[i] == 87 || msg[i] == 88 || msg[i] == 89
                         ) {
                             // %ls doznaje kontuzji! / %ls kontuzjowany!
                             // Na chwilę przenosimy się na trybuny...
@@ -1625,7 +1632,7 @@ bool Match::runMecz() {
                             color = WHITE;
                         }
 
-                        int bkgcolor = msgWhoBall[i] == 1 ? BLUE : RED;
+                        int bkgcolor = msgWhoBall[i] == true ? BLUE : RED;
 
                         pColors->textcolor(color);
                         pColors->textbackground(bkgcolor);
@@ -1633,7 +1640,7 @@ bool Match::runMecz() {
                         swprintf(
                             tmpMessage,
                             MAX_NEWS_LENGTH,
-                            meczs.message.c_str(),
+                            matchMasgItem.message.c_str(),
                             msgFootballers[k].c_str(),
                             msgFootballers[k + 1].c_str()
                         );
@@ -1648,39 +1655,39 @@ bool Match::runMecz() {
                             pColors->stopBlinking();
                         }
 
-                        saveMatchMessageToFile(bkgcolor, minuta, tmpMessage);
+                        saveMatchMessageToFile(bkgcolor, matchMinute, tmpMessage);
 
                         break;
                     }
                 }
 
-                if (wiado[i] != 0) { //&&wiado[i+1]!=0)
+                if (msg[i] != 0) { //&&msg[i+1]!=0)
                     /*if (clubRef.isMatchAutoMsg) {
                         //gettime(&t);
                         time_t tmptime = time(NULL);
                         t = *localtime(&tmptime);
-                        k = t.tm_sec;
-                        if (czas == 1) {
+                        int k = t.tm_sec;
+                        if (speedSelected == 1) {
                             if (k == 59) k = 0;
-                            else k += czas;
+                            else k += speedSelected;
                         }
-                        else if (czas == 2) {
+                        else if (speedSelected == 2) {
                             if (k == 58) k = 0;
                             else if (k == 59) k = 1;
-                            else k += czas;
+                            else k += speedSelected;
                         }
-                        else if (czas == 3) {
+                        else if (speedSelected == 3) {
                             if (k == 57) k = 0;
                             else if (k == 58) k = 1;
                             else if (k == 59) k = 2;
-                            else k += czas;
+                            else k += speedSelected;
                         }
-                        else if (czas == 4) {
+                        else if (speedSelected == 4) {
                             if (k == 56) k = 0;
                             else if (k == 57) k = 1;
                             else if (k == 58) k = 2;
                             else if (k == 59) k = 3;
-                            else k += czas;
+                            else k += speedSelected;
                         }
 
                         while (t.tm_sec != k) {
@@ -1704,28 +1711,29 @@ bool Match::runMecz() {
                 }
             }
             pColors->textbackground(BLACK);
-            memset(wiado, 0, MAX_MESSAGES * sizeof(int));
-            minuta += 2;
-            minuta2 += 2;
-            //****************** posiadanie piłki i strefy **********************
+            memset(msg, 0, MAX_MESSAGES * sizeof(int));
+            matchMinute += 2;
+            trueMinute += 2;
+            //****************** ball possessions and zones **********************
             if (isPlayerBall) {
-                pos++;
+                playerBallPossessionCounter++;
             }
-            pos1 = (pos * 100) / (minuta2 / 2);
-            pos2 = 100 - pos1;
+            ballPossessionPlayer = (playerBallPossessionCounter * 100) / (trueMinute / 2); // ball possession by player in %
+            ballPossessionRival = 100 - ballPossessionPlayer; // ball possession by rival in %
 
             if (whereIsAction == ACTION_IN_MIDDLEFIELD) {
-                strefa[1]++;
+                zonePossessionCounter[ZONE_MIDDLE]++;
             }
             else {
-                isPlayerBall ? strefa[2]++ : strefa[0]++;
+                zonePossessionCounter[isPlayerBall ? ZONE_RIGHT : ZONE_LEFT]++;
             }
-            strefa[3] = (strefa[0] * 100) / (minuta2 / 2);
-            strefa[4] = (strefa[1] * 100) / (minuta2 / 2);
-            strefa[5] = (strefa[2] * 100) / (minuta2 / 2);
-            //***************** posiadanie i strefy end *********************
+            zonePossession[ZONE_LEFT] = (zonePossessionCounter[ZONE_LEFT] * 100) / (trueMinute / 2);
+            zonePossession[ZONE_MIDDLE] = (zonePossessionCounter[ZONE_MIDDLE] * 100) / (trueMinute / 2);
+            zonePossession[ZONE_RIGHT] = (zonePossessionCounter[ZONE_RIGHT] * 100) / (trueMinute / 2);
+            //***************** ball possessions and zones *********************
+
             //***************** kondycja ***************************
-            k = (clubRef.inst[2] == 1) ? 2 : 3;
+            int k = (clubRef.inst[2] == 1) ? 2 : 3;
 
             for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
                 SFootballer &footballer = pFootballers->getPlayerTeam(index);
@@ -1765,18 +1773,18 @@ bool Match::runMecz() {
         }//dla start=1
         //************ wypisz wiadomość *************
 
-        if (minuta > 45 && whereIsAction == ACTION_IN_MIDDLEFIELD && koniec == 0 && !endHalfMatch) {
-            koniec = 1; // koniec 1 polowy
-            minuta = 45;
+        if (matchMinute > 45 && whereIsAction == ACTION_IN_MIDDLEFIELD && matchStatus == START_MATCH && !endHalfMatch) {
+            matchStatus = END_1ST_HALF;
+            matchMinute = 45;
             endHalfMatch = true;
             whereIsAction = ACTION_IN_MIDDLEFIELD;
-        }//koniec1 połowy
-
-        if (minuta > 90 && whereIsAction == ACTION_IN_MIDDLEFIELD && koniec == 2) {
-            koniec = 3; // koniec meczu
         }
 
-        if (koniec == 4) {
+        if (matchMinute > 90 && whereIsAction == ACTION_IN_MIDDLEFIELD && matchStatus == START_2ND_HALF) {
+            matchStatus = END_MATCH;
+        }
+
+        if (matchStatus == EXIT_MATCH) {
             wcout << endl << pLang->get(L"END OF THE MATCH");
         }
         pColors->textcolor(GREEN);
@@ -1785,19 +1793,19 @@ bool Match::runMecz() {
             wcout << endl << pLang->get(L"S Start a match") << endl;
         }
 
-        if (clubRef.isMatchAutoMsg && (koniec == 0 || koniec == 2 || koniec == 1 || koniec == 4)) {
+        if (clubRef.isMatchAutoMsg && matchStatus != END_MATCH) {
             wcout << endl;
             wprintf(
                 pLang->get(L"A Tactics-%ls  P Tactics-%ls  C Speed-%ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
                 pClub->getClubName(clubRef.rivalData[0] - 1).c_str(),
-                speed[czas].c_str()
+                speed[speedSelected].c_str()
             );
             wcout << endl;
         }
 
         if (!clubRef.isMatchAutoMsg) {
-            if (start && koniec < 4) {
+            if (start && matchStatus < EXIT_MATCH) {
                 wcout << pLang->get(L"S Continue     ");
             }
             wprintf(
@@ -1808,37 +1816,44 @@ bool Match::runMecz() {
             wcout << endl;
         }
 
-        if (koniec == 4) {
+        if (matchStatus == EXIT_MATCH) {
             pColors->textcolor(RED);
             wcout << endl << pLang->get(L"Q Quit");
         }
 
         wchar_t menu = L'y';
-        if (clubRef.isMatchAutoMsg && (start == 0 || isOpenTacticsMenu || koniec == 4)) {
+        if (clubRef.isMatchAutoMsg && (start == 0 || isOpenTacticsMenu || matchStatus == EXIT_MATCH)) {
             menu = pInput->getKeyBoardPressed();
         }
-        else if (!clubRef.isMatchAutoMsg && (start == 0 || isPossibleGoToTactics || koniec == 1 || koniec == 4)) {
+        else if (!clubRef.isMatchAutoMsg &&
+                (start == 0 || isPossibleGoToTactics || matchStatus == END_1ST_HALF || matchStatus == EXIT_MATCH)
+        ) {
             menu = pInput->getKeyBoardPressed();
         }
 
-        if (koniec == 3) {
-            koniec = 4; // wyjscie z meczu
+        if (matchStatus == END_MATCH) {
+            matchStatus = EXIT_MATCH;
         }
 
         isPossibleGoToTactics = false;
         isOpenTacticsMenu = false;
-        k = 0;
 
-        if (walkower < 11) {
+        if (isWalkover) {
             endMenuMatch = L'Q';
             pColors->textcolor(LIGHTRED);
             wcout << endl << pLang->get(L"You lose by default 0-3");
-            playerGoals = 0;
-            rivalGoals = 3;
+            pInput->getKeyBoardPressed();
+
+            goalsInfoPlayer.clear();
+
+            SGoalsInfo goalsInfo;
+            goalsInfoRival.push_back(goalsInfo);
+            goalsInfoRival.push_back(goalsInfo);
+            goalsInfoRival.push_back(goalsInfo);
         }
 
         switch (menu) {
-            case 'C': { // szybkosc
+            case 'C': { // speed
                 pInput->clrscr();
                 pColors->textcolor(GREEN);
                 wcout << endl <<
@@ -1848,14 +1863,14 @@ bool Match::runMecz() {
                     pLang->get(L"2. Medium") << endl <<
                     pLang->get(L"3. Slow") << endl <<
                     pLang->get(L"4. Very Slow") << endl;
-                czas = pInput->getNumber();
-                if (czas < 0 || czas > 4) {
-                    czas = 2;
+                speedSelected = static_cast<SpeedOptions>(pInput->getNumber());
+                if (speedSelected < VERY_FAST || speedSelected > VERY_SLOW) {
+                    speedSelected = MEDIUM;
                 }
                 break;
             }
-            case 'Q': { // wyjscie
-                if (koniec == 4) {
+            case 'Q': { // quit
+                if (matchStatus == EXIT_MATCH) {
                     endMenuMatch = L'Q';
                 }
                 else {
@@ -1870,7 +1885,7 @@ bool Match::runMecz() {
                 break;
             }
             case 'A': { // taktyka gracza
-                if (koniec < 3) {
+                if (matchStatus < END_MATCH) {
                     start = 0;
                 }
 
@@ -1878,7 +1893,7 @@ bool Match::runMecz() {
                 break;
             }
             case 'P': { // taktyka przeciwnika
-                if (koniec < 3) {
+                if (matchStatus < END_MATCH) {
                     start = 0;
                 }
 
@@ -1910,22 +1925,22 @@ bool Match::runMecz() {
     clubRef.finances[10] = clubRef.finances[6] + clubRef.finances[7] + clubRef.finances[8] + clubRef.finances[9];
     clubRef.finances[11] = clubRef.finances[5] - clubRef.finances[10];
     clubRef.isMatch = 0; //bylM=1;
-    clubRef.playerGoals = playerGoals;
-    clubRef.rivalGoals = rivalGoals;
+    clubRef.playerGoals = static_cast<int>(goalsInfoPlayer.size());
+    clubRef.rivalGoals = static_cast<int>(goalsInfoRival.size());
     clubRef.isAssistantMsg = 1;
     //******** manager stats ************
     clubRef.managerStats[4]++;
-    if (playerGoals > rivalGoals) {
+    if (goalsInfoPlayer.size() > goalsInfoRival.size()) {
         clubRef.managerStats[5]++;
     }
-    else if (playerGoals == rivalGoals) {
+    else if (goalsInfoPlayer.size() == goalsInfoRival.size()) {
         clubRef.managerStats[6]++;
     }
     else {
         clubRef.managerStats[7]++;
     }
-    clubRef.managerStats[8] += playerGoals;
-    clubRef.managerStats[9] += rivalGoals;
+    clubRef.managerStats[8] += static_cast<int>(goalsInfoPlayer.size());
+    clubRef.managerStats[9] += static_cast<int>(goalsInfoRival.size());
     clubRef.managerStats[3] = (clubRef.managerStats[0] * 100)
         + (clubRef.managerStats[2] * 10)
         + (clubRef.managerStats[4] * 10)
@@ -1937,12 +1952,12 @@ bool Match::runMecz() {
     //*******************************
 
     if (clubRef.roundNumber <= 0) { //mecze kontrolne
-        k = clubRef.roundNumber + 4;
-        clubRef.goalsControls[k * 2] = playerGoals;
-        clubRef.goalsControls[k * 2 + 1] = rivalGoals;
+        int k = clubRef.roundNumber + 4;
+        clubRef.goalsControls[k * 2] = static_cast<int>(goalsInfoPlayer.size());
+        clubRef.goalsControls[k * 2 + 1] = static_cast<int>(goalsInfoRival.size());
     }
-    else if (clubRef.roundNumber > 0) {
-        k = -2;
+    else if (clubRef.roundNumber > 0) { // kolejka ligowa
+        int k = -2;
         while (k != 14) { //wszystkie mecze kolejki, losujemy wyniki meczy
             k += 2;
             int round = clubRef.roundNumber * 16;
@@ -1956,12 +1971,12 @@ bool Match::runMecz() {
 
         int roundIndex = clubRef.roundNumber * 16;
         if (clubIndexInRound % 2 == 0) {
-            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound] = playerGoals;
-            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound + 1] = rivalGoals;
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound] = static_cast<int>(goalsInfoPlayer.size());
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound + 1] = static_cast<int>(goalsInfoRival.size());
         }
         else {
-            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound] = playerGoals;
-            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound - 1] = rivalGoals;
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound] = static_cast<int>(goalsInfoPlayer.size());
+            clubRef.goalsLeague[roundIndex - 16 + clubIndexInRound - 1] = static_cast<int>(goalsInfoRival.size());
         }
 
         for (size_t index = 0; pRounds->getSize(); index++) {
@@ -1974,7 +1989,7 @@ bool Match::runMecz() {
         }
 
         pTable->save();
-    }//else kolejka ligowa
+    }
     pClub->save();
     //**************
 
@@ -2031,15 +2046,13 @@ void Match::updateTable()
     while (loop != 3) {
         loop++;
 
-        int k = 0;
-        for (size_t index = 0; index < pTable->getSize(); index++) {
+        for (size_t index = 0, k; index < pTable->getSize(); index++, k++) {
             STable &tableRef = pTable->get(index);
             pkt[k] = tableRef.data[7]; //zapisuje punkty do pkt
             clubId[k] = tableRef.num; // numer klubu
             golr[k] = tableRef.data[6]; // roznica goli
             gol[k] = tableRef.data[4]; //gole zdobyte
             blokada[k] = 0;
-            k++;
         }
 
         for (int i = 0; i < 16; i++) { //sortowanie wg. pkt
@@ -2127,7 +2140,7 @@ void Match::prepareFootballers()
     for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
         SFootballer &footballer = pFootballers->getPlayerTeam(index);
 
-        if (footballer.data[0] <= 11) { //zwiększam morale jedenastce za 1 skład
+        if (footballer.data[0] <= 11) { // increase morale of footballers from first squad
             footballer.data[8] += 3;
             if (footballer.data[8] > 5) {
                 footballer.data[7]++;
@@ -2138,7 +2151,7 @@ void Match::prepareFootballers()
             }
         }
 
-        if (footballer.data[0] > 16) { // zmniejszam morale tym co nie pojechali na mecz
+        if (footballer.data[0] > 16) { // decrease morale of footballers who have not been called to the match
             footballer.data[8] -= 2;
             if (footballer.data[8] < -5) {
                 footballer.data[7]--;
@@ -2149,17 +2162,17 @@ void Match::prepareFootballers()
             }
         }
 
-        footballer.data[20] = 0; // reset forma podczas meczu
-        footballer.data[21] = 0; // reset gole podczas meczu
+        footballer.data[20] = 0; // reset form during the match
+        footballer.data[21] = 0; // reset goals during the match
     }
     pFootballers->savePlayerTeam();
 
     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
         SFootballer &footballer = pFootballers->getRival(index);
 
-        footballer.data[20] = 0; // reset forma podczas meczu
-        footballer.data[21] = 0; // reset gole podczas meczu
-        footballer.data[12] = 0; // zolte kartki podczas meczu
+        footballer.data[20] = 0; // reset form during the match
+        footballer.data[21] = 0; // reset goals during the match
+        footballer.data[12] = 0; // yellow cards during the match
     }
     pFootballers->saveRivals();
 }
@@ -2185,7 +2198,12 @@ void Match::prepareFootballersSurnames(const SClub &clubRef)
     }
 }
 
-void Match::drawTeam(int usta, int tryb, int kto)
+/**
+ * @param int setting
+ * @param int mode It can be 11 (1st squad) or 16 (reserve)
+ * @param int who = 0 - player club id, who > 0 - rival club id
+ */
+void Match::drawTeam(int setting, int mode, int who)
 {
     Squad squad(pColors, pLang);
     int i = 0;
@@ -2209,26 +2227,26 @@ void Match::drawTeam(int usta, int tryb, int kto)
     wcout << pLang->get(L"Morale  For. ForM Con. Goals");
     pColors->textcolor(LIGHTBLUE);
     int color = LIGHTBLUE;
-    if (tryb == 16) {
+    if (mode == 16) {
         i = 11; // dla pokazania rezerwowych w taktyce
     }
-    else if (tryb == 40) {
+    else if (mode == 40) {
         i = 20; // dla dalej w Składzie
     }
 
-    while (i != tryb) {
+    while (i != mode) {
         i++;
-        if (tryb == 16 || i == 12) {
+        if (mode == 16 || i == 12) {
             color = YELLOW;
-            pColors->textcolor(color);//BROWN);
+            pColors->textcolor(color);
         }
-        else if (tryb == 40) {
+        else if (mode == 40) {
             color = LIGHTGRAY;
             pColors->textcolor(color);
         }
 
-        vector<SFootballer> &tmpFoorballers = (kto > 0) ? pFootballers->getRivals() : pFootballers->getPlayersTeam();
-        int clubId = (kto > 0) ? kto : pClub->get().clubId;
+        vector<SFootballer> &tmpFoorballers = (who > 0) ? pFootballers->getRivals() : pFootballers->getPlayersTeam();
+        int clubId = (who > 0) ? who : pClub->get().clubId;
 
         for (int index = 0; index < tmpFoorballers.size(); index++) {
             SFootballer &footballer = tmpFoorballers[index];
@@ -2280,68 +2298,66 @@ void Match::drawTeam(int usta, int tryb, int kto)
             }
         }
 
-        if (kto > -1) {
-            if (i == 1) {
-                color = MAGENTA;
-                pColors->textcolor(color);
-            }
+        if (i == 1) {
+            color = MAGENTA;
+            pColors->textcolor(color);
+        }
 
-            if ((i == 5) &&
-                (usta == 1 || usta == 2 || usta == 3 || usta == 4 || usta == 9 || usta == 10 || usta == 11)
-            ) {
-                color = LIGHTCYAN;
-                pColors->textcolor(color);
-            }
-            else if ((i == 4) && (usta == 5 || usta == 6 || usta == 7 || usta == 8)) {
-                color = LIGHTCYAN;
-                pColors->textcolor(color);
-            }
-            else if ((i == 6) && (usta == 12 || usta == 13 || usta == 14)) {
-                color = LIGHTCYAN;
-                pColors->textcolor(color);
-            }
+        if ((i == 5) &&
+            (setting == 1 || setting == 2 || setting == 3 || setting == 4 || setting == 9 || setting == 10 || setting == 11)
+        ) {
+            color = LIGHTCYAN;
+            pColors->textcolor(color);
+        }
+        else if ((i == 4) && (setting == 5 || setting == 6 || setting == 7 || setting == 8)) {
+            color = LIGHTCYAN;
+            pColors->textcolor(color);
+        }
+        else if ((i == 6) && (setting == 12 || setting == 13 || setting == 14)) {
+            color = LIGHTCYAN;
+            pColors->textcolor(color);
+        }
 
-            if ((i == 7) && (usta == 9)) {
-                color = LIGHTGREEN;
-                pColors->textcolor(color);
-            }
-            else if ((i == 8) && (usta == 10 || usta == 5)) {
-                color = LIGHTGREEN;
-                pColors->textcolor(color);
-            }
-            else if ((i == 10) && (usta == 11)) {
-                color = LIGHTGREEN;
-                pColors->textcolor(color);
-            }
-            else if ((i == 9) &&
-                (
-                    usta == 1 || usta == 2 || usta == 3 || usta == 4 || usta == 6 ||
-                    usta == 7 || usta == 8 || usta == 12 || usta == 13 || usta == 14
-                )
-            ) {
-                color = LIGHTGREEN;
-                pColors->textcolor(color);
-            }
+        if ((i == 7) && (setting == 9)) {
+            color = LIGHTGREEN;
+            pColors->textcolor(color);
+        }
+        else if ((i == 8) && (setting == 10 || setting == 5)) {
+            color = LIGHTGREEN;
+            pColors->textcolor(color);
+        }
+        else if ((i == 10) && (setting == 11)) {
+            color = LIGHTGREEN;
+            pColors->textcolor(color);
+        }
+        else if ((i == 9) &&
+            (
+                setting == 1 || setting == 2 || setting == 3 || setting == 4 || setting == 6 ||
+                setting == 7 || setting == 8 || setting == 12 || setting == 13 || setting == 14
+            )
+        ) {
+            color = LIGHTGREEN;
+            pColors->textcolor(color);
+        }
 
-            if (i == 16) {
-                color = LIGHTGRAY;
-                pColors->textcolor(color);
-            }
+        if (i == 16) {
+            color = LIGHTGRAY;
+            pColors->textcolor(color);
         }
     }
 }
 
 int Match::whatHappened(
     bool isPlayerBall,
-    int PnaP,
-    int OnaA,
-    int AnaO,
+    int MonM,
+    int DonA,
+    int AonD,
     int playerGoalkeeperSkills,
     int rivalGoalkeeperSkills,
     int whereIsAction,
     const SClub &clubRef
 ) {
-    int x1, x2, x3, los, co;
+    int x1, x2, x3, los, what;
     if (whereIsAction == ACTION_IN_MIDDLEFIELD) { // P/P
         if (isPlayerBall) {
             x1 = clubRef.inst[4]; //gra z kontry twoja
@@ -2355,439 +2371,439 @@ int Match::whatHappened(
         }
         los = (rand() % 27) + 1;
         if (los < 10) {
-            co = los;
+            what = los;
         }
         else {
-            if ((PnaP > 20 && isPlayerBall) || (PnaP < -20 && !isPlayerBall)) { // przewaga duża
+            if ((MonM > 20 && isPlayerBall) || (MonM < -20 && !isPlayerBall)) { // przewaga duża
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
-                    co = 1;
+                    what = 1;
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 6;
-                    else co = 1;
+                    if (los == 1 || los == 2 || los == 3) what = 6;
+                    else what = 1;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2) co = 5;
-                    else co = 1;
+                    if (los == 1 || los == 2) what = 5;
+                    else what = 1;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2) co = 6;
-                    else if (los == 3 || los == 4) co = 5;
-                    else co = 1;
+                    if (los == 1 || los == 2) what = 6;
+                    else if (los == 3 || los == 4) what = 5;
+                    else what = 1;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 1; //udana normal
-                    else co = 2; //udana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
+                    else what = 2; //udana z kontry
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 1; //udana normal
-                    else if (los == 4 || los == 5 || los == 6) co = 6; //pressing rywala
-                    else co = 2; //udana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
+                    else if (los == 4 || los == 5 || los == 6) what = 6; //pressing rywala
+                    else what = 2; //udana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 1; //udana normal
-                    else if (los == 4 || los == 5) co = 5; //słabe podania
-                    else co = 2; //udana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
+                    else if (los == 4 || los == 5) what = 5; //słabe podania
+                    else what = 2; //udana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 1; //udana normal
-                    else if (los == 4 || los == 5) co = 5; //słabe podania
-                    else if (los == 6 || los == 7) co = 6; //pressing rywala
-                    else co = 2; //udana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
+                    else if (los == 4 || los == 5) what = 5; //słabe podania
+                    else if (los == 6 || los == 7) what = 6; //pressing rywala
+                    else what = 2; //udana z kontry
                 }
             }
-            else if ((PnaP > 10 && PnaP < 21 && isPlayerBall) || (PnaP < -10 && PnaP > -21 && !isPlayerBall))//przewaga mała
+            else if ((MonM > 10 && MonM < 21 && isPlayerBall) || (MonM < -10 && MonM > -21 && !isPlayerBall))//przewaga mała
             {
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
-                    if (los == 14 || los == 22) co = 4;
-                    else if (los == 15 || los == 23 || los == 26) co = 7;
-                    else if (los == 16 || los == 24 || los == 27) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 1; //if (los==10||los==11||los==12||los==13||los==19||los==20||los==21||los==25)
+                    if (los == 14 || los == 22) what = 4;
+                    else if (los == 15 || los == 23 || los == 26) what = 7;
+                    else if (los == 16 || los == 24 || los == 27) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 1; //if (los==10||los==11||los==12||los==13||los==19||los==20||los==21||los==25)
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
-                    if (los == 13 || los == 21 || los == 22 || los == 26) co = 6; //pressing przeciwnika
-                    else if (los == 14 || los == 23) co = 4;
-                    else if (los == 15 || los == 24) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 1; //if (los==10||los==11||los==12||los==19||los==20||los==25||los==27)
+                    if (los == 13 || los == 21 || los == 22 || los == 26) what = 6; //pressing przeciwnika
+                    else if (los == 14 || los == 23) what = 4;
+                    else if (los == 15 || los == 24) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 1; //if (los==10||los==11||los==12||los==19||los==20||los==25||los==27)
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
-                    if (los == 13 || los == 23 || los == 24 || los == 27) co = 5; //słabe podania
-                    else if (los == 14) co = 4;
-                    else if (los == 15 || los == 25 || los == 26) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 1; //if (los==10||los==11||los==12||los==19||los==20||los==21||los==22)
+                    if (los == 13 || los == 23 || los == 24 || los == 27) what = 5; //słabe podania
+                    else if (los == 14) what = 4;
+                    else if (los == 15 || los == 25 || los == 26) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 1; //if (los==10||los==11||los==12||los==19||los==20||los==21||los==22)
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
-                    if (los == 12 || los == 22 || los == 24) co = 6; //pressing przeciwnika
-                    else if (los == 13 || los == 23 || los == 25) co = 5; //słabe podania
-                    else if (los == 14) co = 4;
-                    else if (los == 15 || los == 26) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 1; //if (los==10||los==11||los==19||los==20||los==21||los==27)
+                    if (los == 12 || los == 22 || los == 24) what = 6; //pressing przeciwnika
+                    else if (los == 13 || los == 23 || los == 25) what = 5; //słabe podania
+                    else if (los == 14) what = 4;
+                    else if (los == 15 || los == 26) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 1; //if (los==10||los==11||los==19||los==20||los==21||los==27)
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
-                    if (los == 13 || los == 24 || los == 25 || los == 26) co = 3; //nie udana z kontry
-                    else if (los == 14) co = 4;
-                    else if (los == 15 || los == 27) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 2; //udana z kontryif (los==10||los==11||los==12||los==19||los==20||los==21||los==22||los==23)
+                    if (los == 13 || los == 24 || los == 25 || los == 26) what = 3; //nie udana z kontry
+                    else if (los == 14) what = 4;
+                    else if (los == 15 || los == 27) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 2; //udana z kontryif (los==10||los==11||los==12||los==19||los==20||los==21||los==22||los==23)
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
-                    if (los == 12 || los == 23 || los == 25) co = 6; //pressing przeciwnika
-                    else if (los == 13 || los == 24 || los == 14) co = 3; //nie udana z kontry
-                    else if (los == 15 || los == 26) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 2; //udana z kontry if (los==10||los==11||los==19||los==20||los==21||los==22||los==27)
+                    if (los == 12 || los == 23 || los == 25) what = 6; //pressing przeciwnika
+                    else if (los == 13 || los == 24 || los == 14) what = 3; //nie udana z kontry
+                    else if (los == 15 || los == 26) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 2; //udana z kontry if (los==10||los==11||los==19||los==20||los==21||los==22||los==27)
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
-                    if (los == 12 || los == 23 || los == 24) co = 5; //słaby trening podaä
-                    else if (los == 13 || los == 26 || los == 14) co = 3; //nie udana z kontry
-                    else if (los == 15 || los == 27) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 2; //udana z kontry if (los==10||los==11||los==19||los==20||los==21||los==22||los==25)
+                    if (los == 12 || los == 23 || los == 24) what = 5; //słaby trening podaä
+                    else if (los == 13 || los == 26 || los == 14) what = 3; //nie udana z kontry
+                    else if (los == 15 || los == 27) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 2; //udana z kontry if (los==10||los==11||los==19||los==20||los==21||los==22||los==25)
                 }
                 else { //if (x1==1&&x2<2&&x3==1)
-                    if (los == 13 || los == 22 || los == 26) co = 5; //słaby trening podaä
-                    else if (los == 14 || los == 23 || los == 27) co = 3; //nie udana z kontry
-                    else if (los == 16) co = 7;
-                        //else if (los==7) co=8;//aut
-                    else if (los == 17) co = 9;
-                    else if (los == 15 || los == 18 || los == 24) co = 6; //pressing rywala3x
-                    else co = 2; //udana z kontryif (los==10||los==11||los==12||los==19||los==20||los==21||los==25)
+                    if (los == 13 || los == 22 || los == 26) what = 5; //słaby trening podaä
+                    else if (los == 14 || los == 23 || los == 27) what = 3; //nie udana z kontry
+                    else if (los == 16) what = 7;
+                        //else if (los==7) what=8;//aut
+                    else if (los == 17) what = 9;
+                    else if (los == 15 || los == 18 || los == 24) what = 6; //pressing rywala3x
+                    else what = 2; //udana z kontryif (los==10||los==11||los==12||los==19||los==20||los==21||los==25)
                 }
             }
-            else if ((PnaP > 20 && !isPlayerBall) || (PnaP < -20 && isPlayerBall)) { //osłabienie duże
+            else if ((MonM > 20 && !isPlayerBall) || (MonM < -20 && isPlayerBall)) { //osłabienie duże
                 if (x1 == 0 && x2 >= 2 && x3 == 0){
-                    co = 4;
+                    what = 4;
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 4;
-                    else co = 6;
+                    if (los == 1 || los == 2 || los == 3) what = 4;
+                    else what = 6;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2) co = 4;
-                    else co = 5;
+                    if (los == 1 || los == 2) what = 4;
+                    else what = 5;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2) co = 5;
-                    else if (los == 3 || los == 4) co = 4;
-                    else co = 6;
+                    if (los == 1 || los == 2) what = 5;
+                    else if (los == 3 || los == 4) what = 4;
+                    else what = 6;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 4; //nieudana normal
-                    else co = 3; //nieudana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
+                    else what = 3; //nieudana z kontry
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 4; //nieudana normal
-                    else if (los == 4 || los == 5 || los == 6) co = 6; //pressing rywala
-                    else co = 3; //nieudana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
+                    else if (los == 4 || los == 5 || los == 6) what = 6; //pressing rywala
+                    else what = 3; //nieudana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 4; //nieudana normal
-                    else if (los == 4 || los == 5) co = 5; //słabe podania
-                    else co = 3; //nieudana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
+                    else if (los == 4 || los == 5) what = 5; //słabe podania
+                    else what = 3; //nieudana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 1) {
                     los = (rand() % 18) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 4; //nieudana normal
-                    else if (los == 4 || los == 5) co = 5; //słabe podania
-                    else if (los == 6 || los == 7) co = 6; //pressing rywala
-                    else co = 3; //nieudana z kontry
+                    if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
+                    else if (los == 4 || los == 5) what = 5; //słabe podania
+                    else if (los == 6 || los == 7) what = 6; //pressing rywala
+                    else what = 3; //nieudana z kontry
                 }
             }
-            else if ((PnaP < -10 && PnaP > -21 && isPlayerBall) || (PnaP > 10 && PnaP < 21 && !isPlayerBall)) { //osłabienie
+            else if ((MonM < -10 && MonM > -21 && isPlayerBall) || (MonM > 10 && MonM < 21 && !isPlayerBall)) { //osłabienie
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
-                    if (los == 14 || los == 22 || los == 23 || los == 27) co = 1;
-                    else if (los == 15 || los == 24) co = 7;
-                    else if (los == 16 || los == 25) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 4; //if (los==10||los==11||los==12||los==13||los==19||los==20||los==21||los==26)
+                    if (los == 14 || los == 22 || los == 23 || los == 27) what = 1;
+                    else if (los == 15 || los == 24) what = 7;
+                    else if (los == 16 || los == 25) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 4; //if (los==10||los==11||los==12||los==13||los==19||los==20||los==21||los==26)
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
-                    if (los == 10 || los == 26) co = 4;
-                    else if (los == 14 || los == 23 || los == 25 || los == 27) co = 1;
-                    else if (los == 15 || los == 24) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 6; //pressing przeciwnikaif (los==11||los==12||los==13||los==19||los==20||los==21||los==22)
+                    if (los == 10 || los == 26) what = 4;
+                    else if (los == 14 || los == 23 || los == 25 || los == 27) what = 1;
+                    else if (los == 15 || los == 24) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 6; //pressing przeciwnikaif (los==11||los==12||los==13||los==19||los==20||los==21||los==22)
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
-                    if (los == 10 || los == 23) co = 4;
-                    else if (los == 14 || los == 25 || los == 26 || los == 27) co = 1;
-                    else if (los == 15 || los == 24) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 5; //słabe podania if (los==11||los==12||los==13||los==19||los==20||los==21||los==22)
+                    if (los == 10 || los == 23) what = 4;
+                    else if (los == 14 || los == 25 || los == 26 || los == 27) what = 1;
+                    else if (los == 15 || los == 24) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 5; //słabe podania if (los==11||los==12||los==13||los==19||los==20||los==21||los==22)
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
-                    if (los == 10) co = 4;
-                    else if (los == 11 || los == 12 || los == 19 || los == 20) co = 6; //pressing przeciwnika
-                    else if (los == 13 || los == 22 || los == 23 || los == 21) co = 5; //słabe podania
-                    else if (los == 14 || los == 25 || los == 26 || los == 27) co = 1;
-                    else if (los == 15 || los == 24) co = 7;
-                    else if (los == 16) co = 8;
-                    else co = 9;
+                    if (los == 10) what = 4;
+                    else if (los == 11 || los == 12 || los == 19 || los == 20) what = 6; //pressing przeciwnika
+                    else if (los == 13 || los == 22 || los == 23 || los == 21) what = 5; //słabe podania
+                    else if (los == 14 || los == 25 || los == 26 || los == 27) what = 1;
+                    else if (los == 15 || los == 24) what = 7;
+                    else if (los == 16) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
-                    //if (los==10||los==11||los==12||los==19||los==20||los==21||los==27) co=3;//nie udana z kontry
-                    if (los == 13 || los == 22 || los == 23 || los == 24) co = 2; //udana z kontry
-                    else if (los == 14 || los == 25) co = 4;
-                    else if (los == 15 || los == 26) co = 7;
-                    else if (los == 16) co = 8;
-                    else if (los == 17 || los == 18) co = 9;
-                    else co = 3; //nie udana z kontry if (los==10||los==11||los==12||los==19||los==20||los==21||los==27)
+                    //if (los==10||los==11||los==12||los==19||los==20||los==21||los==27) what=3;//nie udana z kontry
+                    if (los == 13 || los == 22 || los == 23 || los == 24) what = 2; //udana z kontry
+                    else if (los == 14 || los == 25) what = 4;
+                    else if (los == 15 || los == 26) what = 7;
+                    else if (los == 16) what = 8;
+                    else if (los == 17 || los == 18) what = 9;
+                    else what = 3; //nie udana z kontry if (los==10||los==11||los==12||los==19||los==20||los==21||los==27)
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
-                    if (los == 10 || los == 11 || los == 20 || los == 21) co = 3; //nieudana z kontry
-                    else if (los == 12 || los == 22 || los == 23 || los == 27) co = 6; //pressing przeciwnika
-                    else if (los == 13 || los == 24 || los == 25 || los == 19) co = 2; //udana z kontry
-                    else if (los == 14) co = 4;
-                    else if (los == 15 || los == 26) co = 7;
-                    else if (los == 16) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 20 || los == 21) what = 3; //nieudana z kontry
+                    else if (los == 12 || los == 22 || los == 23 || los == 27) what = 6; //pressing przeciwnika
+                    else if (los == 13 || los == 24 || los == 25 || los == 19) what = 2; //udana z kontry
+                    else if (los == 14) what = 4;
+                    else if (los == 15 || los == 26) what = 7;
+                    else if (los == 16) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 19 || los == 20) co = 3; //nieudana z kontry
-                    else if (los == 12 || los == 21 || los == 22 || los == 23) co = 5; //słaby trening podaä
-                    else if (los == 13 || los == 24 || los == 25 || los == 26) co = 2; //udana z kontry
-                    else if (los == 14) co = 4;
-                    else if (los == 15 || los == 27) co = 7;
-                    else if (los == 16) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 19 || los == 20) what = 3; //nieudana z kontry
+                    else if (los == 12 || los == 21 || los == 22 || los == 23) what = 5; //słaby trening podaä
+                    else if (los == 13 || los == 24 || los == 25 || los == 26) what = 2; //udana z kontry
+                    else if (los == 14) what = 4;
+                    else if (los == 15 || los == 27) what = 7;
+                    else if (los == 16) what = 8;
+                    else what = 9;
                 }
                 else { //if (x1==1&&x2<2&&x3==1)
-                    if (los == 10 || los == 11 || los == 12 || los == 19) co = 3; //nieudana z kontry
-                    else if (los == 13 || los == 22 || los == 23) co = 5; //słaby trening podaä
-                    else if (los == 14 || los == 24 || los == 25 || los == 26) co = 2; // udana z kontry
-                    else if (los == 15) co = 4;
-                    else if (los == 16 || los == 27) co = 7;
-                        //else if (los==7) co=8;//aut
-                    else if (los == 17) co = 9;
-                    else co = 6; //pressing rywala3x
+                    if (los == 10 || los == 11 || los == 12 || los == 19) what = 3; //nieudana z kontry
+                    else if (los == 13 || los == 22 || los == 23) what = 5; //słaby trening podaä
+                    else if (los == 14 || los == 24 || los == 25 || los == 26) what = 2; // udana z kontry
+                    else if (los == 15) what = 4;
+                    else if (los == 16 || los == 27) what = 7;
+                        //else if (los==7) what=8;//aut
+                    else if (los == 17) what = 9;
+                    else what = 6; //pressing rywala3x
                 }
             }
-            else { //if (PnaP>=-10&&PnaP<=10)//siły wyrównane
+            else { //if (MonM>=-10&&MonM<=10)//siły wyrównane
                 if (x1 == 0 && x2 >= 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 19 || los == 24 || los == 25) co = 1;
-                    else if (los == 12 || los == 13 || los == 20 || los == 26) co = 4;
-                    else if (los == 14 || los == 15 || los == 21) co = 7;
-                    else if (los == 16 || los == 17 || los == 22 || los == 27) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 19 || los == 24 || los == 25) what = 1;
+                    else if (los == 12 || los == 13 || los == 20 || los == 26) what = 4;
+                    else if (los == 14 || los == 15 || los == 21) what = 7;
+                    else if (los == 16 || los == 17 || los == 22 || los == 27) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
-                    if (los == 10 || los == 11 || los == 19 || los == 20 || los == 24) co = 1;
-                    else if (los == 12 || los == 21) co = 4;
-                    else if (los == 13 || los == 22) co = 6; //pressing rywala
-                    else if (los == 14 || los == 15 || los == 23) co = 7;
-                    else if (los == 16 || los == 17 || los == 25 || los == 26) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 19 || los == 20 || los == 24) what = 1;
+                    else if (los == 12 || los == 21) what = 4;
+                    else if (los == 13 || los == 22) what = 6; //pressing rywala
+                    else if (los == 14 || los == 15 || los == 23) what = 7;
+                    else if (los == 16 || los == 17 || los == 25 || los == 26) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) co = 1;
-                    else if (los == 12 || los == 24) co = 4;
-                    else if (los == 13 || los == 23) co = 5; //słabe podania
-                    else if (los == 14 || los == 15 || los == 22) co = 7;
-                    else if (los == 16 || los == 17 || los == 20 || los == 21) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 1;
+                    else if (los == 12 || los == 24) what = 4;
+                    else if (los == 13 || los == 23) what = 5; //słabe podania
+                    else if (los == 14 || los == 15 || los == 22) what = 7;
+                    else if (los == 16 || los == 17 || los == 20 || los == 21) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) co = 1;
-                    else if (los == 12 || los == 24) co = 6; //pressing przeciwnika
-                    else if (los == 13 || los == 23) co = 5; //słabe podania
-                    else if (los == 14 || los == 15 || los == 22) co = 7;
-                    else if (los == 16 || los == 17 || los == 20 || los == 21) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 1;
+                    else if (los == 12 || los == 24) what = 6; //pressing przeciwnika
+                    else if (los == 13 || los == 23) what = 5; //słabe podania
+                    else if (los == 14 || los == 15 || los == 22) what = 7;
+                    else if (los == 16 || los == 17 || los == 20 || los == 21) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) co = 2; //unanie z kontry
-                    else if (los == 12 || los == 13 || los == 23 || los == 24) co = 3; //nieudana kontra
-                    else if (los == 14 || los == 15 || los == 22) co = 7;
-                    else if (los == 16 || los == 17 || los == 20 || los == 21) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    else if (los == 12 || los == 13 || los == 23 || los == 24) what = 3; //nieudana kontra
+                    else if (los == 14 || los == 15 || los == 22) what = 7;
+                    else if (los == 16 || los == 17 || los == 20 || los == 21) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) co = 2; //unanie z kontry
-                    else if (los == 12 || los == 24) co = 3; //nieudana kontra
-                    else if (los == 13 || los == 23) co = 6; //pressing przeciwnika
-                    else if (los == 14 || los == 15 || los == 22) co = 7;
-                    else if (los == 16 || los == 17 || los == 20 || los == 21) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    else if (los == 12 || los == 24) what = 3; //nieudana kontra
+                    else if (los == 13 || los == 23) what = 6; //pressing przeciwnika
+                    else if (los == 14 || los == 15 || los == 22) what = 7;
+                    else if (los == 16 || los == 17 || los == 20 || los == 21) what = 8;
+                    else what = 9;
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) co = 2; //unanie z kontry
-                    else if (los == 12 || los == 24) co = 3; //nieudana kontra
-                    else if (los == 13 || los == 23) co = 5; //słaby trening
-                    else if (los == 14 || los == 15 || los == 22) co = 7;
-                    else if (los == 16 || los == 17 || los == 20 || los == 21) co = 8;
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    else if (los == 12 || los == 24) what = 3; //nieudana kontra
+                    else if (los == 13 || los == 23) what = 5; //słaby trening
+                    else if (los == 14 || los == 15 || los == 22) what = 7;
+                    else if (los == 16 || los == 17 || los == 20 || los == 21) what = 8;
+                    else what = 9;
                 }
                 else { //if (x1==1&&x2<2&&x3==1)
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) co = 2; //unanie z kontry
-                    else if (los == 12 || los == 24) co = 3; //nieudana kontra
-                    else if (los == 13 || los == 23) co = 5; //słaby trening
-                    else if (los == 14 || los == 15 || los == 22) co = 7;
-                    else if (los == 16 || los == 21) co = 8;
-                    else if (los == 17 || los == 20) co = 6; //pressing rywala
-                    else co = 9;
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    else if (los == 12 || los == 24) what = 3; //nieudana kontra
+                    else if (los == 13 || los == 23) what = 5; //słaby trening
+                    else if (los == 14 || los == 15 || los == 22) what = 7;
+                    else if (los == 16 || los == 21) what = 8;
+                    else if (los == 17 || los == 20) what = 6; //pressing rywala
+                    else what = 9;
                 }
             }
         }
     }//whereIsAction = ACTION_IN_MIDDLEFIELD  P/P
-    else if (whereIsAction == ACTION_IN_WINGER) { //skrzydłowy przy piłce, A/O
+    else if (whereIsAction == ACTION_IN_WINGER) { // winger has a ball, A/D
         los = (rand() % 12) + 1;
         if (los < 5) {
-            co = los + 9;
+            what = los + 9;
         }
         else {
-            if ((AnaO > 10 && isPlayerBall) || (OnaA < -10 && !isPlayerBall)) { //duża przewaga ataku
+            if ((AonD > 10 && isPlayerBall) || (DonA < -10 && !isPlayerBall)) { //duża przewaga ataku
                 los = (rand() % 10) + 1;
-                if (los == 1 || los == 2) co = 11;
-                else co = 10;
+                if (los == 1 || los == 2) what = 11;
+                else what = 10;
             }
-            else if ((AnaO > 0 && AnaO < 11 && isPlayerBall) || (OnaA > -11 && OnaA < 0 && !isPlayerBall)) { //przewaga ataku
-                if (los == 6 || los == 7 || los == 8 || los == 9) co = 10;
-                else if (los == 10 || los == 11 || los == 12) co = 11;
-                else co = 13;
-            }//przewaga w ataku
-            else if ((AnaO < -40 && isPlayerBall) || (OnaA > 40 && !isPlayerBall)) { //duża przewaga obrony
+            else if ((AonD > 0 && AonD < 11 && isPlayerBall) || (DonA > -11 && DonA < 0 && !isPlayerBall)) { //przewaga ataku
+                if (los == 6 || los == 7 || los == 8 || los == 9) what = 10;
+                else if (los == 10 || los == 11 || los == 12) what = 11;
+                else what = 13;
+            }
+            else if ((AonD < -40 && isPlayerBall) || (DonA > 40 && !isPlayerBall)) { //duża przewaga obrony
                 los = (rand() % 10) + 1;
-                if (los == 1 || los == 2) co = 12;
-                else co = 13;
+                if (los == 1 || los == 2) what = 12;
+                else what = 13;
             }
-            else if ((AnaO > -41 && AnaO < -20 && isPlayerBall) || (OnaA > 20 && OnaA < 41 && !isPlayerBall)) { //przewaga obrony
-                if (los == 5 || los == 6 || los == 7 || los == 8 || los == 9) co = 13;
-                else if (los == 10 || los == 11) co = 10;
-                else co = 11;
-            }//przewaga w obronie
-            else { //if ((AnaO > -21&&AnaO<1&& isPlayerBall)||(OnaA<21&&OnaA > -1&& !isPlayerBall))
-                if (los > 4 && los < 9) co = los + 5;
-                else co = los + 1;
+            else if ((AonD > -41 && AonD < -20 && isPlayerBall) || (DonA > 20 && DonA < 41 && !isPlayerBall)) { //przewaga obrony
+                if (los == 5 || los == 6 || los == 7 || los == 8 || los == 9) what = 13;
+                else if (los == 10 || los == 11) what = 10;
+                else what = 11;
             }
-        }//else
+            else { //if ((AonD > -21&&AonD<1&& isPlayerBall)||(DonA<21&&DonA > -1&& !isPlayerBall))
+                if (los > 4 && los < 9) what = los + 5;
+                else what = los + 1;
+            }
+        }
     }
-    else if (whereIsAction == ACTION_IN_PANELTY_AREA) { //pole karne A/O
+    else if (whereIsAction == ACTION_IN_PANELTY_AREA) { // penalty area A/D
         los = (rand() % 30) + 1;
         if (isPlayerBall) {
-            x1 = clubRef.rivalInst[3]; //pułapki ofsajdowe rywala
+            x1 = clubRef.rivalInst[3]; // offsides trap by rival
         }
         else {
             x1 = clubRef.inst[3];
         }
 
         if (los < 11) {
-            co = los + 13;
+            what = los + 13;
         }
         else {
-            if ((AnaO > 10 && isPlayerBall) || (OnaA < -10 && !isPlayerBall)) { //duża przewaga ataku
+            if ((AonD > 10 && isPlayerBall) || (DonA < -10 && !isPlayerBall)) { //duża przewaga ataku
                 if (x1 == 0) {
                     los = (rand() % 10) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 21;
-                    else co = 22;
+                    if (los == 1 || los == 2 || los == 3) what = 21;
+                    else what = 22;
                 }
                 else if (x1 == 1) {
                     los = (rand() % 15) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 21;
-                    else if (los == 4 || los == 5 || los == 6) co = 14;
-                    else if (los == 7) co = 15;
-                    else co = 22;
+                    if (los == 1 || los == 2 || los == 3) what = 21;
+                    else if (los == 4 || los == 5 || los == 6) what = 14;
+                    else if (los == 7) what = 15;
+                    else what = 22;
                 }
             }
-            else if ((AnaO > 0 && AnaO < 11 && isPlayerBall) || (OnaA > -11 && OnaA < 0 && !isPlayerBall)) { //przewaga ataku
+            else if ((AonD > 0 && AonD < 11 && isPlayerBall) || (DonA > -11 && DonA < 0 && !isPlayerBall)) { //przewaga ataku
                 if (x1 == 0) {
-                    if (los == 11 || los == 27) co = 16;
-                    else if (los == 12 || los == 26) co = 17;
-                    else if (los == 13 || los == 25) co = 18;
-                    else if (los == 14 || los == 15 || los == 24 || los == 30) co = 20;
-                    else if (los == 16 || los == 17 || los == 23) co = 21;
-                    else if (los == 18 || los == 19 || los == 21 || los == 22 || los == 29) co = 22;
-                    else co = 23;
+                    if (los == 11 || los == 27) what = 16;
+                    else if (los == 12 || los == 26) what = 17;
+                    else if (los == 13 || los == 25) what = 18;
+                    else if (los == 14 || los == 15 || los == 24 || los == 30) what = 20;
+                    else if (los == 16 || los == 17 || los == 23) what = 21;
+                    else if (los == 18 || los == 19 || los == 21 || los == 22 || los == 29) what = 22;
+                    else what = 23;
                 }
                 else if (x1 == 1) {
-                    if (los == 11 || los == 23 || los == 27) co = 14;
-                    else if (los == 12 || los == 28) co = 15;
-                    else if (los == 13) co = 16;
-                    else if (los == 14) co = 17;
-                    else if (los == 15 || los == 29) co = 18;
-                    else if (los == 16 || los == 24) co = 20;
-                    else if (los == 17 || los == 22 || los == 26) co = 21;
-                    else if (los == 18 || los == 19 || los == 21 || los == 25 || los == 30) co = 22;
-                    else co = 23;
+                    if (los == 11 || los == 23 || los == 27) what = 14;
+                    else if (los == 12 || los == 28) what = 15;
+                    else if (los == 13) what = 16;
+                    else if (los == 14) what = 17;
+                    else if (los == 15 || los == 29) what = 18;
+                    else if (los == 16 || los == 24) what = 20;
+                    else if (los == 17 || los == 22 || los == 26) what = 21;
+                    else if (los == 18 || los == 19 || los == 21 || los == 25 || los == 30) what = 22;
+                    else what = 23;
                 }
             }
-            else if ((AnaO < -40 && isPlayerBall) || (OnaA > 40 && !isPlayerBall)) { //duża przewaga obrony
+            else if ((AonD < -40 && isPlayerBall) || (DonA > 40 && !isPlayerBall)) { //duża przewaga obrony
                 if (x1 == 0) {
                     los = (rand() % 10) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 17;
-                    else co = 16;
+                    if (los == 1 || los == 2 || los == 3) what = 17;
+                    else what = 16;
                 }
                 else if (x1 == 1) {
                     los = (rand() % 15) + 1;
-                    if (los == 1 || los == 2 || los == 3) co = 17;
-                    else if (los == 4 || los == 5 || los == 6) co = 16;
-                    else if (los == 7) co = 15;
-                    else co = 14;
+                    if (los == 1 || los == 2 || los == 3) what = 17;
+                    else if (los == 4 || los == 5 || los == 6) what = 16;
+                    else if (los == 7) what = 15;
+                    else what = 14;
                 }
             }
-            else if ((AnaO > -41 && AnaO < -20 && isPlayerBall) || (OnaA > 20 && OnaA < 41 && !isPlayerBall)) { //przewaga obrony
+            else if ((AonD > -41 && AonD < -20 && isPlayerBall) || (DonA > 20 && DonA < 41 && !isPlayerBall)) { //przewaga obrony
                 if (x1 == 0) {
-                    if (los == 11 || los == 12 || los == 13 || los == 21 || los == 22 || los == 30) co = 16;
-                    else if (los == 14 || los == 23 || los == 24) co = 17;
-                    else if (los == 15) co = 18;
-                    else if (los == 16 || los == 17 || los == 27) co = 20;
-                    else if (los == 18 || los == 25) co = 21;
-                    else if (los == 19 || los == 26) co = 22;
-                    else co = 23; //3x
+                    if (los == 11 || los == 12 || los == 13 || los == 21 || los == 22 || los == 30) what = 16;
+                    else if (los == 14 || los == 23 || los == 24) what = 17;
+                    else if (los == 15) what = 18;
+                    else if (los == 16 || los == 17 || los == 27) what = 20;
+                    else if (los == 18 || los == 25) what = 21;
+                    else if (los == 19 || los == 26) what = 22;
+                    else what = 23; //3x
                 }
                 else if (x1 == 1) {
-                    if (los == 11 || los == 12 || los == 13 || los == 21 || los == 22 || los == 29) co = 14;
-                    else if (los == 30) co = 16;
-                    else if (los == 14 || los == 23) co = 15;
-                    else if (los == 15 || los == 28) co = 17;
-                    else if (los == 16) co = 18;
-                    else if (los == 17 || los == 27) co = 20;
-                    else if (los == 18 || los == 26) co = 21;
-                    else if (los == 19 || los == 25) co = 22;
-                    else co = 23;
+                    if (los == 11 || los == 12 || los == 13 || los == 21 || los == 22 || los == 29) what = 14;
+                    else if (los == 30) what = 16;
+                    else if (los == 14 || los == 23) what = 15;
+                    else if (los == 15 || los == 28) what = 17;
+                    else if (los == 16) what = 18;
+                    else if (los == 17 || los == 27) what = 20;
+                    else if (los == 18 || los == 26) what = 21;
+                    else if (los == 19 || los == 25) what = 22;
+                    else what = 23;
                 }
             }
-            else if ((AnaO > -21 && AnaO < 1 && isPlayerBall) || (OnaA < 21 && OnaA > -1 && !isPlayerBall)) {
+            else if ((AonD > -21 && AonD < 1 && isPlayerBall) || (DonA < 21 && DonA > -1 && !isPlayerBall)) {
                 if (x1 == 0) {
-                    if (los == 11 || los == 12 || los == 13 || los == 21) co = 16;
-                    else if (los == 30) co = 14;
-                    else if (los == 14 || los == 23) co = 17;
-                    else if (los == 15) co = 18;
-                    else if (los == 16 || los == 17 || los == 24 || los == 27) co = 20;
-                    else if (los == 18 || los == 25 || los == 29) co = 21;
-                    else if (los == 19 || los == 26 || los == 22) co = 22;
-                    else co = 23;
+                    if (los == 11 || los == 12 || los == 13 || los == 21) what = 16;
+                    else if (los == 30) what = 14;
+                    else if (los == 14 || los == 23) what = 17;
+                    else if (los == 15) what = 18;
+                    else if (los == 16 || los == 17 || los == 24 || los == 27) what = 20;
+                    else if (los == 18 || los == 25 || los == 29) what = 21;
+                    else if (los == 19 || los == 26 || los == 22) what = 22;
+                    else what = 23;
                 }
                 else if (x1 == 1) {
                     los = (rand() % 10) + 1;
-                    co = los + 13;
+                    what = los + 13;
                 }
             }
-        }//else
+        }
     }//dla whereIsAction == ACTION_IN_PANELTY_AREA A/O
     else if (whereIsAction == ACTION_IN_GOAL_SITUATION ||
              whereIsAction == ACTION_IN_DIRECT_FREE_KICK
@@ -2811,38 +2827,38 @@ int Match::whatHappened(
         }
 
         if (x1 < 15) {
-            if (los == 1 || los == 2 || los == 3 || los == 4) co = 28; //gol
-            else if (los == 5 || los == 6 || los == 7) co = 27; //róg
-            else if (los == 8 || los == 9) co = 26; //niepewnia obrona
-            else if (los == 10) co = 29; //gol nieuznany
-            else if (los == 11) co = 24; //obronił
-            else co = 30; //strzał niecelny 1x
+            if (los == 1 || los == 2 || los == 3 || los == 4) what = 28; //gol
+            else if (los == 5 || los == 6 || los == 7) what = 27; //róg
+            else if (los == 8 || los == 9) what = 26; //niepewnia obrona
+            else if (los == 10) what = 29; //gol nieuznany
+            else if (los == 11) what = 24; //obronił
+            else what = 30; //strzał niecelny 1x
         }
         else if (x1 >= 15 && x1 < 25) {
-            if (los == 1 || los == 2 || los == 3) co = 28; //gol
-            else if (los == 4 || los == 5 || los == 6) co = 27; //róg
-            else if (los == 7 || los == 8) co = 26; //niepewnia obrona
-            else if (los == 9) co = 29; //gol nieuznany
-            else if (los == 10 || los == 11) co = 24; //obronił
-            else co = 30; //strzał niecelny
+            if (los == 1 || los == 2 || los == 3) what = 28; //gol
+            else if (los == 4 || los == 5 || los == 6) what = 27; //róg
+            else if (los == 7 || los == 8) what = 26; //niepewnia obrona
+            else if (los == 9) what = 29; //gol nieuznany
+            else if (los == 10 || los == 11) what = 24; //obronił
+            else what = 30; //strzał niecelny
         }
         else if (x1 >= 25 && x1 < 35) {
-            if (los == 1 || los == 2 || los == 3) co = 28; //gol
-            else if (los == 4 || los == 5) co = 27; //róg
-            else if (los == 6 || los == 7) co = 26; //niepewnia obrona
-            else if (los == 8) co = 29; //gol nieuznany
-            else if (los == 9 || los == 10) co = 24; //obronił
-            else if (los == 11) co = 25; //bez problemu
-            else co = 30; //strzał niecelny1x
+            if (los == 1 || los == 2 || los == 3) what = 28; //gol
+            else if (los == 4 || los == 5) what = 27; //róg
+            else if (los == 6 || los == 7) what = 26; //niepewnia obrona
+            else if (los == 8) what = 29; //gol nieuznany
+            else if (los == 9 || los == 10) what = 24; //obronił
+            else if (los == 11) what = 25; //bez problemu
+            else what = 30; //strzał niecelny1x
         }
         else if (x1 > 34) {
-            if (los == 1 || los == 2) co = 28; //gol
-            else if (los == 3 || los == 4) co = 27; //róg
-            else if (los == 5) co = 26; //niepewnia obrona
-            else if (los == 6) co = 29; //gol nieuznany
-            else if (los == 7 || los == 8) co = 24; //obronił
-            else if (los == 9 || los == 10) co = 25; //bez problemu
-            else co = 30; //strzał niecelny2x
+            if (los == 1 || los == 2) what = 28; //gol
+            else if (los == 3 || los == 4) what = 27; //róg
+            else if (los == 5) what = 26; //niepewnia obrona
+            else if (los == 6) what = 29; //gol nieuznany
+            else if (los == 7 || los == 8) what = 24; //obronił
+            else if (los == 9 || los == 10) what = 25; //bez problemu
+            else what = 30; //strzał niecelny2x
         }
     } // whereIsAction = ACTION_IN_GOAL_SITUATION // obrona B
     else if (whereIsAction == ACTION_IN_PANELTY_OR_1ON1) { //obrona B - karny, sma na sam
@@ -2855,28 +2871,28 @@ int Match::whatHappened(
         }
 
         if (x1 < 15) {
-            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5 || los == 6 || los == 7) co = 28; //gol
-            else if (los == 8) co = 24; //obronił
-            else co = 30; //strzał niecelny 1x
+            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5 || los == 6 || los == 7) what = 28; //gol
+            else if (los == 8) what = 24; //obronił
+            else what = 30; //strzał niecelny 1x
         }
         else if (x1 >= 15 && x1 < 25) {
-            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5 || los == 6) co = 28; //gol
-            else if (los == 8) co = 24; //obronił
-            else co = 30; //strzał niecelny 2x
+            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5 || los == 6) what = 28; //gol
+            else if (los == 8) what = 24; //obronił
+            else what = 30; //strzał niecelny 2x
         }
         else if (x1 >= 25 && x1 < 35) {
-            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) co = 28; //gol
-            else if (los == 8 || los == 6) co = 24; //obronił
-            else co = 30; //strzał niecelny 2x
+            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) what = 28; //gol
+            else if (los == 8 || los == 6) what = 24; //obronił
+            else what = 30; //strzał niecelny 2x
         }
         else if (x1 > 34) {
-            if (los == 1 || los == 2 || los == 3 || los == 4) co = 28; //gol
-            else if (los == 8 || los == 6 || los == 5) co = 24; //obronił
-            else co = 30; //strzał niecelny 2x
+            if (los == 1 || los == 2 || los == 3 || los == 4) what = 28; //gol
+            else if (los == 8 || los == 6 || los == 5) what = 24; //obronił
+            else what = 30; //strzał niecelny 2x
         }
-    }//whereIsAction = ACTION_IN_PANELTY_OR_1ON1 //obrona B
+    }
 
-    return co;
+    return what;
 }
 
 void Match::drawBoard(
@@ -2886,12 +2902,12 @@ void Match::drawBoard(
     int cornersHome, int cornersAway,
     float zoneLeft, float zoneCenter, float zoneRight,
     int offsidesHome, int offsidesAway,
-    int faulsHome, int faulsAway,
+    int foulsHome, int foulsAway,
     int paneltiesHome, int paneltiesAway,
     int yellowsHome, int yellowsAway,
     int redsHome, int redsAway,
     int ballPossHome, int ballPossAway,
-    int OnaA, int PnaP, int AnaO,
+    int DonA, int MonM, int AonD,
     int whereIsAction,
     bool isPlayerBall
 ) {
@@ -3031,7 +3047,7 @@ void Match::drawBoard(
             BOX_LIGHT_VERTICAL;
 
     pColors->textbackground(BLACK);
-    wprintf(pLang->get(L"     %2d      Fouls      %2d").c_str(), faulsHome, faulsAway);
+    wprintf(pLang->get(L"     %2d      Fouls      %2d").c_str(), foulsHome, foulsAway);
 
     pColors->textbackground(GREEN);
     wcout << endl <<
@@ -3076,16 +3092,16 @@ void Match::drawBoard(
     pColors->textbackground(GREEN);
     wcout << endl << BOX_LIGHT_VERTICAL << L"  ";
     isHome
-        ? drawOnaA(isHome, OnaA)
-        : drawAnaO(isHome, AnaO);
+        ? drawOnaA(isHome, DonA)
+        : drawAnaO(isHome, AonD);
 
     pColors->textcolor(WHITE);
     wcout << L"   " << BOX_LIGHT_DASH_VERTICAL << L"    ";
-    if (PnaP < -20) {
+    if (MonM < -20) {
         pColors->textcolor(RED);
         wcout << BALL_FULL << BALL_FULL << BALL_FULL << BALL_FULL;
     }
-    else if (PnaP >= -20 && PnaP < -10) {
+    else if (MonM >= -20 && MonM < -10) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL;
@@ -3099,7 +3115,7 @@ void Match::drawBoard(
             wcout << BALL_FULL;
         }
     }
-    else if (PnaP >= -10 && PnaP < 11) {
+    else if (MonM >= -10 && MonM < 11) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL << BALL_FULL;
@@ -3113,7 +3129,7 @@ void Match::drawBoard(
             wcout << BALL_FULL << BALL_FULL;
         }
     }
-    else if (PnaP >= 11 && PnaP < 21) {
+    else if (MonM >= 11 && MonM < 21) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL << BALL_FULL << BALL_FULL;
@@ -3127,7 +3143,7 @@ void Match::drawBoard(
             wcout << BALL_FULL << BALL_FULL << BALL_FULL;
         }
     }
-    else if (PnaP >= 21) {
+    else if (MonM >= 21) {
         pColors->textcolor(BLUE);
         wcout << BALL_FULL << BALL_FULL << BALL_FULL << BALL_FULL;
     }
@@ -3136,8 +3152,8 @@ void Match::drawBoard(
     wcout << L"     " << BOX_LIGHT_DASH_VERTICAL << L"   ";
 
     isHome
-        ? drawAnaO(isHome, AnaO)
-        : drawOnaA(isHome, OnaA);
+        ? drawAnaO(isHome, AonD)
+        : drawOnaA(isHome, DonA);
 
     pColors->textcolor(WHITE);
     wcout << L"  " << BOX_LIGHT_VERTICAL;
@@ -3151,7 +3167,7 @@ void Match::drawBoard(
     wcout << endl << BOX_LIGHT_UP_RIGHT << BOX_LIGHT_HORIZONTAL;
 
     pColors->textcolor(BLACK);
-    wprintf(L"%4d", isHome ? OnaA : AnaO);
+    wprintf(L"%4d", isHome ? DonA : AonD);
 
     pColors->textcolor(WHITE);
     wcout << BOX_LIGHT_HORIZONTAL <<
@@ -3164,7 +3180,7 @@ void Match::drawBoard(
             BOX_LIGHT_HORIZONTAL <<
             BOX_LIGHT_HORIZONTAL;
     pColors->textcolor(BLACK);
-    wprintf(L"%4d", PnaP);
+    wprintf(L"%4d", MonM);
     pColors->textcolor(WHITE);
     wcout << BOX_LIGHT_HORIZONTAL <<
             BOX_LIGHT_HORIZONTAL <<
@@ -3176,7 +3192,7 @@ void Match::drawBoard(
             BOX_LIGHT_HORIZONTAL <<
             BOX_LIGHT_HORIZONTAL;
     pColors->textcolor(BLACK);
-    wprintf(L"%4d", isHome ? AnaO : OnaA);
+    wprintf(L"%4d", isHome ? AonD : DonA);
     pColors->textcolor(WHITE);
     wcout << BOX_LIGHT_HORIZONTAL << BOX_LIGHT_HORIZONTAL << BOX_LIGHT_UP_LEFT;
 
@@ -3199,13 +3215,13 @@ void Match::drawBoard(
     }
 }
 
-void Match::drawOnaA(bool isHome, int OnaA)
+void Match::drawOnaA(bool isHome, int DonA)
 {
-    if (OnaA < -10) {
+    if (DonA < -10) {
         pColors->textcolor(RED);
         wcout << BALL_FULL << BALL_FULL << BALL_FULL << BALL_FULL;
     }
-    else if (OnaA >= -10 && OnaA < 0) {
+    else if (DonA >= -10 && DonA < 0) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL;
@@ -3219,7 +3235,7 @@ void Match::drawOnaA(bool isHome, int OnaA)
             wcout << BALL_FULL;
         }
     }
-    else if (OnaA >= 0 && OnaA < 21) {
+    else if (DonA >= 0 && DonA < 21) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL << BALL_FULL;
@@ -3233,7 +3249,7 @@ void Match::drawOnaA(bool isHome, int OnaA)
             wcout << BALL_FULL << BALL_FULL;
         }
     }
-    else if (OnaA >= 21 && OnaA < 41) {
+    else if (DonA >= 21 && DonA < 41) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL << BALL_FULL << BALL_FULL;
@@ -3247,19 +3263,19 @@ void Match::drawOnaA(bool isHome, int OnaA)
             wcout << BALL_FULL << BALL_FULL << BALL_FULL;
         }
     }
-    else if (OnaA >= 41) {
+    else if (DonA >= 41) {
         pColors->textcolor(BLUE);
         wcout << BALL_FULL << BALL_FULL << BALL_FULL << BALL_FULL;
     }
 }
 
-void Match::drawAnaO(bool isHome, int AnaO)
+void Match::drawAnaO(bool isHome, int AonD)
 {
-    if (AnaO < -40) {
+    if (AonD < -40) {
         pColors->textcolor(RED);
         wcout << BALL_FULL << BALL_FULL << BALL_FULL << BALL_FULL;
     }
-    else if (AnaO >= -40 && AnaO < -20) {
+    else if (AonD >= -40 && AonD < -20) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL;
@@ -3273,7 +3289,7 @@ void Match::drawAnaO(bool isHome, int AnaO)
             wcout << BALL_FULL;
         }
     }
-    else if (AnaO >= -20 && AnaO < 1) {
+    else if (AonD >= -20 && AonD < 1) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL << BALL_FULL;
@@ -3287,7 +3303,7 @@ void Match::drawAnaO(bool isHome, int AnaO)
             wcout << BALL_FULL << BALL_FULL;
         }
     }
-    else if (AnaO >= 1 && AnaO < 11) {
+    else if (AonD >= 1 && AonD < 11) {
         if (isHome) {
             pColors->textcolor(BLUE);
             wcout << BALL_FULL << BALL_FULL << BALL_FULL;
@@ -3301,49 +3317,49 @@ void Match::drawAnaO(bool isHome, int AnaO)
             wcout << BALL_FULL << BALL_FULL << BALL_FULL;
         }
     }
-    else if (AnaO >= 11) {
+    else if (AonD >= 11) {
         pColors->textcolor(BLUE);
         wcout << BALL_FULL << BALL_FULL << BALL_FULL << BALL_FULL;
     }
 }
 
-void Match::drawWhoScored(int mingol1[], int mingol2[], wstring dlagol1[], wstring dlagol2[])
+void Match::drawWhoScored(const vector<SGoalsInfo> &home, const vector<SGoalsInfo> &away)
 {
-    int i = 3;
-    for (int k = 0; k < 10; k++) {
-        if (mingol1[k] != 0) {
-            wcout << endl;
-            wprintf(L"%19ls %2d ", dlagol1[k].c_str(), mingol1[k]);
-            i--;
-        }
-
-        if (mingol2[k] != 0 && mingol1[k] != 0) {
-            wprintf(L" %2d %-19ls", mingol2[k], dlagol2[k].c_str());
-        }
-        else if (mingol2[k] != 0 && mingol1[k] == 0) {
-            wcout << endl;
-            wprintf(L"                        %2d %-19ls", mingol2[k], dlagol2[k].c_str());
-            i--;
-        }
-    }
-
-    if (i == 3) {
-        wcout << endl << endl << endl;
-    }
-    else if (i == 2) {
-        wcout << endl << endl;
-    }
-    else if (i == 1) {
+    size_t homeSize = home.size();
+    size_t awaySize = away.size();
+    size_t max = std::max(homeSize, awaySize);
+    for (size_t i = 0; i < max; i++) {
         wcout << endl;
+
+        if (i < homeSize) {
+            const SGoalsInfo homeItem = home[i];
+            wprintf(L"%19ls %2d ", homeItem.footballerName.c_str(), homeItem.minute);
+        }
+
+        if (i < awaySize) {
+            if (i >= homeSize) {
+                wcout << L"                       ";
+            }
+
+            const SGoalsInfo awayItem = away[i];
+            wprintf(L" %2d %-19ls", awayItem.minute, awayItem.footballerName.c_str());
+        }
+    }
+
+    if (max < 3) {
+        size_t newLine = 3 - max;
+        for (size_t i = 0; i < newLine; i++) {
+            wcout << endl;
+        }
     }
 }
 
-void Match::saveMatchMessageToFile(int bkgcolor, int minuta, const wchar_t *message)
+void Match::saveMatchMessageToFile(int bkgcolor, int matchMinute, const wchar_t *message)
 {
     SLastMatch lastMatch;
     lastMatch.textcolor = bkgcolor == BLUE ? LIGHTBLUE : RED;
 
-    swprintf(lastMatch.text, MAX_NEWS_LENGTH, pLang->get(L"%02d min. %ls").c_str(), minuta + 2, message);
+    swprintf(lastMatch.text, MAX_NEWS_LENGTH, pLang->get(L"%02d min. %ls").c_str(), matchMinute + 2, message);
 
     FILE *f = fopen(FILE_SAVE_LAST_MATCH_REPORTS, "aw");
     fwrite(&lastMatch, sizeof(SLastMatch), 1, f);
@@ -3426,10 +3442,10 @@ void Match::playerTactics()
                 if (footballer1 != footballer2) {
                     if ((footballer1 < 12 && footballer2 > 11) || (footballer2 < 12 && footballer1 > 11)) {
                         howManyPlayerChanges++;
-                        msgWhoBall[9] = 1;
+                        msgWhoBall[9] = true;
                         whoPlayerChanges = 1;
-                        wiado[9] = 6;
-                        if (footballer1 <= 11 && footballer2 > 11) { // stalenie w wiadomosci kto kogo zastepuje
+                        msg[9] = 6; // %ls comes in for %ls.
+                        if (footballer1 <= 11 && footballer2 > 11) { // ustalenie w wiadomosci kto kogo zastepuje
                             msgFootballers[18] = msgPlayerSurnames[footballer2 - 1];
                             msgFootballers[19] = msgPlayerSurnames[footballer1 - 1];
                         }
@@ -3626,6 +3642,11 @@ void Match::rivalTactics()
     while (menuTeamSetting != 'Q');
 }
 
+/**
+ * @param bool isPlayerBall
+ * @param int footabllerId
+ * @return wstring
+ */
 wstring Match::getFootballerSurname(bool isPlayerBall, int footabllerId)
 {
     return isPlayerBall ? msgPlayerSurnames[footabllerId] : msgRivalSurnames[footabllerId];
@@ -3762,10 +3783,10 @@ int Match::getFootballerIdWhoShootDistance(int teamSetting)
     }
 }
 
-int Match::getGoooalMinute(int minuta, int koniec)
+int Match::getGoooalMinute(int matchMinute, MatchStatus matchStatus)
 {
-    int result = minuta + 2;
-    if (result > 45 && (koniec == 0 || koniec == 1)) {
+    int result = matchMinute + 2;
+    if (result > 45 && (matchStatus == START_MATCH || matchStatus == END_1ST_HALF)) {
         result = 45;
     }
 
@@ -4073,4 +4094,15 @@ SFormationsSum Match::getRivalFormationsSum(const SClub &clubRef)
     }
 
     return rivalFormationsSum;
+}
+
+int Match::getEmptyMsgSlot()
+{
+    int index = 0;
+    for (int i = MAX_MESSAGES; i > 0; i--) {
+        if (msg[i] == 0) {
+            index = i;
+        }
+    }
+    return index;
 }

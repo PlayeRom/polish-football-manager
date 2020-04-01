@@ -116,7 +116,7 @@ void PlayerClub::initNewClub(int clubId)
 void PlayerClub::save() const
 {
     FILE *f = fopen(FILE_SAVE_CLUB, "wb");
-    fwrite(&club, sizeof (SClub), 1, f);
+    fwrite(&club, sizeof(SClub), 1, f);
     fclose(f);
 }
 
@@ -129,7 +129,7 @@ void PlayerClub::load()
         throw std::invalid_argument(message);
     }
 
-    fread(&club, sizeof (SClub), 1, f);
+    fread(&club, sizeof(SClub), 1, f);
     fclose(f);
 }
 

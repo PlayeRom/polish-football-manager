@@ -180,6 +180,7 @@ struct SClub {
 
     // dla opcji wyswietlania napisow w meczu, 1 - automatycznie, 0 - za kazdym razem press any key
     int isMatchAutoMsg;
+    int isWalkover; // = 1 - last match lose by walkover
 };
 
 struct SRound {

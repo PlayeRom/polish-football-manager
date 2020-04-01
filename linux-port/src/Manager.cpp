@@ -872,7 +872,7 @@ void Manager::menuItemContinueMatch(SClub &clubRef)
         wcout << endl << endl << pLang->get(L"Do you want to go to the match? (Y/n): ");
         wchar_t matchYN = pInput->getKeyBoardPressed();
         if (matchYN == pLang->getYesKeyborad() || matchYN == L'\n') {
-            pMatch->runMecz();
+            pMatch->runMatch();
         }
     }
     else {
@@ -3209,43 +3209,45 @@ void Manager::setAssistantMessageAfterMatch()
         int PnaP = pMatch->getMonM();
         int AnaO = pMatch->getAonD();
 
-        if (clubRef.playerGoals <= clubRef.rivalGoals) {
-            // przegrana
-            if (AnaO < -20 && clubRef.inst[4] == 0) {
-                // 20 = ASYSTENT: Byliśmy osłabieni w ataku, więc moim zdaniem gra z kontry przyniosłaby lepsze rezultaty.
-                pNews->setTmpMsgData(20);
-            }
-            if (PnaP < -10 && clubRef.inst[0] != 4) {
-                pNews->setTmpMsgData(21);
-            }
-            if (OnaA < 0 && clubRef.inst[3] == 0) {
-                pNews->setTmpMsgData(22);
-            }
-            if (OnaA > 20 && clubRef.inst[3] == 1) {
-                pNews->setTmpMsgData(23);
-            }
-            if (PnaP > 10 && clubRef.inst[0] != 2) {
-                pNews->setTmpMsgData(24);
-            }
-            if (AnaO > 0 && clubRef.inst[4] == 1) {
-                pNews->setTmpMsgData(25);
-            }
+        if (!clubRef.isWalkover) {
+            if (clubRef.playerGoals <= clubRef.rivalGoals) {
+                // przegrana
+                if (AnaO < -20 && clubRef.inst[4] == 0) {
+                    // 20 = ASYSTENT: Byliśmy osłabieni w ataku, więc moim zdaniem gra z kontry przyniosłaby lepsze rezultaty.
+                    pNews->setTmpMsgData(20);
+                }
+                if (PnaP < -10 && clubRef.inst[0] != 4) {
+                    pNews->setTmpMsgData(21);
+                }
+                if (OnaA < 0 && clubRef.inst[3] == 0) {
+                    pNews->setTmpMsgData(22);
+                }
+                if (OnaA > 20 && clubRef.inst[3] == 1) {
+                    pNews->setTmpMsgData(23);
+                }
+                if (PnaP > 10 && clubRef.inst[0] != 2) {
+                    pNews->setTmpMsgData(24);
+                }
+                if (AnaO > 0 && clubRef.inst[4] == 1) {
+                    pNews->setTmpMsgData(25);
+                }
 
-            if (clubRef.inst[2] == 0) {
-                pNews->setTmpMsgData(26);
+                if (clubRef.inst[2] == 0) {
+                    pNews->setTmpMsgData(26);
+                }
+                if (clubRef.inst[2] == 1) {
+                    pNews->setTmpMsgData(27);
+                }
+                if (clubRef.inst[1] != 3) {
+                    pNews->setTmpMsgData(28);
+                }
             }
-            if (clubRef.inst[2] == 1) {
-                pNews->setTmpMsgData(27);
+            else { // wygrana meczu
+                int los = rand() % 2;
+                // ASYSTENT: Gratuluję zwycięstwa. Dobrał pan właściwą taktykę.
+                // ASYSTENT: Gratuluję wygranej. Nie mam zastrzeżeń co do zastosowanej taktyki.
+                pNews->setTmpMsgData(los == 0 ? 29 : 30);
             }
-            if (clubRef.inst[1] != 3) {
-                pNews->setTmpMsgData(28);
-            }
-        }
-        else { // wygrana meczu
-            int los = rand() % 2;
-            // ASYSTENT: Gratuluję zwycięstwa. Dobrał pan właściwą taktykę.
-            // ASYSTENT: Gratuluję wygranej. Nie mam zastrzeżeń co do zastosowanej taktyki.
-            pNews->setTmpMsgData(los == 0 ? 29 : 30);
         }
         clubRef.isAssistantMsg = 0;
 
