@@ -16,6 +16,7 @@
 #include "Match.h"
 #include "Logger.h"
 #include "Language.h"
+#include "Random.h"
 
 using namespace std;
 
@@ -30,7 +31,8 @@ public:
         Table *pTable,
         Rounds *pRounds,
         News *pNews,
-        Language *pLang
+        Language *pLang,
+        const Random *pRand
     );
     virtual ~Manager();
 
@@ -50,6 +52,7 @@ private:
     Match *pMatch;
     Logger *pLogger;
     Language *pLang;
+    const Random *pRand;
 
     // filtry listy transferowej:
     int filterPosition;
@@ -106,6 +109,9 @@ private:
     int getRivalOffsideTrap(int rivalSetting);
     int getRivalContra(int rivalSetting);
     int getRivalAttitude(int rivalSetting);
+
+    bool isGrantedFunds(const SClub &clubRef);
+    int getChanceForGrantedFunds(const SClub &clubRef);
 };
 
 #endif /* MANAGER_H */

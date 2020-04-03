@@ -10,6 +10,7 @@
 #include "Rounds.h"
 #include "News.h"
 #include "Language.h"
+#include "Random.h"
 
 using namespace std;
 
@@ -23,7 +24,8 @@ public:
         Table *pTable,
         Rounds *pRounds,
         News *pNews,
-        Language *pLang
+        Language *pLang,
+        const Random *pRand
     );
 
     void run();
@@ -37,6 +39,7 @@ private:
     Rounds *pRounds;
     News *pNews;
     Language *pLang;
+    const Random *pRand;
 
     void draw();
     bool newGame();

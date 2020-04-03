@@ -46,6 +46,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/Match.o \
 	${OBJECTDIR}/News.o \
 	${OBJECTDIR}/PlayerClub.o \
+	${OBJECTDIR}/Random.o \
 	${OBJECTDIR}/Rounds.o \
 	${OBJECTDIR}/Squad.o \
 	${OBJECTDIR}/Table.o \
@@ -132,6 +133,11 @@ ${OBJECTDIR}/PlayerClub.o: PlayerClub.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/PlayerClub.o PlayerClub.cpp
+
+${OBJECTDIR}/Random.o: Random.cpp
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Random.o Random.cpp
 
 ${OBJECTDIR}/Rounds.o: Rounds.cpp
 	${MKDIR} -p ${OBJECTDIR}

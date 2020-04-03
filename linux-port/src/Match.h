@@ -15,6 +15,7 @@
 #include "Tactic.h"
 #include "Logger.h"
 #include "Language.h"
+#include "Random.h"
 
 #define MAX_MESSAGES 10
 
@@ -90,7 +91,8 @@ public:
         Table *pTable,
         Rounds *pRounds,
         const TeamInstructions *pTeamInstruction,
-        Language *pLang
+        Language *pLang,
+        const Random *pRand
     );
     Match(const Match& orig);
     virtual ~Match();
@@ -113,6 +115,7 @@ private:
     const Tactic *pTactic;
     vector<SNews> matchMsgs;
     Logger *pLogger;
+    const Random *pRand;
     vector<SGoalsInfo> goalsInfoPlayer;
     vector<SGoalsInfo> goalsInfoRival;
 

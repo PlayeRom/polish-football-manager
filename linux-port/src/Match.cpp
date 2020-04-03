@@ -30,7 +30,8 @@ Match::Match(
     Table *pTable,
     Rounds *pRounds,
     const TeamInstructions *pTeamInstruction,
-    Language *pLang
+    Language *pLang,
+    const Random *pRand
 ) {
     this->pClub = pClub;
     this->pColors = pColors;
@@ -40,6 +41,7 @@ Match::Match(
     this->pRounds = pRounds;
     this->pTeamInstruction = pTeamInstruction;
     this->pLang = pLang;
+    this->pRand = pRand;
 
     pTactic = new Tactic(pColors, pLang);
     pLogger = new Logger();
@@ -293,31 +295,31 @@ bool Match::runMatch()
             }
 
             if (whereIsAction == ACTION_IN_MIDDLEFIELD) {
-                los = (rand() % 3) + 2;
+                los = pRand->get(2, 4);
                 msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                 msgFootballers[1] = getFootballerSurname(isPlayerBall, 6); //czyli 7
 
                 if (what == 1) {
                     msg[0] = 8;
-                    los = (rand() % 3); //blokada=1;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
 
-                    if (los == 0) { //na lewe skrzydło
+                    los = pRand->get(3);
+                    if (los == 1) { //na lewe skrzydło
                         msg[1] = 9;
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getLefttWingerFootballerId(teamSetting);
                         msgFootballers[3] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
-                    else if (los == 1) { // podanie na prawe skrzydło
+                    else if (los == 2) { // podanie na prawe skrzydło
                         msg[1] = 10;
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getRightWingerFootballerId(teamSetting);
                         msgFootballers[3] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
-                    else if (los == 2) {
+                    else if (los == 3) {
                         msg[1] = 11; // %ls podaje do przodu.
                         whereIsAction = ACTION_IN_PANELTY_AREA;
                         msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
@@ -462,20 +464,20 @@ bool Match::runMatch()
                     msgFootballers[8] = getFootballerSurname(isPlayerBall, 6);
                     msgFootballers[10] = getFootballerSurname(isPlayerBall, 6);
 
-                    los = (rand() % 3);
-                    if (los == 0) { //na lewe skrzydło
+                    los = pRand->get(3);
+                    if (los == 1) { //na lewe skrzydło
                         msg[5] = 9; // %ls podaje na lewe skrzydło do %ls.
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getLefttWingerFootballerId(teamSetting);
                         msgFootballers[11] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
-                    else if (los == 1) { //podanie na prawe skrzydło
+                    else if (los == 2) { //podanie na prawe skrzydło
                         msg[5] = 10; // %ls podaje na prawe skrzydło do %ls.
                         whereIsAction = ACTION_IN_WINGER;
                         footballerMemory = getRightWingerFootballerId(teamSetting);
                         msgFootballers[11] = getFootballerSurname(isPlayerBall, footballerMemory);
                     }
-                    else if (los == 2) {
+                    else if (los == 3) {
                         msg[5] = 11; // %ls podaje do przodu.
                         whereIsAction = ACTION_IN_PANELTY_AREA;
                     }
@@ -486,9 +488,9 @@ bool Match::runMatch()
                     isPossibleGoToTactics = true;
                     msg[1] = 23;
                     msgWhoBall[1] = isPlayerBall;
-                    msg[2] = (rand() % 2) == 0 ? 24 : 25;
+                    msg[2] = pRand->get(24, 25);
 
-                    los = (rand() % 3) + 2;
+                    los = pRand->get(2, 4);
 
                     // zmiana pilki
                     isPlayerBall = !isPlayerBall;
@@ -502,7 +504,7 @@ bool Match::runMatch()
                     msgWhoBall[2] = isPlayerBall;
                     msg[1] = 26;
                     msgWhoBall[1] = isPlayerBall;
-                    msg[2] = (rand() % 2) == 0 ? 27 : 28;
+                    msg[2] = pRand->get(27, 28);
 
                     isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
@@ -548,7 +550,7 @@ bool Match::runMatch()
                         pFootballers->saveRivals();
                     }
 
-                    msg[2] = (rand() % 2) == 0 ? 31 : 32;
+                    msg[2] = pRand->get(31, 32);
 
                     msgWhoBall[2] = isPlayerBall;
                     whereIsAction = ACTION_IN_PANELTY_AREA;
@@ -654,7 +656,7 @@ bool Match::runMatch()
                     msg[4] = 85; // %ls będzie uderzał z wolnego.
                     msgWhoBall[4] = isPlayerBall;
 
-                    footballerMemory = ((rand() % 10) + 2) - 1;
+                    footballerMemory = pRand->get(2, 11) - 1;
                     msgFootballers[8] = getFootballerSurname(isPlayerBall, footballerMemory);
                     isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
@@ -670,9 +672,9 @@ bool Match::runMatch()
                     msg[1] = 34;
                     msgWhoBall[1] = isPlayerBall;
                     isPossibleGoToTactics = true;
-                    msg[2] = (rand() % 2) == 0 ? 24 : 25;
+                    msg[2] = pRand->get(24, 25);
 
-                    los = (rand() % 3) + 2;
+                    los = pRand->get(2, 4);
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[2] = isPlayerBall;
@@ -680,7 +682,7 @@ bool Match::runMatch()
                 }
                 else if (what == 13) { //nie dośrodkował
                     msg[1] = 35;
-                    los = (rand() % 3) + 2;
+                    los = pRand->get(2, 4);
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[1] = isPlayerBall;
@@ -708,22 +710,22 @@ bool Match::runMatch()
                     }
 
                     msgFootballers[4] = msgFootballers[2];
-                    los = (rand() % 6);
+                    los = pRand->get(6);
                     switch (instrPasses) {
                         case INSTR_PASSES_LONG: { //długie podania
-                            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
-                                // %ls wykonuje długie podanie do przodu.
-                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
-                            }
-                            else {
+                            if (los == 1) {
                                 // %ls podaje do przodu.
                                 msg[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
+                            }
+                            else {
+                                // %ls wykonuje długie podanie do przodu.
+                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             break;
                         }
                         case INSTR_PASSES_MIXES:
                         case INSTR_PASSES_MIDDLE: { //mieszane, średnie
-                            if (los == 1 || los == 2 || los == 5) {
+                            if (los == 2 || los == 3 || los == 6) {
                                 msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
                             }
                             else {
@@ -733,11 +735,11 @@ bool Match::runMatch()
                         }
                         case INSTR_PASSES_SHORT: //któtkie podania
                         default: {
-                            if (los == 1 || los == 2 || los == 3 || los == 4 || los == 5) {
-                                msg[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
+                            if (los == 1) {
+                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA
                             }
                             else {
-                                msg[2] = 36; //whereIsAction = ACTION_IN_PANELTY_AREA;
+                                msg[2] = 11; //whereIsAction = ACTION_IN_MIDDLEFIELD;
                             }
                             break;
                         }
@@ -754,16 +756,10 @@ bool Match::runMatch()
                     isPossibleGoToTactics = true;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
 
-                    los = (rand() % 3);
-                    if (los == 0) {
-                        msg[1] = 38; // %ls na spalonym!
-                    }
-                    else if (los == 1) {
-                        msg[1] = 39; // %ls ruszył za wcześnie. Spalony.
-                    }
-                    else {
-                        msg[1] = 40; // Chorągiewka w górze! %ls na spalonym.
-                    }
+                    // 38; // %ls na spalonym!
+                    // 39; // %ls ruszył za wcześnie. Spalony.
+                    // 40; // Chorągiewka w górze! %ls na spalonym.
+                    msg[1] = pRand->get(38, 40);
 
                     msgFootballers[2] = msgFootballers[0];
                     msgWhoBall[1] = isPlayerBall;
@@ -790,11 +786,11 @@ bool Match::runMatch()
                         }
                         case T3_4_3:
                         case T4_3_3: {
-                            los = (rand() % 3) + 9;
+                            los = pRand->get(9, 11);
                             break;
                         }
                         default: {
-                            los = (rand() % 2) + 10;
+                            los = pRand->get(10, 11);
                             break;
                         }
                     }
@@ -810,43 +806,43 @@ bool Match::runMatch()
                 else if (what == 16) { // defence kick off
                     int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
 
-                    los = (rand() % 6);
+                    los = pRand->get(6);
                     switch (instrPasses) {
                         case INSTR_PASSES_LONG: { //długie
-                            if (los == 0) {
+                            if (los == 1) {
                                 whereIsAction = ACTION_IN_MIDDLEFIELD;
-                                msg[0] = (rand() % 2) == 0 ? 44 : 45;
+                                msg[0] = pRand->get(44, 45);
                             }
                             else {
                                 whereIsAction = ACTION_IN_PANELTY_AREA;
-                                msg[0] = (rand() % 2) == 0 ? 46 : 47;
+                                msg[0] = pRand->get(46, 47);
                             }
                             break;
                         }
                         case INSTR_PASSES_SHORT: { //krótkie
-                            if (los == 0) {
+                            if (los == 1) {
                                 whereIsAction = ACTION_IN_PANELTY_AREA;
-                                msg[0] = (rand() % 2) == 0 ? 46 : 47;
+                                msg[0] = pRand->get(46, 47);
                             }
                             else {
                                 whereIsAction = ACTION_IN_MIDDLEFIELD;
-                                msg[0] = (rand() % 2) == 0 ? 44 : 45;
+                                msg[0] = pRand->get(44, 45);
                             }
                             break;
                         }
                         default: { //pozostałe
-                            if (los == 0 || los == 1 || los == 2) {
+                            if (los == 1 || los == 2 || los == 3) {
                                 whereIsAction = ACTION_IN_PANELTY_AREA;
-                                msg[0] = (rand() % 2) == 0 ? 46 : 47;
+                                msg[0] = pRand->get(46, 47);
                             }
                             else {
                                 whereIsAction = ACTION_IN_MIDDLEFIELD;
-                                msg[0] = (rand() % 2) == 0 ? 44 : 45;
+                                msg[0] = pRand->get(44, 45);
                             }
                             break;
                         }
                     }
-                    los = (rand() % 3) + 2;
+                    los = pRand->get(2, 4);
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[0] = isPlayerBall;
@@ -881,7 +877,7 @@ bool Match::runMatch()
                     msgFootballers[3] = msgFootballers[0];
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, los - 1);
 
-                    msg[2] = (rand() % 2) == 0 ? 51 : 52;
+                    msg[2] = pRand->get(51, 52);
 
                     int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
                     msgWhoBall[2] = !isPlayerBall;
@@ -941,8 +937,8 @@ bool Match::runMatch()
                         msgWhoBall[3] = !isPlayerBall;
                     }
 
-                    msg[4] = (rand() % 2) == 0 ? 53 : 54;
-                    footballerMemory = ((rand() % 4) + 8) - 1;
+                    msg[4] = pRand->get(53, 54);
+                    footballerMemory = pRand->get(8, 11) - 1;
                     msgFootballers[8] = getFootballerSurname(isPlayerBall, footballerMemory);
                     whereIsAction = ACTION_IN_PANELTY_OR_1ON1;
                     msgWhoBall[4] = isPlayerBall;
@@ -964,7 +960,7 @@ bool Match::runMatch()
                     msg[2] = 55; // %ls pada na murawę, ale sędzia nie dał się nabrać.
                     msgWhoBall[2] = isPlayerBall;
                     msgFootballers[4] = msgFootballers[0];
-                    msg[3] = ((rand() % 2) == 0) ? 44 : 45;
+                    msg[3] = pRand->get(44, 45);
                     isPlayerBall = !isPlayerBall;
                     msgFootballers[6] = msgFootballers[2];
                     msgWhoBall[3] = isPlayerBall;
@@ -995,17 +991,16 @@ bool Match::runMatch()
                     msg[0] = 37;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
-                    los = (rand() % 2);
-                    msg[1] = (los == 0) ? 43 : 57;
+                    msg[1] = (pRand->get(2) == 1) ? 43 : 57;
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
                     if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
-                        los = (rand() % 3) + 9;
+                        los = pRand->get(9, 11);
                     }
                     else if (teamSetting == T4_5_1) {
                         los = 11;
                     }
                     else {
-                        los = (rand() % 2) + 10;
+                        los = pRand->get(10, 11);
                     }
 
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
@@ -1020,10 +1015,9 @@ bool Match::runMatch()
                     msg[1] = 58;
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    los = (rand() % 2);
-                    msg[2] = (los == 0) ? 59 : 57;
+                    msg[2] = pRand->get(2) == 1 ? 59 : 57;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
-                    los = (rand() % 4) + 7;
+                    los = pRand->get(7, 10);
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
                     isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
                     msgFootballers[4] = msgFootballers[2];
@@ -1043,13 +1037,13 @@ bool Match::runMatch()
                     isPlayerBall ? statPlayer[FOULS]++ : statRival[FOULS]++;
 
                     if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
-                        los = (rand() % 3) + 9;
+                        los = pRand->get(9, 11);
                     }
                     else if (teamSetting == T4_5_1) {
                         los = 11;
                     }
                     else {
-                        los = (rand() % 2) + 10;
+                        los = pRand->get(10, 11);
                     }
 
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, los - 1);
@@ -1134,7 +1128,7 @@ bool Match::runMatch()
                      whereIsAction == ACTION_IN_DIRECT_FREE_KICK
             ) { //obrona B
                 if (what == 24) { // udana
-                    msg[0] = (rand() % 2) == 0 ? 65 : 66;
+                    msg[0] = pRand->get(65, 66);
                     msg[1] = 67; // I łapie piłkę! Dobra obrona.
                     msg[2] = 49; // Bramkarz wykopuje piłkę.
                     isPlayerBall ? statPlayer[SHOOTS_ON_TARGET]++ : statRival[SHOOTS_ON_TARGET]++;
@@ -1174,7 +1168,7 @@ bool Match::runMatch()
                 else if (what == 25) { //no problem
                     //68. Dobrze ustawiony %ls, bez trudu łapie piłkę.
                     //69. %ls spokojnie łapie piłkę.
-                    msg[0] = (rand() % 2 == 0) ? 68 : 69;
+                    msg[0] = pRand->get(68, 69);
                     msg[1] = 49; // Bramkarz wykopuje piłkę.
 
                     isPlayerBall ? statPlayer[SHOOTS_ON_TARGET]++ : statRival[SHOOTS_ON_TARGET]++;
@@ -1209,8 +1203,8 @@ bool Match::runMatch()
                     }
                 }
                 else if (what == 26) { //niepewnie
-                    los = (rand() % 4);
-                    if (los == 0) {
+                    los = pRand->get(4);
+                    if (los == 1) {
                         msg[0] = 70; // %ls z trudem broni, ale nie zdołał złapać piłki...
                         msgWhoBall[0] = !isPlayerBall;
                         if (isPlayerBall) {
@@ -1220,11 +1214,11 @@ bool Match::runMatch()
                             statRival[SHOOTS_ON_TARGET]++;
                         }
                     }
-                    else if (los == 1) {
+                    else if (los == 2) {
                         msg[0] = 71; // Piłka uderza w słupek!!
                         msgWhoBall[0] = isPlayerBall;
                     }
-                    else if (los == 2) {
+                    else if (los == 3) {
                         msg[0] = 72; // Piłka uderza w poprzeczkę!!
                         msgWhoBall[0] = isPlayerBall;
                     }
@@ -1237,7 +1231,7 @@ bool Match::runMatch()
                 }
                 else if (what == 27) { // corner
                     isPossibleGoToTactics = true;
-                    if (rand() % 2 == 0) {
+                    if (pRand->get(2) == 1) {
                         msg[0] = 70; // %ls hardly defends but fails to catch the ball ...
                         isPlayerBall ? statPlayer[SHOOTS_ON_TARGET]++ : statRival[SHOOTS_ON_TARGET]++;
                     }
@@ -1257,13 +1251,13 @@ bool Match::runMatch()
                 }
                 else if (what == 28) { // GOOL
                     isPossibleGoToTactics = true;
-                    msg[0] = (rand() % 2 == 0) ? 65 : 66;
+                    msg[0] = pRand->get(65, 66);
                     msg[1] = 74;
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    msg[2] = (rand() % 2 == 0) ? 75 : 76;
+                    msg[2] = pRand->get(75, 76);
                     msg[3] = 22;
-                    los = (rand() % 11) + 1;
+                    int footballerIdForm = pRand->get(11);
 
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
@@ -1289,7 +1283,7 @@ bool Match::runMatch()
                                 clubRef.finances[7] += footballer.finances[2]; // premia za gola
                             }
                         }
-                        if (footballer.data[0] == los && clubId == footballer.data[22]) {
+                        if (footballer.data[0] == footballerIdForm && clubId == footballer.data[22]) {
                             footballer.data[20]++; // losowy gracz dosatje formę
                         }
                     }
@@ -1324,7 +1318,7 @@ bool Match::runMatch()
                     msgWhoBall[0] = isPlayerBall;
 
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
-                    los = (rand() % 11) + 1;
+                    int footballerIdFormMinus = pRand->get(11);
 
                     // musi byc raz jeszcze pobranie zespolu i klubu bo zmienila sie pilka
                     vector<SFootballer> &losersFootballers = isPlayerBall
@@ -1348,7 +1342,7 @@ bool Match::runMatch()
                             }
                         }
 
-                        if (footballer.data[0] == los && clubId == footballer.data[22]) {
+                        if (footballer.data[0] == footballerIdFormMinus && clubId == footballer.data[22]) {
                             footballer.data[20]--; // losowy zawodnik dostaje tez minus forma
                         }
                     }
@@ -1362,11 +1356,11 @@ bool Match::runMatch()
                 }
                 else if (what == 29) { // goal not recognized
                     isPossibleGoToTactics = true;
-                    msg[0] = (rand() % 2 == 0) ? 65 : 66;
+                    msg[0] = pRand->get(65, 66);
                     msg[1] = 74;
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    msg[2] = (rand() % 2 == 0) ? 75 : 76;
+                    msg[2] = pRand->get(75, 76);
                     msg[3] = 77;
                     msgWhoBall[3] = isPlayerBall;
                     msg[4] = 41;
@@ -1383,20 +1377,12 @@ bool Match::runMatch()
                     whereIsAction = ACTION_IN_MIDDLEFIELD;
                 }
                 else if (what == 30) { // shot off target
-                    los = (rand() % 4);
                     isPossibleGoToTactics = true;
-                    if (los == 0) {
-                        msg[0] = 79; // %ls walnął nad poprzeczką!
-                    }
-                    else if (los == 1) {
-                        msg[0] = 80; // Ale strzelił fatalnie!
-                    }
-                    else if (los == 2) {
-                        msg[0] = 81; // %ls minimalnie chybił!
-                    }
-                    else {
-                        msg[0] = 82; // Poszło w trybuny! Fatalny strzał.
-                    }
+                    // 79; // %ls walnął nad poprzeczką!
+                    // 80; // Ale strzelił fatalnie!
+                    // 81; // %ls minimalnie chybił!
+                    // 82; // Poszło w trybuny! Fatalny strzał.
+                    msg[0] = pRand->get(79, 82);
 
                     msgWhoBall[0] = isPlayerBall;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, footballerMemory);
@@ -1412,7 +1398,7 @@ bool Match::runMatch()
             if (matchMinute == 0 && matchStatus == START_MATCH) { // The beginning of the match.
                 memset(msg, 0, 10 * sizeof(int));
                 msg[0] = 1; // %ls starts the match.
-                whoStartedMatch = (rand() % 2) + 1;
+                whoStartedMatch = pRand->get(2);
                 if (whoStartedMatch == 1) { // player starts the match
                     msgFootballers[0] = pClub->getClubName(clubRef.clubId - 1);
                     isPlayerBall = true;
@@ -1449,9 +1435,9 @@ bool Match::runMatch()
             }
 
             //************************ injury *************************
-            if ((rand() % 100) == 0) { // lottery for injury 1/100
-                bool isPlayerInjury = (rand() % 2) == 0; // lottery which team 50/50
-                los = (rand() % 11) + 1; // lottery which player
+            if (pRand->get(100) == 1) { // lottery for injury 1/100
+                bool isPlayerInjury = pRand->get(2) == 1; // lottery which team 50/50
+                los = pRand->get(11); // lottery which player
 
                 vector<SFootballer> &tmpFootballers = isPlayerInjury
                     ? pFootballers->getPlayersTeam()
@@ -1465,7 +1451,7 @@ bool Match::runMatch()
                         footballer.data[19] = 1;
 
                         int k = getEmptyMsgSlot();
-                        msg[k] = (rand() % 2 == 0) ? 83 : 84; // %ls doznaje kontuzji! / %ls kontuzjowany!
+                        msg[k] = pRand->get(83, 84); // %ls doznaje kontuzji! // %ls kontuzjowany!
 
                         if (isPlayerInjury) {
                             msgWhoBall[k] = true;
@@ -1574,7 +1560,7 @@ bool Match::runMatch()
                 whoPlayerChanges = 0;
             }
             //*************** zadyma **********************
-            if ((rand() % 100) == 1 && whereIsAction == ACTION_IN_MIDDLEFIELD) {
+            if (pRand->get(100) == 1 && whereIsAction == ACTION_IN_MIDDLEFIELD) {
                 int k = getEmptyMsgSlot();
                 msg[k] = 86;
                 msg[k + 1] = 87;
@@ -1737,7 +1723,7 @@ bool Match::runMatch()
 
             for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
                 SFootballer &footballer = pFootballers->getPlayerTeam(index);
-                los = (rand() % k) + 1;
+                los = pRand->get(k);
                 if (los > 1) {
                     los = 0;
                 }
@@ -1756,7 +1742,7 @@ bool Match::runMatch()
 
             for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                 SFootballer &footballer = pFootballers->getRival(index);
-                los = (rand() % k) + 1;
+                los = pRand->get(k);
                 if (los > 1) {
                     los = 0;
                 }
@@ -1907,13 +1893,13 @@ bool Match::runMatch()
     pColors->textcolor(LIGHTGRAY);
     wcout << endl << pLang->get(L"Please wait...");
     if (clubRef.rivalData[1] == 0) { // player home
-        float tickets = ((rand() % 30) + 30) * 5000.0;
+        float tickets = pRand->get(30, 59) * 5000.0;
         clubRef.finances[0] += tickets; //bilety
 
-        float tv = ((rand() % 30) + 30) * 5000.0;
+        float tv = pRand->get(30, 59) * 5000.0;
         clubRef.finances[1] += tv; //Tv
 
-        clubRef.finances[2] += ((rand() % 10) + 1) * 1000; //handel
+        clubRef.finances[2] += pRand->get(10) * 1000; //handel
 
         clubRef.finances[4] += 300000;
     }
@@ -1961,8 +1947,8 @@ bool Match::runMatch()
         while (k != 14) { //wszystkie mecze kolejki, losujemy wyniki meczy
             k += 2;
             int round = clubRef.roundNumber * 16;
-            int homeGoals = (rand() % 5);
-            int awayGoals = (rand() % 4);
+            int homeGoals = pRand->get(0, 4);
+            int awayGoals = pRand->get(0, 3);
             clubRef.goalsLeague[round - 16 + k] = homeGoals;
             clubRef.goalsLeague[round - 16 + k + 1] = awayGoals;
         }
@@ -2369,7 +2355,7 @@ int Match::whatHappened(
             x2 = 2; //podania trening rywala
             x3 = clubRef.inst[2]; //pressing twój
         }
-        los = (rand() % 27) + 1;
+        los = pRand->get(27);
         if (los < 10) {
             what = los;
         }
@@ -2379,40 +2365,40 @@ int Match::whatHappened(
                     what = 1;
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 6;
                     else what = 1;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2) what = 5;
                     else what = 1;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2) what = 6;
                     else if (los == 3 || los == 4) what = 5;
                     else what = 1;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
                     else what = 2; //udana z kontry
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
                     else if (los == 4 || los == 5 || los == 6) what = 6; //pressing rywala
                     else what = 2; //udana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
                     else if (los == 4 || los == 5) what = 5; //słabe podania
                     else what = 2; //udana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 1; //udana normal
                     else if (los == 4 || los == 5) what = 5; //słabe podania
                     else if (los == 6 || los == 7) what = 6; //pressing rywala
@@ -2492,40 +2478,40 @@ int Match::whatHappened(
                     what = 4;
                 }
                 else if (x1 == 0 && x2 >= 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 4;
                     else what = 6;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 0) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2) what = 4;
                     else what = 5;
                 }
                 else if (x1 == 0 && x2 < 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2) what = 5;
                     else if (los == 3 || los == 4) what = 4;
                     else what = 6;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
                     else what = 3; //nieudana z kontry
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
                     else if (los == 4 || los == 5 || los == 6) what = 6; //pressing rywala
                     else what = 3; //nieudana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
                     else if (los == 4 || los == 5) what = 5; //słabe podania
                     else what = 3; //nieudana z kontry
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 1) {
-                    los = (rand() % 18) + 1;
+                    los = pRand->get(18);
                     if (los == 1 || los == 2 || los == 3) what = 4; //nieudana normal
                     else if (los == 4 || los == 5) what = 5; //słabe podania
                     else if (los == 6 || los == 7) what = 6; //pressing rywala
@@ -2671,13 +2657,13 @@ int Match::whatHappened(
         }
     }//whereIsAction = ACTION_IN_MIDDLEFIELD  P/P
     else if (whereIsAction == ACTION_IN_WINGER) { // winger has a ball, A/D
-        los = (rand() % 12) + 1;
+        los = pRand->get(12);
         if (los < 5) {
             what = los + 9;
         }
         else {
             if ((AonD > 10 && isPlayerBall) || (DonA < -10 && !isPlayerBall)) { //duża przewaga ataku
-                los = (rand() % 10) + 1;
+                los = pRand->get(10);
                 if (los == 1 || los == 2) what = 11;
                 else what = 10;
             }
@@ -2687,7 +2673,7 @@ int Match::whatHappened(
                 else what = 13;
             }
             else if ((AonD < -40 && isPlayerBall) || (DonA > 40 && !isPlayerBall)) { //duża przewaga obrony
-                los = (rand() % 10) + 1;
+                los = pRand->get(10);
                 if (los == 1 || los == 2) what = 12;
                 else what = 13;
             }
@@ -2703,7 +2689,7 @@ int Match::whatHappened(
         }
     }
     else if (whereIsAction == ACTION_IN_PANELTY_AREA) { // penalty area A/D
-        los = (rand() % 30) + 1;
+        los = pRand->get(30);
         if (isPlayerBall) {
             x1 = clubRef.rivalInst[3]; // offsides trap by rival
         }
@@ -2717,12 +2703,12 @@ int Match::whatHappened(
         else {
             if ((AonD > 10 && isPlayerBall) || (DonA < -10 && !isPlayerBall)) { //duża przewaga ataku
                 if (x1 == 0) {
-                    los = (rand() % 10) + 1;
+                    los = pRand->get(10);
                     if (los == 1 || los == 2 || los == 3) what = 21;
                     else what = 22;
                 }
                 else if (x1 == 1) {
-                    los = (rand() % 15) + 1;
+                    los = pRand->get(15);
                     if (los == 1 || los == 2 || los == 3) what = 21;
                     else if (los == 4 || los == 5 || los == 6) what = 14;
                     else if (los == 7) what = 15;
@@ -2753,12 +2739,12 @@ int Match::whatHappened(
             }
             else if ((AonD < -40 && isPlayerBall) || (DonA > 40 && !isPlayerBall)) { //duża przewaga obrony
                 if (x1 == 0) {
-                    los = (rand() % 10) + 1;
+                    los = pRand->get(10);
                     if (los == 1 || los == 2 || los == 3) what = 17;
                     else what = 16;
                 }
                 else if (x1 == 1) {
-                    los = (rand() % 15) + 1;
+                    los = pRand->get(15);
                     if (los == 1 || los == 2 || los == 3) what = 17;
                     else if (los == 4 || los == 5 || los == 6) what = 16;
                     else if (los == 7) what = 15;
@@ -2799,7 +2785,7 @@ int Match::whatHappened(
                     else what = 23;
                 }
                 else if (x1 == 1) {
-                    los = (rand() % 10) + 1;
+                    los = pRand->get(10);
                     what = los + 13;
                 }
             }
@@ -2808,7 +2794,7 @@ int Match::whatHappened(
     else if (whereIsAction == ACTION_IN_GOAL_SITUATION ||
              whereIsAction == ACTION_IN_DIRECT_FREE_KICK
     ) { //obrona B playerGoalkeeperSkills max 43, mini 8, śred 26
-        los = (rand() % 12) + 1;
+        los = pRand->get(12);
         if (whereIsAction == ACTION_IN_GOAL_SITUATION) {
             if (isPlayerBall) {
                 x1 = rivalGoalkeeperSkills; //umiejętności bramkarza
@@ -2862,7 +2848,7 @@ int Match::whatHappened(
         }
     } // whereIsAction = ACTION_IN_GOAL_SITUATION // obrona B
     else if (whereIsAction == ACTION_IN_PANELTY_OR_1ON1) { //obrona B - karny, sma na sam
-        los = (rand() % 9) + 1;
+        los = pRand->get(9);
         if (isPlayerBall) {
             x1 = rivalGoalkeeperSkills - clubRef.trained[2]; //um. bramkarza-stałe fragmenty
         }
@@ -3654,24 +3640,24 @@ wstring Match::getFootballerSurname(bool isPlayerBall, int footabllerId)
 
 int Match::getArbiterDecision(int instrTreatment)
 {
-    int chance = (rand() % 6);
+    int chance = pRand->get(6);
 
     switch (instrTreatment) {
         case INSTR_TREATMENT_SOFT: {
-            if (chance == 0 || chance == 1 || chance == 2) {
+            if (chance == 1 || chance == 2 || chance == 3) {
                 return 1; // nie ma kartki 1/2
             }
-            else if (chance == 3 || chance == 4) {
+            else if (chance == 4 || chance == 5) {
                 return 2; // słowne upomienie 1/3
             }
 
             return 3; // żólta kartka 1/6
         }
         case INSTR_TREATMENT_HARD: {
-            if (chance == 0) {
+            if (chance == 1) {
                 return 1; //nie ma kartki 1/6
             }
-            else if (chance == 1 || chance == 2) {
+            else if (chance == 2 || chance == 3) {
                 return 2; //słowne upomienie 1/3
             }
 
@@ -3679,10 +3665,10 @@ int Match::getArbiterDecision(int instrTreatment)
         }
         case INSTR_TREATMENT_NORMAL:
         default: {
-            if (chance == 0 || chance == 1) {
+            if (chance == 1 || chance == 2) {
                 return 1; // nie ma kartki 1/3
             }
-            else if (chance == 2 || chance == 3) {
+            else if (chance == 3 || chance == 4) {
                 return 2; // słowne upomienie 1/3
             }
 
@@ -3704,29 +3690,29 @@ int Match::getMiddlefieldFootballerIdWhoFouled(int teamSetting)
         case T4_4_2_DEF:
         case T4_4_2_ATT:
         case T4_4_2_DIA: {
-            return (rand() % 4) + 6; // middlefield 6-9
+            return pRand->get(6, 9); // middlefield 6-9
         }
         case T3_4_3: {
-            return (rand() % 4) + 5; // middlefield 5-8
+            return pRand->get(5, 8); // middlefield 5-8
         }
         case T3_5_2:
         case T3_5_2_DEF:
         case T3_5_2_ATT: {
-            return (rand() % 5) + 5; // middlefield 5-9
+            return pRand->get(5, 9); // middlefield 5-9
         }
         case T4_2_4: {
-            return (rand() % 2) + 6;
+            return pRand->get(6, 7);
         }
         case T4_3_3: {
-            return (rand() % 3) + 6;;
+            return pRand->get(6, 8);
         }
         case T4_5_1: {
-            return (rand() % 5) + 6;
+            return pRand->get(6, 10);
         }
         case T5_3_2:
         case T5_3_2_DEF:
         case T5_3_2_ATT: {
-            return (rand() % 3) + 7;;
+            return pRand->get(7, 9);
         }
     }
 }
@@ -3741,16 +3727,16 @@ int Match::getDefFootballerId(int teamSetting)
         case T4_2_4:
         case T4_3_3:
         case T4_5_1: {
-            return (rand() % 4) + 2;
+            return pRand->get(2, 5);
         }
         case T3_4_3:
         case T3_5_2:
         case T3_5_2_DEF:
         case T3_5_2_ATT: {
-            return (rand() % 3) + 2;
+            return pRand->get(2, 4);
         }
         default: {
-            return (rand() % 5) + 2;
+            return pRand->get(2, 6);
         }
     }
 }
@@ -3761,24 +3747,24 @@ int Match::getFootballerIdWhoShootDistance(int teamSetting)
         case T3_5_2:
         case T3_5_2_DEF:
         case T3_5_2_ATT: {
-            return (rand() % 5) + 5;
+            return pRand->get(5, 9);
         }
         case T4_5_1: {
-            return (rand() % 5) + 6;
+            return pRand->get(6, 10);
         }
         case T5_3_2:
         case T5_3_2_DEF:
         case T5_3_2_ATT: {
-            return (rand() % 3) + 7;
+            return pRand->get(7, 9);
         }
         case T3_4_3: {
-            return (rand() % 4) + 5;
+            return pRand->get(5, 8);
         }
         case T4_3_3: {
-            return (rand() % 4) + 6;
+            return pRand->get(6, 9);
         }
         default: {
-            return (rand() % 4) + 6;
+            return pRand->get(6, 9);
         }
     }
 }

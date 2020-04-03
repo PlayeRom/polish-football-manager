@@ -1,5 +1,6 @@
 
 #include <cstdlib>
+#include <random>
 
 #include "Colors.h"
 #include "Input.h"
@@ -9,6 +10,7 @@
 #include "MainMenu.h"
 #include "Language.h"
 #include "ArgumentsReader.h"
+#include "Random.h"
 
 using namespace std;
 
@@ -16,20 +18,20 @@ int main(int argc, char** argv)
 {
     setlocale(LC_ALL, ""); // for display Polish chars
 
-    srand(time(NULL));
-
     try {
         ArgumentsReader argsReader(argc, argv);
         if (argsReader.isExitFlag()) {
             return EXIT_FAILURE;
         }
 
+        Random random;
+
         Language lang;
         lang.load(argsReader.getLanguage());
 
         Input input;
         Colors colors;
-        Footballers footballers;
+        Footballers footballers(&random);
         Table table(&colors, &lang);
         Rounds rounds;
         PlayerClub club;
@@ -43,7 +45,8 @@ int main(int argc, char** argv)
             &table,
             &rounds,
             &news,
-            &lang
+            &lang,
+            &random
         );
         mainMenu.run();
     }

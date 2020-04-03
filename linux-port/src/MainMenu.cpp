@@ -15,7 +15,8 @@ MainMenu::MainMenu(
     Table *pTable,
     Rounds *pRounds,
     News *pNews,
-    Language *pLang
+    Language *pLang,
+    const Random *pRand
 ) {
     this->pColors = pColors;
     this->pInput = pInput;
@@ -25,6 +26,7 @@ MainMenu::MainMenu(
     this->pRounds = pRounds;
     this->pNews = pNews;
     this->pLang = pLang;
+    this->pRand = pRand;
 }
 
 /**
@@ -35,7 +37,7 @@ MainMenu::MainMenu(
 void MainMenu::run()
 {
     wchar_t menu = 0;
-    Manager manager(pClub, pColors, pInput, pFootballers, pTable, pRounds, pNews, pLang);
+    Manager manager(pClub, pColors, pInput, pFootballers, pTable, pRounds, pNews, pLang, pRand);
 
     do {
         draw();
@@ -91,7 +93,7 @@ void MainMenu::draw()
     pColors->textbackground(BLACK);
 
     pColors->textcolor(DARKGRAY);
-    wcout << L"  v."VERSION;
+    wcout << L"  v." VERSION;
 
     pColors->textcolor(GREEN);
     wcout << endl << endl <<

@@ -18,7 +18,8 @@ Manager::Manager(
     Table *pTable,
     Rounds *pRounds,
     News *pNews,
-    Language *pLang
+    Language *pLang,
+    const Random *pRand
 ) {
     this->pClub = pClub;
     this->pColors = pColors;
@@ -28,6 +29,7 @@ Manager::Manager(
     this->pRounds = pRounds;
     this->pNews = pNews;
     this->pLang = pLang;
+    this->pRand = pRand;
 
     pTactic = new Tactic(pColors, pLang);
     pSquad = new Squad(pColors, pLang);
@@ -41,7 +43,8 @@ Manager::Manager(
         pTable,
         pRounds,
         pTeamInstr,
-        pLang
+        pLang,
+        pRand
     );
 
     pLogger = new Logger();
@@ -370,7 +373,6 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
         //****************************** co miesiąc ****************
         if (clubRef.day == 1) {
             isProcessing = false;
-            int tablePosRandom = (rand() % 2) + 1;
             int tablePos = pTable->getPositionInTable(clubRef.clubId);
 
             if (tablePos == 0) {
@@ -426,6 +428,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 clubRef.month == 11 ||
                 clubRef.month == 12
             ) {
+                int tablePosRandom = pRand->get(1, 2);
                 int clubId = pTable->getClubNumberInPosition(tablePosRandom);
                 if (clubId == clubRef.clubId) {
                     // player got award "manager of month"
@@ -486,15 +489,15 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
 
         int playerTeamSize = pFootballers->getSizePlayerTeam();
 
-        int randMinus = rand() % 12; // losuje czy odjąć 1/12
-        if (lata == 0 && randMinus == 0) {
+        int randMinus = pRand->get(12); // losuje czy odjąć 1/12
+        if (lata == 0 && randMinus == 1) {
             clubRef.treBOPN--;
-            int footballerId = (rand() % playerTeamSize) + 1; // losuj ktory pilkarz
+            int footballerId = pRand->get(playerTeamSize); // losuj ktory pilkarz
 
             for (size_t index = 0; index < playerTeamSize; index++) {
                 SFootballer &footballer = pFootballers->getPlayerTeam(index);
                 if (footballer.data[0] == footballerId) { //--
-                    randMinus = (rand() % 4) + 3; // losujemy ktora umiejetnosc spada
+                    randMinus = pRand->get(3, 6); // losujemy ktora umiejetnosc spada
                     footballer.data[randMinus]--;
                     if (footballer.data[randMinus] < 1) {
                         footballer.data[randMinus] = 1;
@@ -508,9 +511,9 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             pFootballers->savePlayerTeam();
         }//dla lata==0
 
-        int randPlus = rand() % 6; //losuje czy dodać trening BOPN (1/6 szans)
-        if (lata > 0 && randPlus == 0) {
-            int footballerId = (rand() % playerTeamSize) + 1; // losuj ktory pilkarz
+        int randPlus = pRand->get(6); //losuje czy dodać trening BOPN (1/6 szans)
+        if (lata > 0 && randPlus == 1) {
+            int footballerId = pRand->get(playerTeamSize); // losuj ktory pilkarz
 
             for (size_t index = 0; index < playerTeamSize; index++) {
                 SFootballer &footballer = pFootballers->getPlayerTeam(index);
@@ -535,19 +538,18 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             SFootballer &footballer = pFootballers->getPlayerTeam(index);
             //************ sprzedaż zawodnika *****************
             //lista transferowa
-            int kupno = (rand() % 20);
-            if (footballer.data[17] == 1 && kupno == 0) {
+            if (footballer.data[17] == 1 && pRand->get(20) == 1) { // 1/20 szans
                 pInput->clrscr();
 
                 // random club which want to buy footballer
                 int clubIdBuyer = 0;
                 do {
-                    clubIdBuyer = (rand() % 16) + 1;
+                    clubIdBuyer = pRand->get(16);
                 }
                 while (clubIdBuyer == clubRef.clubId);
 
                 pColors->textcolor(LIGHTGRAY);
-                int random = (rand() % 10) - 5;
+                int random = pRand->get(-5, 4);
                 transfer = random * 10000.0;
                 cena = transfer + footballer.finances[0];
                 if (cena > footballer.finances[3]) {
@@ -662,7 +664,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 footballer.data[19] = 0;
                 isProcessing = false;
                 // LEKARZ: %ls doznał kontuzji. Za około %d dni będzie do dyspozycji.
-                int injuryDays = (rand() % 83) + 8; // in how many days heals injuries
+                int injuryDays = pRand->get(8, 90); // in how many days heals injuries
                 pNews->setTmpMsgData(6, footballer.surname, injuryDays);
 
                 footballer.data[15] = injuryDays;
@@ -740,13 +742,13 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
         pFootballers->saveTransfers();
 
         //******************** komunikaty kibiców ******************
-        int random = (rand() % 6);
-        if (random == 0 && clubRef.playerGoals != clubRef.rivalGoals) {
-            if (clubRef.playerGoals > clubRef.rivalGoals) {
-                random = (rand() % 6) + 8;
+        int random = pRand->get(6);
+        if (clubRef.playerGoals != clubRef.rivalGoals && random == 1) {
+            if (clubRef.playerGoals > clubRef.rivalGoals) { // win
+                random = pRand->get(8, 13);
             }
-            else if (clubRef.playerGoals < clubRef.rivalGoals) {
-                random = (rand() % 6) + 14;
+            else { // loss
+                random = pRand->get(14, 19);
             }
 
             isProcessing = false;
@@ -2965,15 +2967,8 @@ void Manager::menuItemManagement()
             wcout << endl << L" " << pLang->get(L"Q Back to MENU") << endl;
             menu = pInput->getKeyBoardPressed();
             switch (menu) {
-                case 'T': {
-                    int chance = 1;
-                    if (clubRef.finances[12] <= 0)                                              chance = 1; // bez szans
-                    else if (clubRef.finances[12] > 0 && clubRef.finances[12] <= 500000)        chance = (rand() % 6); // 1/6 szansy
-                    else if (clubRef.finances[12] > 500000 && clubRef.finances[12] <= 1000000)  chance = (rand() % 5); // 1/5 szansy
-                    else if (clubRef.finances[12] > 1000000 && clubRef.finances[12] <= 2000000) chance = (rand() % 4); // 1/4 szansy
-                    else if (clubRef.finances[12] > 2000000)                                    chance = (rand() % 3); // 1/3 szansy
-
-                    if (chance == 0 && !clubRef.isBlockTransferFunds) {
+                case 'T': { // Request for additional funds for transfers
+                    if (isGrantedFunds(clubRef) && !clubRef.isBlockTransferFunds) {
                         pColors->textcolor(GREEN);
                         wcout << endl << endl <<
                             pLang->get(L"Management: We agree at your request. We hope you will use the funds wisely and strengthen our team.");
@@ -3244,10 +3239,9 @@ void Manager::setAssistantMessageAfterMatch()
                 }
             }
             else { // wygrana meczu
-                int los = rand() % 2;
                 // ASYSTENT: Gratuluję zwycięstwa. Dobrał pan właściwą taktykę.
                 // ASYSTENT: Gratuluję wygranej. Nie mam zastrzeżeń co do zastosowanej taktyki.
-                pNews->setTmpMsgData(los == 0 ? 29 : 30);
+                pNews->setTmpMsgData(pRand->get(29, 30));
             }
         }
         clubRef.isAssistantMsg = 0;
@@ -3278,14 +3272,14 @@ void Manager::setRivalForPlayer()
         clubRef.rivalData[0] = pRounds->getClubIdInRoundByClubIndex(clubRef.roundNumber, clubRef.rivalData[3]);
         clubRef.rivalData[2] = getRivalSetting(clubRef.rivalData[0]);
 
-        clubRef.rivalInst[0] = (rand() % 4) + 1; //podania zawsze los
-        clubRef.rivalInst[1] = (rand() % 3 == 0) // traktowanie rywala
-            ? 3
-            : 1; //nigdy delikatne
+        clubRef.rivalInst[0] = pRand->get(4); // passing always random
+        clubRef.rivalInst[1] = (pRand->get(3) == 1) // rival treatment (never delicate)
+            ? 3 // hard 1/3 chance
+            : 1; // normal 2/3 chance
 
-        clubRef.rivalInst[2] = (rand() % 4 == 0) //pressing 3/4 że tak
-            ? 0
-            : 1;
+        clubRef.rivalInst[2] = (pRand->get(4) == 1) // pressing 3/4 chance for yes
+            ? 0 // no
+            : 1; // yes
 
         clubRef.rivalInst[3] = getRivalOffsideTrap(clubRef.rivalData[2]);
         clubRef.rivalInst[4] = getRivalContra(clubRef.rivalData[2]);
@@ -3297,7 +3291,7 @@ void Manager::setRivalForPlayer()
 
         for (size_t i = 0; i < pFootballers->getSizeRivals(); i++) {
             SFootballer &footballer = pFootballers->getRival(i);
-            footballer.data[7] = rand() % 4; // morale od srednie do super
+            footballer.data[7] = pRand->get(0, 3); // morale from middle to super
             footballer.data[11] = 100; // kondycja 100%
         }
         pFootballers->saveRivals();
@@ -3351,14 +3345,14 @@ int Manager::getRivalOffsideTrap(int rivalSetting)
         case T3_5_2:
         case T4_4_2_ATT:
         case T4_3_3: {
-            return 1; //pułapki ofsajdowe tak
+            return 1; // offside traps yes
         }
         case T5_3_2:
         case T5_3_2_ATT: {
-            return rand() % 2; // losowo tak/nie
+            return pRand->get(0, 1); // random yes/no
         }
         default: {
-            return 0; //pułapki ofsajdowe nie
+            return 0; // offside traps no
         }
     }
 }
@@ -3376,7 +3370,7 @@ int Manager::getRivalContra(int rivalSetting)
             return 0; // counter-game no
         }
         default: {
-            return rand() % 2; // random 50/50
+            return pRand->get(0, 1); // random 50/50
         }
     }
 }
@@ -3386,23 +3380,47 @@ int Manager::getRivalAttitude(int rivalSetting)
     switch (rivalSetting) {
         case T4_4_2_DEF:
         case T5_3_2_DEF: {
-            return (rand() % 3 == 0) ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_DEFENSIVE; // 2/3 że obronne, atak wcale
+            return pRand->get(3) == 1 ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_DEFENSIVE; // 2/3 chance for defensive, attack never
         }
         case T4_4_2_ATT:
         case T4_3_3:
         case T5_3_2_ATT: {
-            return (rand() % 3 == 0) ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_ATTACK; //2/3 że atak, obronne wcale
+            return pRand->get(3) == 1 ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_ATTACK; // 2/3 chance for attack, defensive never
         }
         case T3_5_2:
         case T5_3_2:  {
-            switch ((rand() % 4)) {
-                case 0:     return INSTR_ATTIT_DEFENSIVE; // 1/4 ze nastawienie obronne
-                case 1:     return INSTR_ATTIT_ATTACK; // 1/4 ze nastawienie atak
-                default:    return INSTR_ATTIT_NORMAL; // 2/4 że normalne
+            switch (pRand->get(1, 4)) {
+                case 1:     return INSTR_ATTIT_DEFENSIVE; // 1/4 chance for defensive
+                case 2:     return INSTR_ATTIT_ATTACK; // 1/4 chance for attack
+                default:    return INSTR_ATTIT_NORMAL; // 2/4 chance for normal attitude
             }
         }
         default: {
-            return (rand() % 3 == 0) ? INSTR_ATTIT_ATTACK : INSTR_ATTIT_NORMAL; // 2/3 że normalne, obronne wcale
+            return pRand->get(3) == 1 ? INSTR_ATTIT_ATTACK : INSTR_ATTIT_NORMAL; // 2/3 chance for normal, defensive never
         }
     }
+}
+
+bool Manager::isGrantedFunds(const SClub &clubRef)
+{
+    int chance = getChanceForGrantedFunds(clubRef);
+    return pRand->get(chance) == 1;
+}
+
+int Manager::getChanceForGrantedFunds(const SClub &clubRef)
+{
+    if (clubRef.finances[12] > 0 && clubRef.finances[12] <= 500000) {
+        return 6; // 1/6 chance
+    }
+    else if (clubRef.finances[12] > 500000 && clubRef.finances[12] <= 1000000) {
+        return 5; // 1/5 chance
+    }
+    else if (clubRef.finances[12] > 1000000 && clubRef.finances[12] <= 2000000) {
+        return 4; // 1/4 chance
+    }
+    else if (clubRef.finances[12] > 2000000) {
+        return 3; // 1/3 chance
+    }
+
+    return 0; // no chance, if clubRef.finances[12] <= 0
 }

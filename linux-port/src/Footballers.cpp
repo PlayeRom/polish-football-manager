@@ -5,6 +5,11 @@
 #include <algorithm>
 #include "Footballers.h"
 
+Footballers::Footballers(const Random *pRand)
+{
+    this->pRand = pRand;
+}
+
 /**
  * Load for initial file
  */
@@ -173,13 +178,13 @@ void Footballers::changeTransferList()
         SFootballer &footballer = transfers[i];
         // losuj kluczowe umiejetności zawodnika od 1 do 15
         switch (footballer.data[2]) {
-            case PLAYERS_POS_B: footballer.data[3] = (rand() % 15) + 1; break; //random(15)+1;
-            case PLAYERS_POS_O: footballer.data[4] = (rand() % 15) + 1; break; //random(15)+1;
-            case PLAYERS_POS_P: footballer.data[5] = (rand() % 15) + 1; break; //random(15)+1;
-            case PLAYERS_POS_N: footballer.data[6] = (rand() % 15) + 1; break; //random(15)+1;
+            case PLAYERS_POS_B: footballer.data[3] = pRand->get(15); break;
+            case PLAYERS_POS_O: footballer.data[4] = pRand->get(15); break;
+            case PLAYERS_POS_P: footballer.data[5] = pRand->get(15); break;
+            case PLAYERS_POS_N: footballer.data[6] = pRand->get(15); break;
         }
-        footballer.data[7] = (rand() % 7) - 3; //random(7)-3; // losuj morale zawodnika (-3 do 3)
-        footballer.data[9] = (rand() % 6) + 5; //(rand() % 6)+5; // losuj formę zawodnika (5 - 10)
+        footballer.data[7] = pRand->get(-3, 3); // losuj morale zawodnika (-3 do 3)
+        footballer.data[9] = pRand->get(5, 10); // losuj formę zawodnika (5 - 10)
 
         //cena zawodnika, ustal wartość zawodnika w zaleznosci od jego umiejetnosci * 5
         footballer.finances[0] = 0;
