@@ -538,13 +538,14 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             int kupno = (rand() % 20);
             if (footballer.data[17] == 1 && kupno == 0) {
                 pInput->clrscr();
-                int mode = 0;
-                while (!mode) {
-                    lata = (rand() % 16) + 1;
-                    if (lata != clubRef.clubId) {
-                        mode = 1;
-                    }
+
+                // random club which want to buy footballer
+                int clubIdBuyer = 0;
+                do {
+                    clubIdBuyer = (rand() % 16) + 1;
                 }
+                while (clubIdBuyer == clubRef.clubId);
+
                 pColors->textcolor(LIGHTGRAY);
                 int random = (rand() % 10) - 5;
                 transfer = random * 10000.0;
@@ -555,7 +556,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 wcout << endl;
                 wprintf(
                     pLang->get(L"%ls is interested in buying %ls%ls").c_str(),
-                    pClub->getClubName(lata).c_str(),
+                    pClub->getClubName(clubIdBuyer - 1).c_str(),
                     footballer.name,
                     footballer.surname
                 );
@@ -574,7 +575,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 wcout << endl;
                 wprintf(
                     pLang->get(L"%ls is ready to pay $%.2f.").c_str(),
-                    pClub->getClubName(lata).c_str(),
+                    pClub->getClubName(clubIdBuyer - 1).c_str(),
                     cena
                 );
 
@@ -587,11 +588,11 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                         pLang->get(L"%ls's contract expires. %ls is sold to %ls.").c_str(),
                         footballer.surname,
                         footballer.surname,
-                        pClub->getClubName(lata).c_str()
+                        pClub->getClubName(clubIdBuyer - 1).c_str()
                     );
                     footballer.data[18] = 1;
                     footballer.data[17] = 0;
-                    footballer.data[22] = lata + 1;
+                    footballer.data[22] = clubIdBuyer;
                     clubRef.finances[3] += cena;
                     clubRef.finances[5] = clubRef.finances[0] +
                             clubRef.finances[1] +

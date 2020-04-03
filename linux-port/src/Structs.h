@@ -265,7 +265,7 @@ struct SFootballer {
      * 15 - kontuzja, = 0 gdy zawodnik jest zdrowy, gdy > 0 przechowuje ilosc dni do wyleczenia kontuzji, jezeli tych
      *      dni jest 7 lub mniej, to zawodnik moze grac, ale jego kondycja jest ograniczona max do 90%
      * 16 - ilość zdobytch goli
-     * 17 - norlanie 0, gdy = 1 to zawodnik wystawiony jest na sprzedaz
+     * 17 - normalnie 0, gdy = 1 to zawodnik wystawiony jest na sprzedaz
      * 18 - za ile dni wygasa kontrakt zawodnika
      * 19 - flaga czy gracz kontuzjowany, 0 - nie, 1 - tak, potrzebne do okreslenia czy byl komunikat o jego kontucji
      * 20 - forma podczas meczu
