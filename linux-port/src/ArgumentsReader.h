@@ -4,6 +4,7 @@
 
 #include <map>
 #include <string>
+#include "Structs.h"
 
 using namespace std;
 

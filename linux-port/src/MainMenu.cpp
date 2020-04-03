@@ -91,7 +91,7 @@ void MainMenu::draw()
     pColors->textbackground(BLACK);
 
     pColors->textcolor(DARKGRAY);
-    wcout << L"  v.1.05";
+    wcout << L"  v."VERSION;
 
     pColors->textcolor(GREEN);
     wcout << endl << endl <<

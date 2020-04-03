@@ -4,6 +4,8 @@
 
 #include <cstring>
 
+#define VERSION "1.06"
+
 // Initial data file names:
 #define FILE_FOOTBALLERS            "data/footballers.cfg" // old name Kluby_01.cfg
 #define FILE_FOOTBALLERS_RIVALS     "data/footballers-rival.cfg" // old name Rywal2.cfg
