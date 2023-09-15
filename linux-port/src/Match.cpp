@@ -2034,10 +2034,10 @@ void Match::updateTable()
 
         for (size_t i = 0; i < pTable->getSize(); i++) {
             STable &tableRef = pTable->get(i);
-            pkt[i] = tableRef.data[7]; //zapisuje punkty do pkt
-            clubId[i] = tableRef.clubId; // numer klubu
-            golr[i] = tableRef.data[6]; // roznica goli
-            gol[i] = tableRef.data[4]; //gole zdobyte
+            pkt[i]     = tableRef.points; //zapisuje punkty do pkt
+            clubId[i]  = tableRef.clubId; // numer klubu
+            golr[i]    = tableRef.goalsDiff; // roznica goli
+            gol[i]     = tableRef.goalsScored; //gole zdobyte
             blokada[i] = 0;
         }
 
@@ -2103,12 +2103,12 @@ void Match::updateTable()
                     for (size_t index = 0; index < pTable->getSize(); index++) {
                         STable &tableRef = pTable->get(index);
                         if (clubId[i] == tableRef.clubId &&
-                            pkt[i] == tableRef.data[7] &&
-                            golr[k] == tableRef.data[6] &&
-                            gol[v] == tableRef.data[4] &&
+                            pkt[i] == tableRef.points &&
+                            golr[k] == tableRef.goalsDiff &&
+                            gol[v] == tableRef.goalsScored &&
                             blokada[i] == 0
                         ) {
-                            tableRef.data[8] = i + 1;
+                            tableRef.tablePosition = i + 1;
                             blokada[i] = tableRef.clubId;
                             newTable.push_back(tableRef);
                         }

@@ -201,19 +201,15 @@ struct SRound {
 
 struct STable {
     int clubId; // numer klubu, licząc od 1, ktorego dane dotycza
-    int data[9];
-    /**
-     * Znaczenia indexków w Tabela.dane
-     * 0 - rozegrane mecze
-     * 1 - wygrane
-     * 2 - remisy
-     * 3 - przegrane
-     * 4 - gole zdobyte
-     * 5 - gole strancone
-     * 6 - roznica goli
-     * 7 - punkty
-     * 8 - pozycja w tabeli
-     */
+    int numberMatchesPlayed; // rozegrane mecze
+    int wins;                // wygrane
+    int draws;               // remisy
+    int losses;              // przegrane
+    int goalsScored;         // gole zdobyte
+    int goalsLost;           // gole strancone
+    int goalsDiff;           // roznica goli
+    int points;              // punkty
+    int tablePosition;       // pozycja w tabeli
 } /*__attribute__((packed))*/;
 
 #define MAX_NEWS_LENGTH 500

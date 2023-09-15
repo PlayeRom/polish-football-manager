@@ -20,7 +20,15 @@ void Table::createTable()
 {
     for (int i = 0; i < MAX_CLUBS; i++) {
         table[i].clubId = i + 1;
-        memset(table[i].data, 0, 9 * sizeof(int));
+        table[i].numberMatchesPlayed = 0;
+        table[i].wins                = 0;
+        table[i].draws               = 0;
+        table[i].losses              = 0;
+        table[i].goalsScored         = 0;
+        table[i].goalsLost           = 0;
+        table[i].goalsDiff           = 0;
+        table[i].points              = 0;
+        table[i].tablePosition       = 0;
     }
 }
 
@@ -68,7 +76,7 @@ int Table::getPositionInTable(int clubNumber)
 {
     for (int i = 0; i < MAX_CLUBS; i++) {
         if (table[i].clubId == clubNumber) {
-            return table[i].data[8];
+            return table[i].tablePosition;
         }
     }
 
@@ -84,8 +92,8 @@ int Table::getPositionInTable(int clubNumber)
 int Table::getClubNumberInPosition(int tablePosition)
 {
     for (int i = 0; i < MAX_CLUBS; i++) {
-        if (table[i].data[8] == tablePosition) {
-            return table[i].clubId; // wez klub na pozycji lata
+        if (table[i].tablePosition == tablePosition) {
+            return table[i].clubId; // wez klub na pozycji w tabeli
         }
     }
 
@@ -155,7 +163,7 @@ void Table::drawTable(int clubId, const PlayerClub *club)
             pColors->textcolor(YELLOW);
         }
         // pozycja w tabeli:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[8] << L". ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].tablePosition << L". ";
         // nazwa klubu
         wcout << club->getClubName(table[i].clubId - 1);
         int clubNameLength = club->getClubName(table[i].clubId - 1).length();
@@ -164,19 +172,19 @@ void Table::drawTable(int clubId, const PlayerClub *club)
             wcout << L" ";
         }
         // ilość meczy:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[0] << L" " << BOX_LIGHT_VERTICAL << L" ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].numberMatchesPlayed << L" " << BOX_LIGHT_VERTICAL << L" ";
         // wygrane mecze:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[1] << L" ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].wins << L" ";
         // remisy:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[2] << L" ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].draws << L" ";
         // przegrane:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[3] << L" " << BOX_LIGHT_VERTICAL << L" ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].losses << L" " << BOX_LIGHT_VERTICAL << L" ";
         // gole zdobyte:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[4] << L"  ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].goalsScored << L"  ";
         // gole stracone:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[5] << L" " << BOX_LIGHT_VERTICAL << L" ";
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].goalsLost << L" " << BOX_LIGHT_VERTICAL << L" ";
         // punkty:
-        wcout << std::setfill(L' ') << std::setw(2) << table[i].data[7];
+        wcout << std::setfill(L' ') << std::setw(2) << table[i].points;
 
         pColors->textcolor(LIGHTGRAY);
         wcout << L" " << BOX_LIGHT_VERTICAL;
@@ -241,38 +249,38 @@ void Table::updateAfterMatch(const SRound &round, int roundIndex, SClub &clubRef
             STable &tableRef = table[j];
 
             if (round.clubNumbers[i] == tableRef.clubId) {
-                tableRef.data[0]++;
+                tableRef.numberMatchesPlayed++;
                 if (i % 2 == 0) {
-                    tableRef.data[4] += clubRef.goalsLeague[roundIndex - 16 + i];
-                    tableRef.data[5] += clubRef.goalsLeague[roundIndex - 16 + i + 1];
+                    tableRef.goalsScored += clubRef.goalsLeague[roundIndex - 16 + i];
+                    tableRef.goalsLost += clubRef.goalsLeague[roundIndex - 16 + i + 1];
                     if (clubRef.goalsLeague[roundIndex - 16 + i] > clubRef.goalsLeague[roundIndex - 16 + i + 1]) {
-                        tableRef.data[1]++; // win
-                        tableRef.data[7] += 3; // points +3
+                        tableRef.wins++; // win
+                        tableRef.points += 3; // points +3
                     }
                     else if (clubRef.goalsLeague[roundIndex - 16 + i] == clubRef.goalsLeague[roundIndex - 16 + i + 1]) {
-                        tableRef.data[2]++; // draw
-                        tableRef.data[7]++; // points +1
+                        tableRef.draws++; // draw
+                        tableRef.points++; // points +1
                     }
                     else {
-                        tableRef.data[3]++; // defeat
+                        tableRef.losses++; // defeat
                     }
                 }
                 else { //nieparzysta
-                    tableRef.data[4] += clubRef.goalsLeague[roundIndex - 16 + i];
-                    tableRef.data[5] += clubRef.goalsLeague[roundIndex - 16 + i - 1];
+                    tableRef.goalsScored += clubRef.goalsLeague[roundIndex - 16 + i];
+                    tableRef.goalsLost += clubRef.goalsLeague[roundIndex - 16 + i - 1];
                     if (clubRef.goalsLeague[roundIndex - 16 + i] > clubRef.goalsLeague[roundIndex - 16 + i - 1]) {
-                        tableRef.data[1]++; // win
-                        tableRef.data[7] += 3; // points +3
+                        tableRef.wins++; // win
+                        tableRef.points += 3; // points +3
                     }
                     else if (clubRef.goalsLeague[roundIndex - 16 + i] == clubRef.goalsLeague[roundIndex - 16 + i - 1]) {
-                        tableRef.data[2]++; // draw
-                        tableRef.data[7]++; // points +1
+                        tableRef.draws++; // draw
+                        tableRef.points++; // points +1
                     }
                     else {
-                        tableRef.data[3]++; // defeat
+                        tableRef.losses++; // defeat
                     }
                 }
-                tableRef.data[6] = tableRef.data[4] - tableRef.data[5]; // goal difference
+                tableRef.goalsDiff = tableRef.goalsScored - tableRef.goalsLost; // goal difference
 
                 break;
             }
