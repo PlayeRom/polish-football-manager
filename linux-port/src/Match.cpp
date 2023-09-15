@@ -118,7 +118,7 @@ bool Match::runMatch()
         pLang->get(L"V.slow")
     };
 
-    int juzzmienil[3] = {0};
+    int rivalFootballerChanges[3] = {0};
     bool isOpenTacticsMenu = false;
     bool isPossibleGoToTactics = true;
     MatchStatus matchStatus = START_MATCH;
@@ -188,7 +188,7 @@ bool Match::runMatch()
             prepareFootballersSurnames(clubRef);
         }
 
-        bool isHome = clubRef.rivalData[1] == 0;
+        const bool isHome = clubRef.rivalData[1] == 0;
 
         pInput->clrscr();
         pColors->textcolor(WHITE);
@@ -326,7 +326,7 @@ bool Match::runMatch()
                         msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
                     }
                 }
-                else if (what == 2) {
+                else if (what == 2) { // successful counterattack
                     msg[0] = 12;
                     whereIsAction = ACTION_IN_PANELTY_AREA;
                     msgWhoBall[0] = isPlayerBall;
@@ -1492,22 +1492,22 @@ bool Match::runMatch()
                 }
 
                 for (int i = 0; i < 3; i++) {
-                    if (juzzmienil[i] == 0) {
-                        juzzmienil[i] = x1;
+                    if (rivalFootballerChanges[i] == 0) {
+                        rivalFootballerChanges[i] = x1;
                         break;
                     }
                 }
 
                 for (int i = 0; i < 3; i++) {
-                    if (juzzmienil[i] == x1) {
+                    if (rivalFootballerChanges[i] == x1) {
                         x3++;
                     }
                 }
 
                 if (x3 > 1) {
                     for (int i = 2; i >= 0; i--) {
-                        if (juzzmienil[i] == x1) {
-                            juzzmienil[i] = 0;
+                        if (rivalFootballerChanges[i] == x1) {
+                            rivalFootballerChanges[i] = 0;
                             break;
                         }
                     }
@@ -1516,7 +1516,7 @@ bool Match::runMatch()
 
                 if (x1 > 0) {
                     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
-                        SFootballer &footballer = pFootballers->getRival(index);
+                        const SFootballer &footballer = pFootballers->getRival(index);
                         if (footballer.data[0] > 11 &&
                             footballer.data[0] < 17 &&
                             clubRef.rivalData[0] == footballer.data[22] &&
@@ -1544,7 +1544,7 @@ bool Match::runMatch()
             }
             //************************************************
             if (whoPlayerChanges > 0) { // exchange the footballer
-                int k = getEmptyMsgSlot();
+                const int k = getEmptyMsgSlot();
                 msg[k] = 5; // %ls makes a change...
                 if (whoPlayerChanges == 1) { // player exchange
                     msgWhoBall[k] = true;
@@ -1562,7 +1562,7 @@ bool Match::runMatch()
             }
             //*************** zadyma **********************
             if (pRand->get(100) == 1 && whereIsAction == ACTION_IN_MIDDLEFIELD) {
-                int k = getEmptyMsgSlot();
+                const int k = getEmptyMsgSlot();
                 msg[k] = 86;
                 msg[k + 1] = 87;
                 msg[k + 2] = 88;
@@ -1586,7 +1586,7 @@ bool Match::runMatch()
             //*********************************
             wchar_t tmpMessage[MAX_NEWS_LENGTH];
             for (int i = 0; i < MAX_MESSAGES; i++) {
-                int k = i * 2;
+                const int k = i * 2;
                 if (msg[i] != 0) {
                     wcout << endl;
                 }
@@ -1595,7 +1595,7 @@ bool Match::runMatch()
                     const SNews &matchMasgItem = matchMsgs[index];
                     if (msg[i] == matchMasgItem.num) {
                         int color = 0;
-                        bool isGoal = msg[i] == 74; // GOOOL dla %ls!!!
+                        const bool isGoal = msg[i] == 74; // GOOOL dla %ls!!!
                         if (isGoal) {
                             color = 143;
                         }
@@ -2625,14 +2625,14 @@ int Match::whatHappened(
                     else what = 9;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //udanie z kontry
                     else if (los == 12 || los == 13 || los == 23 || los == 24) what = 3; //nieudana kontra
                     else if (los == 14 || los == 15 || los == 22) what = 7;
                     else if (los == 16 || los == 17 || los == 20 || los == 21) what = 8;
                     else what = 9;
                 }
                 else if (x1 == 1 && x2 >= 2 && x3 == 1) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //udanie z kontry
                     else if (los == 12 || los == 24) what = 3; //nieudana kontra
                     else if (los == 13 || los == 23) what = 6; //pressing przeciwnika
                     else if (los == 14 || los == 15 || los == 22) what = 7;
@@ -2640,7 +2640,7 @@ int Match::whatHappened(
                     else what = 9;
                 }
                 else if (x1 == 1 && x2 < 2 && x3 == 0) {
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //udanie z kontry
                     else if (los == 12 || los == 24) what = 3; //nieudana kontra
                     else if (los == 13 || los == 23) what = 5; //słaby trening
                     else if (los == 14 || los == 15 || los == 22) what = 7;
@@ -2648,7 +2648,7 @@ int Match::whatHappened(
                     else what = 9;
                 }
                 else { //if (x1==1&&x2<2&&x3==1)
-                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //unanie z kontry
+                    if (los == 10 || los == 11 || los == 25 || los == 26 || los == 27) what = 2; //udanie z kontry
                     else if (los == 12 || los == 24) what = 3; //nieudana kontra
                     else if (los == 13 || los == 23) what = 5; //słaby trening
                     else if (los == 14 || los == 15 || los == 22) what = 7;
