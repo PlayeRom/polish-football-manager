@@ -2032,7 +2032,7 @@ void Match::updateTable()
     while (loop != 3) {
         loop++;
 
-        for (size_t index = 0, k; index < pTable->getSize(); index++, k++) {
+        for (size_t index = 0, k = 0; index < pTable->getSize(); index++, k++) {
             STable &tableRef = pTable->get(index);
             pkt[k] = tableRef.data[7]; //zapisuje punkty do pkt
             clubId[k] = tableRef.num; // numer klubu
