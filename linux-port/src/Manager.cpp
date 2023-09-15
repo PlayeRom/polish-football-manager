@@ -248,30 +248,31 @@ wchar_t Manager::displayMainMenu(const wstring *pTactics)
 
 void Manager::swapFootballers()
 {
-    int numer1, numer2;
+    int no1, no2;
 
-    size_t playersCount = pFootballers->getSizePlayerTeam();
+    const size_t playersCount = pFootballers->getSizePlayerTeam();
 
     pColors->textcolor(LIGHTGRAY);
     wcout << endl << pLang->get(L"Enter the number, space, second number and press Enter: ");
-    pInput->getNumbersExchange(numer1, numer2);
+    pInput->getNumbersExchange(no1, no2);
 
-    if (numer1 < 1 || numer1 > playersCount ||
-        numer2 < 1 || numer2 > playersCount
+    if (no1 < 1 || no1 > playersCount ||
+        no2 < 1 || no2 > playersCount
     ) {
-        numer1 = 1;
-        numer2 = 1;
+        return; // Numbers out of scope
     }
 
-    if (numer1 != numer2) {
-        for (size_t i = 0; i < playersCount; i++) {
-            SFootballer &footballer = pFootballers->getPlayerTeam(i);
-            if (footballer.data[0] == numer1) {
-                footballer.data[0] = numer2;
-            }
-            else if (footballer.data[0] == numer2) {
-                footballer.data[0] = numer1;
-            }
+    if (no1 == no2) {
+        return; // The same numbers, nothing to swap
+    }
+
+    for (size_t i = 0; i < playersCount; i++) {
+        SFootballer &footballer = pFootballers->getPlayerTeam(i);
+        if (footballer.data[0] == no1) {
+            footballer.data[0] = no2;
+        }
+        else if (footballer.data[0] == no2) {
+            footballer.data[0] = no1;
         }
     }
 
