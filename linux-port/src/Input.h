@@ -57,6 +57,7 @@ public:
     float getFloat() const;
     wchar_t getKeyBoardPressed() const;
     void getText2Buffer(wchar_t *pBuffer, int maxLength) const;
+    int kbhit() const;
 };
 
 #endif /* INPUT_H */

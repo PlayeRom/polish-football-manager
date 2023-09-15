@@ -1,6 +1,11 @@
 
 #include <iomanip>
 #include <sstream>
+#include <stdio.h>
+#include <sys/select.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+
 #include "Input.h"
 
 void Input::clrscr() const
@@ -134,9 +139,9 @@ wchar_t Input::getKeyBoardPressed() const
         }
 
         wchar_t ch = getch();
-            if (ch == L'\033') {
+        if (ch == L'\033') {
             // klawisz niealfa zawsze rozpoczyna się od znaku escape '\033', wiec moge wyzerowac index
-            // Jets to potrzeban bo klawisz Escape wysyła tylko ten jeden znak
+            // Jest to potrzebne bo klawisz Escape wysyła tylko ten jeden znak
             isEscape = true;
             i = 0;
         }
@@ -212,4 +217,24 @@ void Input::getText2Buffer(wchar_t *pBuffer, int maxLength) const
     pBuffer[lenght + 1] = 0;
 
     pBuffer[0] = toupper(pBuffer[0]);
+}
+
+int Input::kbhit() const
+{
+    static const int STDIN = 0;
+    static bool initialized = false;
+
+    if (! initialized) {
+        // Use termios to turn off line buffering
+        termios term;
+        tcgetattr(STDIN, &term);
+        term.c_lflag &= ~ICANON;
+        tcsetattr(STDIN, TCSANOW, &term);
+        setbuf(stdin, NULL);
+        initialized = true;
+    }
+
+    int bytesWaiting;
+    ioctl(STDIN, FIONREAD, &bytesWaiting);
+    return bytesWaiting;
 }

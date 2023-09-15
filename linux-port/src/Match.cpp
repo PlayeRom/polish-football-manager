@@ -167,8 +167,8 @@ bool Match::runMatch()
     goalsInfoPlayer.clear();
     goalsInfoRival.clear();
 
-    //time_t tmptime = time(NULL);
-    //struct tm t = *localtime(&tmptime);
+    time_t tmpTime = time(NULL);
+    struct tm timeStruct = *localtime(&tmpTime);
 
     bool isWalkover = pFootballers->getSizePlayerTeam() < 11;
     clubRef.isWalkover = isWalkover ? 1 : 0;
@@ -278,6 +278,7 @@ bool Match::runMatch()
             );
             wcout << endl;
         }
+
         if (start == 1 && matchStatus < END_MATCH) { // the match has started
             int what = whatHappened(
                 isPlayerBall,
@@ -1648,11 +1649,11 @@ bool Match::runMatch()
                 }
 
                 if (msg[i] != 0) { //&&msg[i+1]!=0)
-                    /*if (clubRef.isMatchAutoMsg) {
-                        //gettime(&t);
-                        time_t tmptime = time(NULL);
-                        t = *localtime(&tmptime);
-                        int k = t.tm_sec;
+                    if (clubRef.isMatchAutoMsg) {
+                        time_t tmpTime = time(NULL);
+                        timeStruct = *localtime(&tmpTime);
+                        int k = timeStruct.tm_sec;
+
                         if (speedSelected == 1) {
                             if (k == 59) k = 0;
                             else k += speedSelected;
@@ -1676,24 +1677,26 @@ bool Match::runMatch()
                             else k += speedSelected;
                         }
 
-                        while (t.tm_sec != k) {
-                            time_t tmptime = time(NULL);
-                            t = *localtime(&tmptime);
+                        while (timeStruct.tm_sec != k) {
+                            time_t tmpTime = time(NULL);
+                            timeStruct = *localtime(&tmpTime);
 
                             // UWAGA kbhit sprawdza czy nacisnieto klawisz, ale nie wstrzymuje programu
-                            if (kbhit() && isPossibleGoToTactics) {
+                            if (pInput->kbhit() && isPossibleGoToTactics) {
                                 isOpenTacticsMenu = true; // wcisnieto klawisz, i mozna wejsc w taktykę, wtedy isOpenTacticsMenu = 1
+                            }
+                            fflush(stdout);
+                        }
+                    }
+                    else {
+                        // The user must press the key after each message
+                        wchar_t key = pInput->getKeyBoardPressed();
+                        if (clubRef.isMatchAutoMsg) {
+                            if (isPossibleGoToTactics && (key == 'A' || key == 'P')) {
+                                isOpenTacticsMenu = true; // user chce wejsc w taktyke swoja albo rywala
                             }
                         }
                     }
-                    else {*/
-                    wchar_t key = pInput->getKeyBoardPressed();
-                    if (clubRef.isMatchAutoMsg) {
-                        if (isPossibleGoToTactics && (key == 'A' || key == 'P')) {
-                            isOpenTacticsMenu = true; // user chce wejsc w taktyke swoja albo rywala
-                        }
-                    }
-                    /*}*/
                 }
             }
             pColors->textbackground(BLACK);
