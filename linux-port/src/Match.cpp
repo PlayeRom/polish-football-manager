@@ -2035,7 +2035,7 @@ void Match::updateTable()
         for (size_t i = 0; i < pTable->getSize(); i++) {
             STable &tableRef = pTable->get(i);
             pkt[i] = tableRef.data[7]; //zapisuje punkty do pkt
-            clubId[i] = tableRef.num; // numer klubu
+            clubId[i] = tableRef.clubId; // numer klubu
             golr[i] = tableRef.data[6]; // roznica goli
             gol[i] = tableRef.data[4]; //gole zdobyte
             blokada[i] = 0;
@@ -2102,14 +2102,14 @@ void Match::updateTable()
                 for (int v = 0; v < 16; v++) {
                     for (size_t index = 0; index < pTable->getSize(); index++) {
                         STable &tableRef = pTable->get(index);
-                        if (clubId[i] == tableRef.num &&
+                        if (clubId[i] == tableRef.clubId &&
                             pkt[i] == tableRef.data[7] &&
                             golr[k] == tableRef.data[6] &&
                             gol[v] == tableRef.data[4] &&
                             blokada[i] == 0
                         ) {
                             tableRef.data[8] = i + 1;
-                            blokada[i] = tableRef.num;
+                            blokada[i] = tableRef.clubId;
                             newTable.push_back(tableRef);
                         }
                     }
@@ -3711,7 +3711,7 @@ int Match::getMiddlefieldFootballerIdWhoFouled(int teamSetting)
         case T4_4_2:
         case T4_4_2_DEF:
         case T4_4_2_ATT:
-        case T4_4_2_DIA: 
+        case T4_4_2_DIA:
         default: {
             return pRand->get(6, 9); // middlefield 6-9
         }

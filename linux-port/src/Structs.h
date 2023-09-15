@@ -59,6 +59,8 @@
 #define INSTR_ATTIT_DEFENSIVE   2 // nastawienie obronne
 #define INSTR_ATTIT_ATTACK      3 // nastawienie atak
 
+#define TRANNING_SLOTS_NUMBER   28 // 7 days x 4 slots per day
+
 struct SClub {
     wchar_t managerName[MAX_USER_NAME];
     wchar_t managerSurname[MAX_USER_SURNAME];
@@ -69,9 +71,9 @@ struct SClub {
     int clubId; //numer od 1 do 16 oznaczający klub,
     int isBlockTransferFunds; //kasa - blokada dla fund. na transfery, 1 = blokada, bo prosic o fundusze mozna raz na ture
     int day, month, year, weekNumber; //dzien,miesiac,rok
-    int training[28];
+    int training[TRANNING_SLOTS_NUMBER];
     /**
-     * trening[28]
+     * trening[TRANNING_SLOTS_NUMBER]
      * Tygodniowy plan treningu, mamy 7 dni po 4 sloty w ktorych coś jest trenowane
      * Wartości:
      * 1 - trenuja kondycje
@@ -110,7 +112,7 @@ struct SClub {
      * 0 - kondycja
      * 1 - podania
      * 2 - stałe fragmenty
-     * 3 - tkatyka
+     * 3 - taktyka
      */
 
     float finances[14];
@@ -126,7 +128,7 @@ struct SClub {
      * // wydatki
      * 6 - płące
      * 7 - premie
-     * 8  - kupno zawodnikow
+     * 8 - kupno zawodnikow
      * 9 - kary ligowe
      * 10 - razem wydatki
      * //
@@ -198,7 +200,7 @@ struct SRound {
 };
 
 struct STable {
-    int num; // numer klubu, licząc od 1, ktorego dane dotycza
+    int clubId; // numer klubu, licząc od 1, ktorego dane dotycza
     int data[9];
     /**
      * Znaczenia indexków w Tabela.dane
@@ -229,14 +231,14 @@ struct SNews {
 #define PLAYERS_POS_N 4 // striker
 // co zawodnik trenuje
 #define PLAYERS_TRAINING_NONE 0 // nie trenuje
-#define PLAYERS_TRAINING_B 1 // bycia bramkarzem
-#define PLAYERS_TRAINING_O 2 // obronę
-#define PLAYERS_TRAINING_P 3 // pomoc
-#define PLAYERS_TRAINING_N 4 // atak
+#define PLAYERS_TRAINING_B    1 // bycia bramkarzem
+#define PLAYERS_TRAINING_O    2 // obronę
+#define PLAYERS_TRAINING_P    3 // pomoc
+#define PLAYERS_TRAINING_N    4 // atak
 // morale zawodnika
-#define PLAYERS_MORALE_FATAL    -3
-#define PLAYERS_MORALE_BAD      -2
-#define PLAYERS_MORALE_LOW      -1
+#define PLAYERS_MORALE_FATAL   -3
+#define PLAYERS_MORALE_BAD     -2
+#define PLAYERS_MORALE_LOW     -1
 #define PLAYERS_MORALE_MIDDLE   0
 #define PLAYERS_MORALE_GOOD     1
 #define PLAYERS_MORALE_VGOOD    2

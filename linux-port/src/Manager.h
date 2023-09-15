@@ -112,6 +112,8 @@ private:
 
     bool isGrantedFunds(const SClub &clubRef);
     int getChanceForGrantedFunds(const SClub &clubRef);
+
+    int getTrainingHolidaysCounter(SClub &clubRef) const;
 };
 
 #endif /* MANAGER_H */

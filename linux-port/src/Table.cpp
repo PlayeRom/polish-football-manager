@@ -19,7 +19,7 @@ Table::Table(const Colors *pColors, Language *pLang)
 void Table::createTable()
 {
     for (int i = 0; i < MAX_CLUBS; i++) {
-        table[i].num = i + 1;
+        table[i].clubId = i + 1;
         memset(table[i].data, 0, 9 * sizeof(int));
     }
 }
@@ -67,7 +67,7 @@ void Table::load()
 int Table::getPositionInTable(int clubNumber)
 {
     for (int i = 0; i < MAX_CLUBS; i++) {
-        if (table[i].num == clubNumber) {
+        if (table[i].clubId == clubNumber) {
             return table[i].data[8];
         }
     }
@@ -85,7 +85,7 @@ int Table::getClubNumberInPosition(int tablePosition)
 {
     for (int i = 0; i < MAX_CLUBS; i++) {
         if (table[i].data[8] == tablePosition) {
-            return table[i].num; // wez klub na pozycji lata
+            return table[i].clubId; // wez klub na pozycji lata
         }
     }
 
@@ -94,7 +94,7 @@ int Table::getClubNumberInPosition(int tablePosition)
 
 /**
  * Draw table
- * @param clubId Id klubu gracza
+ * @param clubId Player's cloub ID
  * @param clubsNames
  */
 void Table::drawTable(int clubId, const PlayerClub *club)
@@ -151,14 +151,14 @@ void Table::drawTable(int clubId, const PlayerClub *club)
 
     for (int i = 0; i < MAX_CLUBS; i++) {
         wcout << endl << BOX_LIGHT_VERTICAL;
-        if (table[i].num == clubId) {
+        if (table[i].clubId == clubId) {
             pColors->textcolor(YELLOW);
         }
         // pozycja w tabeli:
         wcout << std::setfill(L' ') << std::setw(2) << table[i].data[8] << L". ";
         // nazwa klubu
-        wcout << club->getClubName(table[i].num - 1);
-        int clubNameLength = club->getClubName(table[i].num - 1).length();
+        wcout << club->getClubName(table[i].clubId - 1);
+        int clubNameLength = club->getClubName(table[i].clubId - 1).length();
         int maxNamePlaceholder = 21;
         for (int i = 0; i < maxNamePlaceholder - clubNameLength; i++) {
             wcout << L" ";
@@ -240,7 +240,7 @@ void Table::updateAfterMatch(const SRound &round, int roundIndex, SClub &clubRef
         for (int j = 0; j < MAX_CLUBS; j++) { // petla po klubach w tabeli
             STable &tableRef = table[j];
 
-            if (round.clubNumbers[i] == tableRef.num) {
+            if (round.clubNumbers[i] == tableRef.clubId) {
                 tableRef.data[0]++;
                 if (i % 2 == 0) {
                     tableRef.data[4] += clubRef.goalsLeague[roundIndex - 16 + i];

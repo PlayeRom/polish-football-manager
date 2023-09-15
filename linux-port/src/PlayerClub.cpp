@@ -5,7 +5,7 @@
 #include <cwchar>
 #include "PlayerClub.h"
 
-const int defaultTrenningPlan[28] = {
+const int defaultTrenningPlan[TRANNING_SLOTS_NUMBER] = {
     TRAINING_B,         // pn
     TRAINING_B,         // wt
     TRAINING_CONDITIONS,// sr
@@ -102,7 +102,7 @@ void PlayerClub::initNewClub(int clubId)
     club.isRiot = 0;
     club.isBlockTransferFunds = 0;
 
-    for(int i = 0; i < 28; i++) {
+    for(int i = 0; i < TRANNING_SLOTS_NUMBER; i++) {
         club.training[i] = defaultTrenningPlan[i];
     }
     memset(club.trained, 0, 5 * sizeof(float));

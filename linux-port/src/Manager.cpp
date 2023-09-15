@@ -97,51 +97,51 @@ void Manager::runManager()
                 menuItemTraining();
                 break;
             }
-            case 'O': { // ostatni mecz
+            case 'O': { // last match
                 menuItemLastMatch();
                 break;
             }
-            case 'P': { // najbliższy przeciwnik
+            case 'P': { // upcoming opponent
                 menuItemRival();
                 break;
             }
-            case 'K': { //kalendarz
+            case 'K': { // calendar
                 menuItemCalendar();
                 break;
             }
-            case 'T': { //tabela
+            case 'T': { // league table
                 menuItemTable();
                 break;
             }
-            case 'L': { // lista transferowa
+            case 'L': { // transfer list
                 menuItemTransfersList();
                 break;
             }
-            case 'F': { //finanse
+            case 'F': { // finances
                 menuItemFinance();
                 break;
             }
-            case 'D': {// zarzad klubu
+            case 'D': {// club management
                 menuItemManagement();
                 break;
             }
-            case 'M': { // manager - statystyki
+            case 'M': { // manager - statistics
                 menuItemManagerStats();
                 break;
             }
-            case 'E': { // stare wiadomosci
+            case 'E': { // old news
                 menuItemNewsOld();
                 break;
             }
-            case 'W': { //masz wiadomość
+            case 'W': { // you have a message
                 menuItemNews();
                 break;
             }
-            case 'H': { // opcja dla meczu
+            case 'H': { // option for the match
                 menuItemOptions();
                 break;
             }
-            case 'Q': { // wyjscie
+            case 'Q': { // exit
                 pColors->textcolor(LIGHTRED);
                 wcout << endl << pLang->get(L"Do you want to exit the game? (Y/n): ");
 
@@ -150,7 +150,7 @@ void Manager::runManager()
                 break;
             }
         }
-    }//dla do mainMenu
+    }
     while (mainMenu != 'Q');
 
     pInput->clrscr();
@@ -288,13 +288,28 @@ void Manager::menuItemContinue()
             menuItemContinueMatch(clubRef);
         }
         else {
-            // nie ma meczu wiec procesuj
+            // no match, so processing
             menuItemContinueProcessing(clubRef);
         }
     }
-    else { // manager bezrobotny
+    else { // manager unemployed
         menuItemContinueUnemployed(clubRef);
     }
+}
+
+/**
+ *  Count the number of days off training
+ */
+int Manager::getTrainingHolidaysCounter(SClub &clubRef) const
+{
+    int holidaysCounter = 0;
+    for (int i = 0; i < TRANNING_SLOTS_NUMBER; i++) {
+        if (clubRef.training[i] == TRAINING_HOLIDAY) {
+            holidaysCounter++; // count the number of days off training
+        }
+    }
+
+    return holidaysCounter;
 }
 
 /**
@@ -309,7 +324,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
 
     pFootballers->changeTransferList();
 
-    if (pNews->isMessage()) { //czy wogóle jest jakaś wiadomość
+    if (pNews->isMessage()) { // is there any message at all
         pNews->addDisplayManagerMessages(clubRef, false);
     }
 
@@ -317,17 +332,12 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
     while (isProcessing) {
         clubRef.day++;
         clubRef.weekNumber++;
-        int holidaysCounter = 0;
         if (clubRef.weekNumber == 8) {
             clubRef.weekNumber = 1;
-            for (int i = 0; i < 28; i++) {
-                if (clubRef.training[i] == TRAINING_HOLIDAY) {
-                    holidaysCounter++; // zlicz ilosc dni wolnych od treningu
-                }
-            }
 
+            int holidaysCounter = getTrainingHolidaysCounter(clubRef);
             if (holidaysCounter == 0) {
-                // 0 dni wolnych, morale w dol
+                // 0 days off, morale down
                 for (size_t i = 0; i < pFootballers->getSizePlayerTeam(); i++) {
                     SFootballer &footballer = pFootballers->getPlayerTeam(i);
                     pFootballers->moraleDown(footballer, 3);
@@ -336,7 +346,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 pFootballers->savePlayerTeam();
             }
             else if (holidaysCounter > 1) {
-                // sa dni wolne, morale w gore
+                // there are days off, morale up
                 for (size_t i = 0; i < pFootballers->getSizePlayerTeam(); i++) {
                     SFootballer &footballer = pFootballers->getPlayerTeam(i);
                     pFootballers->moraleUp(footballer, holidaysCounter - 1);
@@ -345,6 +355,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 pFootballers->savePlayerTeam();
             }
         }
+
         if ((clubRef.month == 1 ||
             clubRef.month == 3 ||
             clubRef.month == 5 ||
@@ -355,21 +366,25 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             clubRef.day = 1;
             clubRef.month++;
         }
+
         if (clubRef.month == 2 && clubRef.day == 29) {
             clubRef.day = 1;
             clubRef.month++;
         }
+
         if ((clubRef.month == 4 || clubRef.month == 6 || clubRef.month == 9 || clubRef.month == 11) &&
             clubRef.day == 31
         ) {
             clubRef.day = 1;
             clubRef.month++;
         }
+
         if (clubRef.month == 12 && clubRef.day == 32) {
             clubRef.day = 1;
             clubRef.month = 1;
             clubRef.year++;
         }
+
         //****************************** co miesiąc ****************
         if (clubRef.day == 1) {
             isProcessing = false;
@@ -463,7 +478,7 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
         float cena = 0;
         float placa = 0;
         float premia = 0;
-        for (int i = clubRef.weekNumber - 1; i < 28; i += 7) { //sprawdzamy dany dzien
+        for (int i = clubRef.weekNumber - 1; i < TRANNING_SLOTS_NUMBER; i += 7) { //sprawdzamy dany dzien
             if (clubRef.training[i] == 1) transfer++; //kond
             if (clubRef.training[i] == 2) cena++; //podania
             if (clubRef.training[i] == 3) placa++; //stałe
@@ -1574,7 +1589,7 @@ void Manager::menuItemTraining()
 
             int ilex[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-            for (int i = 0; i < 28; i++) {
+            for (int i = 0; i < TRANNING_SLOTS_NUMBER; i++) {
                 if (i == 7 || i == 14 || i == 21 || i == 28) {
                     wcout << endl << BOX_LIGHT_VERTICAL;
                 }
@@ -1656,7 +1671,7 @@ void Manager::menuItemTrainingWeekDay(wchar_t trainingMenu, int *ilex)
     wchar_t tranningPlanMenu = pInput->getKeyBoardPressed();
     switch (tranningPlanMenu) {
         case '1': {//B,O,P,N
-            for (int i = day - 1, j = 1; i < 28; i += 7, ++j) {
+            for (int i = day - 1, j = 1; i < TRANNING_SLOTS_NUMBER; i += 7, ++j) {
                 if (j == 1) clubRef.training[i] = TRAINING_B;
                 if (j == 2) clubRef.training[i] = TRAINING_O;
                 if (j == 3) clubRef.training[i] = TRAINING_P;
@@ -1666,7 +1681,7 @@ void Manager::menuItemTrainingWeekDay(wchar_t trainingMenu, int *ilex)
             break;
         }
         case  '3': { //wolne
-            for (int i = day - 1, j = 1; i < 28; i += 7, ++j) {
+            for (int i = day - 1, j = 1; i < TRANNING_SLOTS_NUMBER; i += 7, ++j) {
                 if (j == 1) clubRef.training[i] = TRAINING_HOLIDAY;
                 if (j == 2) clubRef.training[i] = TRAINING_EMPTY;
                 if (j == 3) clubRef.training[i] = TRAINING_EMPTY;
