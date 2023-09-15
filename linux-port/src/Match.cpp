@@ -3686,12 +3686,6 @@ int Match::getArbiterDecision(int instrTreatment)
 int Match::getMiddlefieldFootballerIdWhoFouled(int teamSetting)
 {
     switch (teamSetting) {
-        case T4_4_2:
-        case T4_4_2_DEF:
-        case T4_4_2_ATT:
-        case T4_4_2_DIA: {
-            return pRand->get(6, 9); // middlefield 6-9
-        }
         case T3_4_3: {
             return pRand->get(5, 8); // middlefield 5-8
         }
@@ -3713,6 +3707,13 @@ int Match::getMiddlefieldFootballerIdWhoFouled(int teamSetting)
         case T5_3_2_DEF:
         case T5_3_2_ATT: {
             return pRand->get(7, 9);
+        }
+        case T4_4_2:
+        case T4_4_2_DEF:
+        case T4_4_2_ATT:
+        case T4_4_2_DIA: 
+        default: {
+            return pRand->get(6, 9); // middlefield 6-9
         }
     }
 }
