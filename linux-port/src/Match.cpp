@@ -2032,13 +2032,13 @@ void Match::updateTable()
     while (loop != 3) {
         loop++;
 
-        for (size_t index = 0, k = 0; index < pTable->getSize(); index++, k++) {
-            STable &tableRef = pTable->get(index);
-            pkt[k] = tableRef.data[7]; //zapisuje punkty do pkt
-            clubId[k] = tableRef.num; // numer klubu
-            golr[k] = tableRef.data[6]; // roznica goli
-            gol[k] = tableRef.data[4]; //gole zdobyte
-            blokada[k] = 0;
+        for (size_t i = 0; i < pTable->getSize(); i++) {
+            STable &tableRef = pTable->get(i);
+            pkt[i] = tableRef.data[7]; //zapisuje punkty do pkt
+            clubId[i] = tableRef.num; // numer klubu
+            golr[i] = tableRef.data[6]; // roznica goli
+            gol[i] = tableRef.data[4]; //gole zdobyte
+            blokada[i] = 0;
         }
 
         for (int i = 0; i < 16; i++) { //sortowanie wg. pkt
