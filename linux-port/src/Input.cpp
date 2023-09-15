@@ -5,7 +5,7 @@
 
 void Input::clrscr() const
 {
-    system("clear");
+    (void) !system("clear");
 }
 
 /**
@@ -33,12 +33,12 @@ wchar_t Input::getch() const
 wchar_t Input::getche() const
 {
     // Set terminal to raw mode
-    system("stty raw");
+    (void) !system("stty raw");
 
     wchar_t result = std::wcin.get();
 
     // Reset terminal to normal "cooked" mode
-    system("stty cooked");
+    (void) !system("stty cooked");
 
     return result;
 }

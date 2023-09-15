@@ -90,6 +90,7 @@ bool News::loadManagerMessages()
     }
 
     fclose(f);
+    return true;
 }
 
 void News::saveManagerMessages()

@@ -129,7 +129,7 @@ void PlayerClub::load()
         throw std::invalid_argument(message);
     }
 
-    fread(&club, sizeof(SClub), 1, f);
+    (void) !fread(&club, sizeof(SClub), 1, f);
     fclose(f);
 }
 
@@ -152,5 +152,6 @@ const wstring PlayerClub::getClubName(int index) const
         case 13: return L"Wisła Kraków";
         case 14: return L"Wisła Płock";
         case 15: return L"Zagłębie Lubin";
+        default: return L"Error"; // should never happen
     }
 }

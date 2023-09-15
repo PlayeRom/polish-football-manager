@@ -132,4 +132,6 @@ int Rounds::getNearestRivalId(int roundNumber, int clubId)
             break;
         }
     }
+
+    return 0; // should never happen
 }
