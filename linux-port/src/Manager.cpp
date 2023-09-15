@@ -2718,7 +2718,7 @@ void Manager::menuItemTransfersListFilters()
 
         setFilterColors(belka, 6);
         wcout << endl;
-        wprintf(L"   Relative to form: %d ", filterForm);
+        wprintf(pLang->get(L"   Relative to form: %d ").c_str(), filterForm);
 
         setFilterColors(belka, 7);
         wcout << endl;
