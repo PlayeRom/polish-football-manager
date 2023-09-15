@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-#define VERSION "1.06"
+#define VERSION "1.07"
 
 // Initial data file names:
 #define FILE_FOOTBALLERS            "data/footballers.cfg" // old name Kluby_01.cfg
