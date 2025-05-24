@@ -7,10 +7,7 @@
 #include "Tactic.h"
 
 /**
- * Sortuj od najmniejszej liczby porzadkowej
- * @param footballer1
- * @param footballer2
- * @return
+ * Sortuj od najmniejszej liczby porządkowej
  */
 bool compareByNumber(const SFootballer &footballer1, const SFootballer &footballer2)
 {
@@ -18,11 +15,7 @@ bool compareByNumber(const SFootballer &footballer1, const SFootballer &football
 }
 
 /**
- * Sortujod najwiejszej wartosci
- *
- * @param footballer1
- * @param footballer2
- * @return
+ * Sortuj od największej wartości
  */
 bool compareByGoalkeeperSkills(const SFootballer &footballer1, const SFootballer &footballer2)
 {
@@ -78,8 +71,8 @@ Squad::Squad(const Colors *pColors, Language *pLang)
 /**
  * Gdy jest sortowanie, to nie ma stronicowania
  *
- * @param footballers Tablica zawodnikow korzy beda wysietlani
- * @param setting Usatwienie zespolu wyswietlanego
+ * @param footballers Tablica zawodnikow którzy będą wyświetlani
+ * @param setting Ustawienie zespołu wyświetlanego
  * @param mode Np. 11 bo trzeba wyswietlic 11 zawodnikow dla taktyki, 16 - rezerwowi, 20 lub 40 dla pełnego składu i treningu
  * @param who -1 - dla treningu, 0 - taktyka moja, > 0 - numer klubu rywala
  * @param sort Sposob sortowanie, 0 - po numerze lp lub jeden z indeksow z SFootballer.dane[...]
@@ -94,39 +87,39 @@ Squad::Squad(const Colors *pColors, Language *pLang)
  * 16 - wg goli
  * 18 - wg kolejności wygaśnięcia kontraktu
  */
-void Squad::draw(const vector<SFootballer> &footballers, int setting, int mode, int clubNumber, bool isTrenning /*= false*/, int sort /* = 0*/)
+void Squad::draw(const vector<SFootballer> &footballers, int setting, int mode, int clubNumber, bool isTraining /*= false*/, int sort /* = 0*/)
 {
     int i = 0, color = 0;
 
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << endl << pLang->get(L"No    Footballer       Po.  ");
 
-    pColors->textcolor(LIGHTBLUE);
+    pColors->textColor(LIGHTBLUE);
     wcout << pLang->get(L"G") << L"  ";
 
-    pColors->textcolor(MAGENTA);
+    pColors->textColor(MAGENTA);
     wcout << pLang->get(L"D") << L"  ";
 
-    pColors->textcolor(LIGHTCYAN);
+    pColors->textColor(LIGHTCYAN);
     wcout <<pLang->get( L"M") << L"  ";
 
-    pColors->textcolor(LIGHTGREEN);
+    pColors->textColor(LIGHTGREEN);
     wcout << pLang->get(L"A") << L"  ";
 
-    pColors->textcolor(GREEN);
-    if (isTrenning) { // sklad do treningu
+    pColors->textColor(GREEN);
+    if (isTraining) { // skład do treningu
         wcout << pLang->get(L"Training");
         color = LIGHTGRAY;
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
-    else { // sklad normalnie
+    else { // skład normalnie
         wcout << pLang->get(L"Morale  For. Con. Goals");
         if (sort == 18) {
             // sortowanie po wygasnieciu kontraktu
             wcout << pLang->get(L"  Expires in:");
         }
         color = LIGHTBLUE;
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
 
     if (mode == 16) {
@@ -138,10 +131,10 @@ void Squad::draw(const vector<SFootballer> &footballers, int setting, int mode, 
 
     if (sort > 0) {
         color = LIGHTGRAY;
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
 
-    // wez zawodnikow tylko ze wskaznego klubu, wiec dzialamy/sortujemy tylko na tymczasowym wektorze
+    // wez zawodnikow tylko ze wskazanego klubu, więc działamy/sortujemy tylko na tymczasowym wektorze
     vector<SFootballer> tmpFootballers;
     for (size_t index = 0; index < footballers.size(); index++) {
         if (clubNumber == footballers[index].data[22]) {
@@ -157,14 +150,14 @@ void Squad::draw(const vector<SFootballer> &footballers, int setting, int mode, 
     for (size_t index = i; index < tmpFootballers.size() && index < mode; index++, settingCount++) {
         const SFootballer &footballer = tmpFootballers[index];
 
-        int newColor = getTextColor(setting, mode, settingCount, isTrenning, sort, color);
+        int newColor = getTextColor(setting, mode, settingCount, isTraining, sort, color);
         if (newColor != color) {
             color = newColor;
-            pColors->textcolor(color);
+            pColors->textColor(color);
         }
 
         wstring strWhatTrain;
-        if (isTrenning) {
+        if (isTraining) {
             // musi byc tutaj aby numer lp. był w odpowiednim kolorze
             strWhatTrain = getTrainingName(footballer.data[1], color);
         }
@@ -183,10 +176,10 @@ void Squad::draw(const vector<SFootballer> &footballers, int setting, int mode, 
             footballer.data[4],
             footballer.data[5],
             footballer.data[6],
-            (isTrenning ? strWhatTrain : getMorale(footballer.data[7])).c_str()
+            (isTraining ? strWhatTrain : getMorale(footballer.data[7])).c_str()
         );
 
-        if (!isTrenning) {
+        if (!isTraining) {
             wprintf(
                 L"  %2d  %3d%%  %2d",
                 footballer.data[9],
@@ -198,21 +191,21 @@ void Squad::draw(const vector<SFootballer> &footballers, int setting, int mode, 
                 wprintf(pLang->get(L" %6d days").c_str(), footballer.data[18]);
             }
 
-            if (!isTrenning && mode == 20 && sort == 0) {
+            if (!isTraining && mode == 20 && sort == 0) {
                 printPlayerCounter++;
                 switch (printPlayerCounter) {
                     case 1: {
-                        pColors->textcolor(WHITE);
+                        pColors->textColor(WHITE);
                         wcout << L" <- " << pLang->get(L"Playing");
                         break;
                     }
                     case 12: {
-                        pColors->textcolor(YELLOW);//BROWN);
+                        pColors->textColor(YELLOW);//BROWN);
                         wcout << L" <- " << pLang->get(L"Reserve");
                         break;
                     }
                     case 17: {
-                        pColors->textcolor(LIGHTGRAY);
+                        pColors->textColor(LIGHTGRAY);
                         wcout << L" <- " << pLang->get(L"Other");
                         break;
                     }
@@ -268,9 +261,9 @@ void Squad::sortFootballers(int sort, vector<SFootballer> &footballers)
     }
 }
 
-int Squad::getTextColor(int setting, int mode, int settingCount, bool isTrenning, int sort, int color)
+int Squad::getTextColor(int setting, int mode, int settingCount, bool isTraining, int sort, int color)
 {
-    if (!isTrenning && sort == 0) {
+    if (!isTraining && sort == 0) {
         if (settingCount == 1) { // bramkarz
             color = LIGHTBLUE;
         }
@@ -334,31 +327,31 @@ int Squad::getTextColor(int setting, int mode, int settingCount, bool isTrenning
 void Squad::drawSpecialEvents(const SFootballer &footballer, int color)
 {
     if (footballer.data[15] > 0 || footballer.data[19]) { // kontuzjowany
-        pColors->textbackground(RED);
-        pColors->textcolor(LIGHTGRAY);
+        pColors->textBackground(RED);
+        pColors->textColor(LIGHTGRAY);
         wcout << pLang->get(L"In"); // injury
-        pColors->textbackground(BLACK);
-        pColors->textcolor(color);
+        pColors->textBackground(BLACK);
+        pColors->textColor(color);
     }
     else if (footballer.data[14] == 1) { // czerwona kartka
-        pColors->textcolor(RED);
+        pColors->textColor(RED);
         wcout << BOX_FULL_BLOCK << L" ";
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
     else if (footballer.data[13] == 1) { // zolta kartka
-        pColors->textcolor(YELLOW);
+        pColors->textColor(YELLOW);
         wcout << BOX_FULL_BLOCK << L" ";
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
     else if (footballer.data[13] == 2) { // dwie zolte kartki
-        pColors->textcolor(YELLOW);
+        pColors->textColor(YELLOW);
         wcout << BOX_FULL_BLOCK << BOX_FULL_BLOCK;
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
     else if (footballer.data[17] == 1) { // wystawiony na transfer
-        pColors->textcolor(LIGHTMAGENTA);
+        pColors->textColor(LIGHTMAGENTA);
         wcout << pLang->get(L"T") << L" ";
-        pColors->textcolor(color);
+        pColors->textColor(color);
     }
     else {
         wcout << L"  ";
@@ -383,31 +376,31 @@ const wstring Squad::getTrainingName(int watTrain, int &color)
         case PLAYERS_TRAINING_NONE: {
             result = pLang->get(L"Not training");
             color = LIGHTGRAY;
-            pColors->textcolor(color);
+            pColors->textColor(color);
             break;
         }
         case PLAYERS_TRAINING_B: {
             result = pLang->get(L"Goalkeepers");
             color = LIGHTBLUE;
-            pColors->textcolor(color);
+            pColors->textColor(color);
             break;
         }
         case PLAYERS_TRAINING_O: {
             result = pLang->get(L"Defense");
             color = MAGENTA;
-            pColors->textcolor(color);
+            pColors->textColor(color);
             break;
         }
         case PLAYERS_TRAINING_P: {
             result = pLang->get(L"Midfield");
             color = LIGHTCYAN;
-            pColors->textcolor(color);
+            pColors->textColor(color);
             break;
         }
         case PLAYERS_TRAINING_N: {
             result = pLang->get(L"Attack");
             color = LIGHTGREEN;
-            pColors->textcolor(color);
+            pColors->textColor(color);
             break;
         }
     }

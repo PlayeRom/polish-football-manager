@@ -73,29 +73,29 @@ void TeamInstructions::draw(
         printInstruction(data[i], bar, i + 1);
     }
 
-    pColors->textbackground(BLACK);
+    pColors->textBackground(BLACK);
 }
 
 void TeamInstructions::setColorBarInstruction(int bar, int barValue) const
 {
     if (bar == barValue) {
-        pColors->textbackground(BLUE);
-        pColors->textcolor(LIGHTGRAY);
+        pColors->textBackground(BLUE);
+        pColors->textColor(LIGHTGRAY);
         return;
     }
 
-    pColors->textbackground(BLACK);
-    pColors->textcolor(GREEN);
+    pColors->textBackground(BLACK);
+    pColors->textColor(GREEN);
 }
 
 void TeamInstructions::setColorForInstruction(int parameter, int paramValue, int bar, int barValue) const
 {
     if (bar == barValue) { // nad parametrem ustawiona jest belka
-        pColors->textcolor(parameter == paramValue ? LIGHTGRAY : BLACK);
+        pColors->textColor(parameter == paramValue ? LIGHTGRAY : BLACK);
         return;
     }
 
-    pColors->textcolor(parameter == paramValue ? GREEN : DARKGRAY);
+    pColors->textColor(parameter == paramValue ? GREEN : DARKGRAY);
 }
 
 void TeamInstructions::printInstruction(vector< pair<wstring, int> > values, int bar, int barValue) const

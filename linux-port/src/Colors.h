@@ -34,8 +34,8 @@ public:
     const std::wstring setColors(int argCount, ...) const;
     int convertFromConio(int conioColor, bool isBkg) const;
 
-    void textcolor(int colorConio) const;
-    void textbackground(int colorConio) const;
+    void textColor(int colorConio) const;
+    void textBackground(int colorConio) const;
 
     void startBlinking() const { std::wcout << L"\033[5m"; }
     void stopBlinking() const { std::wcout << L"\033[0m"; }

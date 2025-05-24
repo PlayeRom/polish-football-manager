@@ -19,12 +19,12 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
 {
     const wstring *settings = getTeamSettings();
 
-    pColors->textbackground(GREEN);
-    pColors->textcolor(BLACK); //wypis taktyk
+    pColors->textBackground(GREEN);
+    pColors->textColor(BLACK); //wypis taktyk
     wprintf(L"\n\r %-15ls", settings[setting - 1].c_str());
 
     //--------------------linia ataku
-    pColors->textcolor(LIGHTGREEN);
+    pColors->textColor(LIGHTGREEN);
     if (setting == T4_4_2 || setting == T4_4_2_DEF || setting == T4_4_2_ATT || setting == T4_4_2_DIA ||
         setting == T3_5_2 || setting == T3_5_2_DEF || setting == T3_5_2_ATT || setting == T4_2_4 ||
         setting == T5_3_2 || setting == T5_3_2_DEF || setting == T5_3_2_ATT
@@ -39,11 +39,11 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
     }
 
     if (isPlayerTeam) {
-        pColors->textbackground(BLACK);
-        pColors->textcolor(GREEN);
+        pColors->textBackground(BLACK);
+        pColors->textColor(GREEN);
         wcout << pLang->get(L"     U Change formation         P Swap players");
-        pColors->textbackground(GREEN);
-        pColors->textcolor(LIGHTGREEN);
+        pColors->textBackground(GREEN);
+        pColors->textColor(LIGHTGREEN);
     }
 
     //--------------------linia ataku
@@ -54,13 +54,13 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
         wcout << endl << L"                ";
     }
 
-    pColors->textbackground(BLACK);
-    pColors->textcolor(GREEN);
+    pColors->textBackground(BLACK);
+    pColors->textColor(GREEN);
     wcout << pLang->get(L"     I Team instructions        R Show reserve");
-    pColors->textbackground(GREEN);
+    pColors->textBackground(GREEN);
 
     //--------------------------linia pomocy
-    pColors->textcolor(LIGHTCYAN);
+    pColors->textColor(LIGHTCYAN);
     if (setting == T4_4_2_DIA || setting == T3_5_2_ATT || setting == T5_3_2_ATT) {
         wcout << endl << L"        9       ";
     }
@@ -71,11 +71,11 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
         wcout << endl << L"                ";
     }
 
-    pColors->textbackground(BLACK);
-    pColors->textcolor(RED);
+    pColors->textBackground(BLACK);
+    pColors->textColor(RED);
     wcout << pLang->get(L"     Q Back");
-    pColors->textbackground(GREEN);
-    pColors->textcolor(LIGHTCYAN);
+    pColors->textBackground(GREEN);
+    pColors->textColor(LIGHTCYAN);
 
     //--------------------------linia pomocy - srodkowa
     if (setting == T4_4_2)                                  wcout << endl << L"  6   7   8   9 ";
@@ -96,7 +96,7 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
     else                                                    wcout << endl << L"                ";
 
     //-----------------------------linia obrony
-    pColors->textcolor(MAGENTA);
+    pColors->textColor(MAGENTA);
     if (setting == T5_3_2 || setting == T5_3_2_DEF || setting == T5_3_2_ATT) {
         wcout << endl << L"  5           6 ";
     }
@@ -114,7 +114,7 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
     }
 
     //-----------------------------biala linia pola bramkowego
-    pColors->textcolor(WHITE);
+    pColors->textColor(WHITE);
     wcout << endl
         << L"   "
         << BOX_LIGHT_DOWN_RIGHT
@@ -129,16 +129,16 @@ void Tactic::drawTeamSetting(int setting, bool isPlayerTeam /*= true*/) const
         << BOX_LIGHT_DOWN_LEFT
         << L"   ";
 
-    pColors->textcolor(WHITE);
+    pColors->textColor(WHITE);
     wcout << endl << L"   " << BOX_LIGHT_VERTICAL;
 
     ////----------------------------- bramkarz
-    pColors->textcolor(LIGHTBLUE);
+    pColors->textColor(LIGHTBLUE);
     wcout << L"    1";
 
-    pColors->textcolor(WHITE);
+    pColors->textColor(WHITE);
     wcout << L"   " << BOX_LIGHT_VERTICAL << L"   ";
-    pColors->textbackground(BLACK);
+    pColors->textBackground(BLACK);
 }
 
 /**
@@ -228,14 +228,14 @@ void Tactic::drawChart(int setting, int clubId, const vector<SFootballer> &footb
     drawBoxes(LIGHTGREEN, pLang->get(L"A"), attack, 16);
 
     if (isRival) {
-        pColors->textcolor(LIGHTGRAY);
+        pColors->textColor(LIGHTGRAY);
         wcout << L"<- " << pLang->get(L"Rival");
     }
 }
 
 void Tactic::drawBoxes(int color, const wstring& sign, int strength, int max)
 {
-    pColors->textcolor(color);
+    pColors->textColor(color);
     wcout << sign << L"-";
 
     int counter = 0;
@@ -245,7 +245,7 @@ void Tactic::drawBoxes(int color, const wstring& sign, int strength, int max)
     }
 
     for (int i = counter; i < max; i++) {
-        pColors->textcolor(DARKGRAY);
+        pColors->textColor(DARKGRAY);
         wcout << BOX_FULL_BLOCK;
     }
 }

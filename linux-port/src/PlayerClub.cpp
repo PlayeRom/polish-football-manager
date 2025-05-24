@@ -5,11 +5,11 @@
 #include <cwchar>
 #include "PlayerClub.h"
 
-const int defaultTrenningPlan[TRANNING_SLOTS_NUMBER] = {
+const int defaultTrainingPlan[TRAINING_SLOTS_NUMBER] = {
     TRAINING_B,         // pn
     TRAINING_B,         // wt
     TRAINING_CONDITIONS,// sr
-    TRAINING_TACTICKS,  // cz
+    TRAINING_TACTICS,   // cz
     TRAINING_FREE_KICKS,// pt
     TRAINING_PASSES,    // so
     TRAINING_HOLIDAY,   // n
@@ -17,7 +17,7 @@ const int defaultTrenningPlan[TRANNING_SLOTS_NUMBER] = {
     TRAINING_O,         // wt
     TRAINING_PASSES,    // sr
     TRAINING_CONDITIONS,// cz
-    TRAINING_TACTICKS,  // pt
+    TRAINING_TACTICS,   // pt
     TRAINING_FREE_KICKS,// so
     TRAINING_EMPTY,     // n
     TRAINING_P,         // pn
@@ -25,7 +25,7 @@ const int defaultTrenningPlan[TRANNING_SLOTS_NUMBER] = {
     TRAINING_FREE_KICKS,// sr
     TRAINING_PASSES,    // cz
     TRAINING_CONDITIONS,// pt
-    TRAINING_TACTICKS,  // so
+    TRAINING_TACTICS,   // so
     TRAINING_EMPTY,     // n
     TRAINING_N,         // pn
     TRAINING_N,         // wt
@@ -50,11 +50,6 @@ PlayerClub::~PlayerClub()
 
 /**
  * Set the club structure with initialize data on the start of game
- * @param name
- * @param surname
- * @param nick
- * @param clubId
- * @param transferAmount
  */
 void PlayerClub::init(const wchar_t* name, const wchar_t* surname, const wchar_t* nick, int clubId)
 {
@@ -85,7 +80,6 @@ void PlayerClub::init(const wchar_t* name, const wchar_t* surname, const wchar_t
 
 /**
  * Gracz rozpoczyna pracę w nowym klubie, resetujemy część informacji
- * @param clubId
  */
 void PlayerClub::initNewClub(int clubId)
 {
@@ -102,12 +96,14 @@ void PlayerClub::initNewClub(int clubId)
     club.isRiot = 0;
     club.isBlockTransferFunds = 0;
 
-    for(int i = 0; i < TRANNING_SLOTS_NUMBER; i++) {
-        club.training[i] = defaultTrenningPlan[i];
+    for(int i = 0; i < TRAINING_SLOTS_NUMBER; i++) {
+        club.training[i] = defaultTrainingPlan[i];
     }
+
     memset(club.trained, 0, 5 * sizeof(float));
     memset(club.finances, 0, 14 * sizeof(float));
     memset(club.financesLastMonth, 0, 14 * sizeof(float));
+
     for (int i = 0; i < MAX_TEAM_INSTRUCTIONS; i++) {
         club.inst[i] = (i == 0 || i == 1 || i == 5) ? 1 : 0;
     }

@@ -29,24 +29,24 @@
 #define MAX_USER_SURNAME 20
 #define MAX_USER_NICK 20
 #define MAX_CLUBS 16
-#define MAX_TEAM_INSTRUCTIONS 6 // ilosc instrukcji dla zespolu w taktyce
+#define MAX_TEAM_INSTRUCTIONS 6 // number of instructions for the team in tactics
 
 #define TRAINING_CONDITIONS     1
-#define TRAINING_PASSES         2 // podanie
-#define TRAINING_FREE_KICKS     3 // rzuty wolne, stale frag. gry
-#define TRAINING_TACTICKS       4 // taktyka
+#define TRAINING_PASSES         2 // pass
+#define TRAINING_FREE_KICKS     3 // rzuty wolne, stale fragmenty gry
+#define TRAINING_TACTICS        4 // tactics
 #define TRAINING_B              5
 #define TRAINING_O              6
 #define TRAINING_P              7
 #define TRAINING_N              8
 #define TRAINING_HOLIDAY        9 // wolne od treningu, odpoczynek
-#define TRAINING_EMPTY          10 // wypelniacz pustego miejsca
+#define TRAINING_EMPTY          10 // wypełniacz pustego miejsca
 
-// wartosci dla instrukcji w taktyce
+// values ​​for instructions in tactics
 #define INSTR_PASSES_MIXES      1 // podania mieszane
 #define INSTR_PASSES_SHORT      2 // podania krotkie
 #define INSTR_PASSES_MIDDLE     3 // podania srednie
-#define INSTR_PASSES_LONG       4 // podania dlugie
+#define INSTR_PASSES_LONG       4 // podania długie
 
 #define INSTR_TREATMENT_NORMAL  1 // traktowanie rywala: normalnie
 #define INSTR_TREATMENT_SOFT    2 // traktowanie rywala: delikatnie
@@ -59,7 +59,7 @@
 #define INSTR_ATTIT_DEFENSIVE   2 // nastawienie obronne
 #define INSTR_ATTIT_ATTACK      3 // nastawienie atak
 
-#define TRANNING_SLOTS_NUMBER   28 // 7 days x 4 slots per day
+#define TRAINING_SLOTS_NUMBER   28 // 7 days x 4 slots per day
 
 struct SClub {
     wchar_t managerName[MAX_USER_NAME];
@@ -67,13 +67,13 @@ struct SClub {
     wchar_t nick[MAX_USER_NICK];
     int isNick; // 1 - user podał nick, 0 - nie podał nicka
     int roundNumber;
-    int isMatch; // 0 - nie ma meczu, wtedy "C = Kontynuj", 1 - jest mecz "C = Mecz"
+    int isMatch; // 0 - nie ma meczu, wtedy "C = Kontynuuj", 1 - jest mecz "C = Mecz"
     int clubId; //numer od 1 do 16 oznaczający klub,
     int isBlockTransferFunds; //kasa - blokada dla fund. na transfery, 1 = blokada, bo prosic o fundusze mozna raz na ture
     int day, month, year, weekNumber; //dzien,miesiac,rok
-    int training[TRANNING_SLOTS_NUMBER];
+    int training[TRAINING_SLOTS_NUMBER];
     /**
-     * trening[TRANNING_SLOTS_NUMBER]
+     * trening[TRAINING_SLOTS_NUMBER]
      * Tygodniowy plan treningu, mamy 7 dni po 4 sloty w ktorych coś jest trenowane
      * Wartości:
      * 1 - trenuja kondycje
@@ -93,22 +93,22 @@ struct SClub {
 
     int inst[MAX_TEAM_INSTRUCTIONS];
     /**
-     * instrukcje dla zespolu podczas meczu
-     * 0 - podania: 1 - mieszane, 2 - krótkie, 3 - srednie, 4 - dlugie
-     * 1 - obochodzenie sie z rywalem: 1 - normalne, 2 - delikatne, 3 - twarde
+     * instrukcje dla zespołu podczas meczu
+     * 0 - podania: 1 - mieszane, 2 - krótkie, 3 - srednie, 4 - długie
+     * 1 - obchodzenie się z rywalem: 1 - normalne, 2 - delikatne, 3 - twarde
      * 2 - pressing: 0 - nie, 1 - tak
      * 3 - pułapki ofsajdowe: 0 - nie, 1 - tak
      * 4 - gra z kontry: 0 - nie, 1 - tak
      * 5 - nastawienie: 1 - normalne, 2 - obronne, 3 - atak
      */
 
-    int teamSetting; // ustawienie zespolu
-    int isAssistantMsg; // asystent=1 widomość od asystenta
+    int teamSetting; // ustawienie zespołu
+    int isAssistantMsg; // asystent=1 wiadomość od asystenta
     int lastMatchRivalId;
     int playerGoals, rivalGoals; // gole z ostatniego meczu playerGoals - gole gracza, rivalGoals - gole przeciwnika
     int isRiot;
     float trained[5];
-    /** punkty wytrenowania zespolowego
+    /** punkty wytrenowania zespołowego
      * 0 - kondycja
      * 1 - podania
      * 2 - stałe fragmenty
@@ -126,21 +126,21 @@ struct SClub {
      * 4 - reklama i sponsorzy
      * 5 - razem zysk
      * // wydatki
-     * 6 - płące
+     * 6 - płace
      * 7 - premie
      * 8 - kupno zawodnikow
      * 9 - kary ligowe
      * 10 - razem wydatki
      * //
      * 11 - zysk (roznica przychod - wydatki)
-     * 12 - calkowita kasa w klubie
+     * 12 - całkowita kasa w klubie
      * 13 - fundusze na transfery (kasa/2)
      */
 
-    float financesLastMonth[14]; // finanse2 - to samo co finanse tylko dla poprzednigo miesiaca
+    float financesLastMonth[14]; // finanse2 - to samo co finanse tylko dla poprzedniego miesiaca
     float ileTrans; // TODO do usuniecia, nie uzywane
-    float totalExpensesTransfers; // łączna suma wydaków na kupno zawodników
-    float totalRevenuesTransfers; // łączna suma zysków za sprzedarz zawodników
+    float totalExpensesTransfers; // łączna suma wydatków na kupno zawodników
+    float totalRevenuesTransfers; // łączna suma zysków za sprzedaż zawodników
 
     int rivalData[4];
     /**
@@ -155,9 +155,9 @@ struct SClub {
 
     int isRivalSet, controlMatchesAmount; //dla rywala
 
-    // gdy = 1 to nie mozna rozegrac meczu bo w skaldzie sa niepowolane osoby, z kartkami (1 czerwona, lub 2 zolte),
-    // albo gracz w skladzie do wyleczenia kontuzji ma wiecej niz 7 dni
-    // gdy = 0, to mozna przejsc do meczu
+    // gdy = 1 to nie mozna rozegrac meczu bo w skaldzie sa niepowołane osoby, z kartkami (1 czerwona, lub 2 żółte),
+    // albo gracz w składzie do wyleczenia kontuzji ma wiecej niz 7 dni
+    // gdy = 0, to można przejść do meczu
     int isNotAllowedTeamPlayer;
 
     int goalsLeague[480];
@@ -176,8 +176,8 @@ struct SClub {
      * 7 - mecze przegrane managera
      * 8 - zdobyte gole managera
      * 9 - stracone gole managera
-     * 10 - ilość wszytskich kupionych zawodnikow managera
-     * 11 - ilość wszytskich sprzedanych zawodnikow managera
+     * 10 - ilość wszystkich kupionych zawodnikow managera
+     * 11 - ilość wszystkich sprzedanych zawodnikow managera
      */
 
     int season; // wiosna, jesien
@@ -188,7 +188,7 @@ struct SClub {
 };
 
 struct SRound {
-    int number, day, month, year; //nr kolejki dniń miesiąc i rok
+    int number, day, month, year; //nr kolejki dni miesiąc i rok
     int clubNumbers[MAX_CLUBS]; //numerowe oznaczenie drużyn dla łatwej identyfikacji, ustawione parami:
     // dom - wyjazd
     // dom - wyjazd, itd.
@@ -206,7 +206,7 @@ struct STable {
     int draws;               // remisy
     int losses;              // przegrane
     int goalsScored;         // gole zdobyte
-    int goalsLost;           // gole strancone
+    int goalsLost;           // gole stracone
     int goalsDiff;           // roznica goli
     int points;              // punkty
     int tablePosition;       // pozycja w tabeli
@@ -247,27 +247,27 @@ struct SFootballer {
     int data[23];
     /**
      * Tabela SFootballer.data
-     * 0 - liczba porzadkowa gracza w druzynie, np. 1 - to bramkarz, 2 - obrońca, ... 12 - pierwszy rezerwowoy, itd.
+     * 0 - liczba porzadkowa gracza w druzynie, np. 1 - to bramkarz, 2 - obrońca, ... 12 - pierwszy rezerwowy, itd.
      * 1 - co trenuje, 0 - nie trenuje, 1 - bramkarz, 2 - obrona, 3 - pomoc, 4 - atak
      * 2 - pozycja na jakiej gra, 1 - B, 2 - O, 3 - P, 4 - N
-     * 3 - umiejetnosci B, od 1 do 20
-     * 4 - umeijetnosci O, od 1 do 20
-     * 5 - umiejetnosci P, od 1 do 20
-     * 6 - umiejetnosci N, od 1 do 20
+     * 3 - umiejętności B, od 1 do 20
+     * 4 - umiejętności O, od 1 do 20
+     * 5 - umiejętności P, od 1 do 20
+     * 6 - umiejętności N, od 1 do 20
      * 7 - morale zawodnika: -3 - "Fatalne", -2 "Złe", -1 "Niskie", 0 "Średnie", 1 "Dobre", 2 "B.dobre", 3 "Super";
      * 8 - licznik zmiany morale, gdy osiagnie -5 lub 5, to sie zeruje i modyfikuje odpowiednio morale [7]
      * 9 - forma zawodnika od 1 do 10
      * 10 - licznik zmiany formy, gdy osiagnie wartosci -3 lub 3, to sie zeruje i odpowiednio zmienia forme zawodnika [9]
      * 11 - kondycja od 0 do 100 %
-     * 12 - zolte kartki dla meczu (co mecz sie zeruje), = 1 gdy zawodnik otrzyma zolta w meczu, = 2 to czerwona
-     * 13 - zółte kartki, = 2 to gracz pauzuje w przyszlym meczu i sie zaruje
-     * 14 - czerwone kartki, gdy = 1 to gracz paizuje i się zeruje
+     * 12 - żółte kartki dla meczu (co mecz sie zeruje), = 1 gdy zawodnik otrzyma żółta w meczu, = 2 to czerwona
+     * 13 - żółte kartki, = 2 to gracz pauzuje w przyszłym meczu i sie zeruje
+     * 14 - czerwone kartki, gdy = 1 to gracz pauzuje i się zeruje
      * 15 - kontuzja, = 0 gdy zawodnik jest zdrowy, gdy > 0 przechowuje ilosc dni do wyleczenia kontuzji, jezeli tych
      *      dni jest 7 lub mniej, to zawodnik moze grac, ale jego kondycja jest ograniczona max do 90%
-     * 16 - ilość zdobytch goli
+     * 16 - ilość zdobytych goli
      * 17 - normalnie 0, gdy = 1 to zawodnik wystawiony jest na sprzedaz
      * 18 - za ile dni wygasa kontrakt zawodnika
-     * 19 - flaga czy gracz kontuzjowany, 0 - nie, 1 - tak, potrzebne do okreslenia czy byl komunikat o jego kontucji
+     * 19 - flaga czy gracz kontuzjowany, 0 - nie, 1 - tak, potrzebne do okreslenia czy byl komunikat o jego kontuzji
      * 20 - forma podczas meczu
      * 21 - gole zdobyte w meczu, co mesz sie zeruje, po meczu dodawane do [16]
      * 22 - numer kluby do ktorego nalezy zawodnik, gdy 0 to nie nalezy do zadnego
@@ -286,7 +286,7 @@ struct SFootballer {
  * Raport ostatniego meczu, struktura jednego wpisu razem z kolorem
  */
 struct SLastMatch {
-    int textcolor;
+    int textColor;
     wchar_t text[MAX_NEWS_LENGTH];
 };
 

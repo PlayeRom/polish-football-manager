@@ -78,12 +78,12 @@ int Colors::getFgBgColor(int color, bool isBkg) const
     return isBkg ? color + 10 : color;
 }
 
-void Colors::textcolor(int colorConio) const {
+void Colors::textColor(int colorConio) const {
     int color = convertFromConio(colorConio, false);
     wcout << setColors(1, color);
 }
 
-void Colors::textbackground(int colorConio) const {
+void Colors::textBackground(int colorConio) const {
     int color = convertFromConio(colorConio, true);
     wcout << setColors(1, color);
 }

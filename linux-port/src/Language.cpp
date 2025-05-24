@@ -68,7 +68,7 @@ bool Language::load(string lngCode)
     return true;
 }
 
-wchar_t Language::getYesKeyborad() const
+wchar_t Language::getYesKeyboard() const
 {
     if (lngCode == "pl_PL") {
         return L'T'; // Tak

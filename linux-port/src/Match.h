@@ -127,7 +127,7 @@ private:
     bool isPlayerChanges; // gracz lub przeciwnik dokonał zmiany
     int whoPlayerChanges; // kto robi zmiane, 0 - nikt, 1 - gracz, 2 - rywal
 
-    wstring msgFootballers[20]; // footabllers names for formatting match messages
+    wstring msgFootballers[20]; // footballers names for formatting match messages
     wstring msgPlayerSurnames[16];
     wstring msgRivalSurnames[16];
     int msg[MAX_MESSAGES];
@@ -156,7 +156,7 @@ private:
         float zoneLeft, float zoneCenter, float zoneRight,
         int offsidesHome, int offsidesAway,
         int foulsHome, int foulsAway,
-        int paneltiesHome, int paneltiesAway,
+        int penaltiesHome, int penaltiesAway,
         int yellowsHome, int yellowsAway,
         int redsHome, int redsAway,
         int ballPossHome, int ballPossAway,
@@ -167,25 +167,25 @@ private:
     void drawOnaA(bool isHome, int DonA);
     void drawAnaO(bool isHome, int AonD);
     void drawWhoScored(const vector<SGoalsInfo> &home, const vector<SGoalsInfo> &away);
-    void saveMatchMessageToFile(int bkgcolor, int matchMinute, const wchar_t *message);
+    void saveMatchMessageToFile(int bkgColor, int matchMinute, const wchar_t *message);
 
     void playerTactics();
     void rivalTactics();
 
-    wstring getFootballerSurname(bool isPlayerBall, int footabllerId);
+    wstring getFootballerSurname(bool isPlayerBall, int footballerId);
     int getArbiterDecision(int instrTreatment);
     int getMiddlefieldFootballerIdWhoFouled(int teamSetting);
     int getDefFootballerId(int teamSetting);
     int getFootballerIdWhoShootDistance(int teamSetting);
     int getGoooalMinute(int matchMinute, MatchStatus matchStatus);
     int getRightWingerFootballerId(int teamSetting);
-    int getLefttWingerFootballerId(int teamSetting);
+    int getLeftWingerFootballerId(int teamSetting);
 
-    int getFooballerStats(const SFootballer& footballer);
-    int getFooballerStatsGoalkeeper(const SFootballer& footballer);
-    int getFooballerStatsDefence(const SFootballer& footballer);
-    int getFooballerStatsMiddlefield(const SFootballer& footballer);
-    int getFooballerStatsAttack(const SFootballer& footballer);
+    int getFootballerStats(const SFootballer& footballer);
+    int getFootballerStatsGoalkeeper(const SFootballer& footballer);
+    int getFootballerStatsDefence(const SFootballer& footballer);
+    int getFootballerStatsMiddlefield(const SFootballer& footballer);
+    int getFootballerStatsAttack(const SFootballer& footballer);
 
     SFormationsSum getFormationsSum(const SClub &clubRef, bool isPlayerTeam);
     SFormationsSum getPlayerFormationsSum(const SClub &clubRef);

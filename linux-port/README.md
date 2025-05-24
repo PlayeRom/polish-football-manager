@@ -8,4 +8,4 @@ In the *save* directory the game will be automatically created a state of game.
 
 ## Build from source
 
-Go to `src` directory and run `./__build_cmake.sh`. The binary fiile will be outputed to `src` directory. You can also run build script with `--run` (or `-r`) option to execute the binary file and run the game: `./__build_cmake.sh -r`.
+Go to `src` directory and run `./__build_cmake.sh`. The binary file will be outputted to `src` directory. You can also run build script with `--run` (or `-r`) option to execute the binary file and run the game: `./__build_cmake.sh -r`.

@@ -42,7 +42,7 @@ void MainMenu::run()
     do {
         draw();
 
-        menu = pInput->getKeyBoardPressed();
+        menu = pInput->getKeyboardPressed();
 
         bool isNewGame = false;
         switch (menu) {
@@ -75,35 +75,35 @@ void MainMenu::draw()
 {
     pInput->clrscr();
 
-    pColors->textbackground(BLACK);
-    pColors->textcolor(WHITE);
+    pColors->textBackground(BLACK);
+    pColors->textColor(WHITE);
     wcout << L"PlayeRom" << endl;
 
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     wcout << L" presents:";
 
-    pColors->textbackground(WHITE);
-    pColors->textcolor(RED);
+    pColors->textBackground(WHITE);
+    pColors->textColor(RED);
     wcout << endl << endl << pLang->get(L"   MANAGER of the   ");
 
-    pColors->textbackground(RED);
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textBackground(RED);
+    pColors->textColor(LIGHTGRAY);
     wcout << endl << pLang->get(L" POLISH LEAGUE 2002 ");
 
-    pColors->textbackground(BLACK);
+    pColors->textBackground(BLACK);
 
-    pColors->textcolor(DARKGRAY);
+    pColors->textColor(DARKGRAY);
     wcout << L"  v." VERSION;
 
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << endl << endl <<
         pLang->get(L"N New game") << endl <<
         pLang->get(L"L Load game");
 
-    pColors->textcolor(RED);
+    pColors->textColor(RED);
     wcout << endl << pLang->get(L"Q Quit") << endl;
 
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
 }
 
 /**
@@ -113,10 +113,10 @@ void MainMenu::draw()
  */
 bool MainMenu::newGame()
 {
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << endl << endl << pLang->get(L"Are you sure you want to start a new game? (Y/n): ");
-    wchar_t yn = pInput->getKeyBoardPressed();
-    if (yn != pLang->getYesKeyborad() && yn != L'\n') {
+    wchar_t yn = pInput->getKeyboardPressed();
+    if (yn != pLang->getYesKeyboard() && yn != L'\n') {
         return false;
     }
 
@@ -126,7 +126,7 @@ bool MainMenu::newGame()
     pFootballers->saveRivals();
 
     pInput->clrscr();
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
 
     wchar_t name[MAX_USER_NAME] = {0};
     wchar_t surname[MAX_USER_SURNAME] = {0};
@@ -139,8 +139,8 @@ bool MainMenu::newGame()
     pInput->getText2Buffer(surname, MAX_USER_SURNAME);
 
     wcout << endl << pLang->get(L"Do you want to enter your nickname? (Y/n): ");
-    yn = pInput->getKeyBoardPressed();
-    if (yn == pLang->getYesKeyborad() || yn == L'\n') {
+    yn = pInput->getKeyboardPressed();
+    if (yn == pLang->getYesKeyboard() || yn == L'\n') {
         wcout << endl << pLang->get(L"Enter your nickname: ");
         pInput->getText2Buffer(nick, MAX_USER_NICK);
     }
@@ -194,7 +194,7 @@ bool MainMenu::newGame()
  * Load the game
  *
  * @param isNewGame
- * @return
+ * @return bool
  */
 bool MainMenu::loadGame(bool isNewGame)
 {
@@ -214,7 +214,7 @@ bool MainMenu::loadGame(bool isNewGame)
 
 /**
  * Check whether save dir exist. If not create it.
- * @retrun bool
+ * @return bool
  */
 bool MainMenu::checkSaveDir()
 {

@@ -107,16 +107,16 @@ int Table::getClubNumberInPosition(int tablePosition)
  */
 void Table::drawTable(int clubId, const PlayerClub *club)
 {
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     wcout << BOX_LIGHT_DOWN_RIGHT;
     for (int i = 0; i < 16; i++) {
         wcout << BOX_LIGHT_HORIZONTAL;
     }
-    pColors->textcolor(WHITE);
+    pColors->textColor(WHITE);
     const int maxLabel = 18;
     const wstring label = pLang->cut(pLang->get(L" TABLE - I LEAGUE "), maxLabel);
     wcout << label;
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     // add missing horizonal according to translations
     for (int i = label.length(); i < maxLabel; i++) {
         wcout << BOX_LIGHT_HORIZONTAL;
@@ -134,25 +134,25 @@ void Table::drawTable(int clubId, const PlayerClub *club)
         wcout << BOX_LIGHT_HORIZONTAL;
     }
     wcout << BOX_LIGHT_DOWN_LEFT << endl << BOX_LIGHT_VERTICAL;
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << pLang->get(L"No  Club                  M ");
 
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << pLang->get(L"  W  D  L ");
 
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << pLang->get(L" G+  G- ");
 
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
-    pColors->textcolor(GREEN);
+    pColors->textColor(GREEN);
     wcout << pLang->get(L" Pts");
 
-    pColors->textcolor(LIGHTGRAY);
+    pColors->textColor(LIGHTGRAY);
     wcout << BOX_LIGHT_VERTICAL;
 
     drawTableHorizontalInner();
@@ -160,7 +160,7 @@ void Table::drawTable(int clubId, const PlayerClub *club)
     for (int i = 0; i < MAX_CLUBS; i++) {
         wcout << endl << BOX_LIGHT_VERTICAL;
         if (table[i].clubId == clubId) {
-            pColors->textcolor(YELLOW);
+            pColors->textColor(YELLOW);
         }
         // pozycja w tabeli:
         wcout << std::setfill(L' ') << std::setw(2) << table[i].tablePosition << L". ";
@@ -186,7 +186,7 @@ void Table::drawTable(int clubId, const PlayerClub *club)
         // punkty:
         wcout << std::setfill(L' ') << std::setw(2) << table[i].points;
 
-        pColors->textcolor(LIGHTGRAY);
+        pColors->textColor(LIGHTGRAY);
         wcout << L" " << BOX_LIGHT_VERTICAL;
 
         if (i == 0) {

@@ -24,7 +24,7 @@ public:
     }
 
     const string& getLngCode() const { return lngCode; }
-    wchar_t getYesKeyborad() const;
+    wchar_t getYesKeyboard() const;
     const wstring cut(wstring text, int maxLen);
 
 private:

@@ -25,7 +25,7 @@ wchar_t Input::getch() const
 	newt = oldt;
 	newt.c_lflag &= ~(ICANON | ECHO);
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	wchar_t result = getwchar(); // dla entera getwchar zwraza \n, a getchar \r, grrrr!
+	wchar_t result = getwchar(); // dla entera getwchar zwraca \n, a getchar \r, grrrr!
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
 	return result;
@@ -59,7 +59,7 @@ void Input::getNumbersExchange(int &number1, int &number2) const
     std::wstring input;
     std::getline(std::wcin, input);
 
-    // rozdziel liczby odzielone spacja
+    // rozdziel liczby oddzielone spacją
     std::wistringstream iss(input);
     std::wstring strNumber;
     int count = 0;
@@ -122,13 +122,13 @@ float Input::getFloat() const
 }
 
 /**
- * W sumie tego należy używac przy wskazaniu przez usera akcji we wszelkim menu
+ * W sumie tego należy używać przy wskazaniu przez usera akcji we wszelkich menu
  * Obsługuje znaki alfanumeryczne, strzałki, page up/down, home/end, delete, backspance, tab, enter
  * UWAGA 1: Nie zwróci espace.
- * UWAGA 2: F1 - F12 zwóci niespodziewane wyniki
+ * UWAGA 2: F1 - F12 zwróci niespodziewane wyniki
  * @return Wcisniety klawisz
  */
-wchar_t Input::getKeyBoardPressed() const
+wchar_t Input::getKeyboardPressed() const
 {
     wchar_t key[5];
     int i = 0;
@@ -140,7 +140,7 @@ wchar_t Input::getKeyBoardPressed() const
 
         wchar_t ch = getch();
         if (ch == L'\033') {
-            // klawisz niealfa zawsze rozpoczyna się od znaku escape '\033', wiec moge wyzerowac index
+            // klawisz nie alfa zawsze rozpoczyna się od znaku escape '\033', wiec moge wyzerowac index
             // Jest to potrzebne bo klawisz Escape wysyła tylko ten jeden znak
             isEscape = true;
             i = 0;
@@ -152,7 +152,7 @@ wchar_t Input::getKeyBoardPressed() const
         else if (i == 2 && isEscape) {
             isEscape = false;
         }
-        /*if (c == L'\n') { // gdyby getch wymagało entera, trzeba to odkomentowac
+        /*if (c == L'\n') { // gdyby getch wymagało entera, trzeba to odkomentować
             i = 0;
             continue;
         }
@@ -160,10 +160,10 @@ wchar_t Input::getKeyBoardPressed() const
         wchar_t cToUpper = toupper(ch);
         if (i == 0 &&
             (
-                (cToUpper >= 32 && cToUpper <= 126) || // zakres normalnych zanków ascii
-                cToUpper == _KEY_BACKSPACE ||
-                cToUpper == _KEY_TAB ||
-                cToUpper == _KEY_ENTER
+                (cToUpper >= 32 && cToUpper <= 126) // zakres normalnych znaków ascii
+                || cToUpper == _KEY_BACKSPACE
+                || cToUpper == _KEY_TAB
+                || cToUpper == _KEY_ENTER
             )
         ) {
             // zwróć klawisz alfanumeryczny toupper
@@ -171,12 +171,18 @@ wchar_t Input::getKeyBoardPressed() const
         }
         else if (i == 2 && key[0] == L'\033' && key[1] == L'[' &&
             (
-                ch == KEY_MAP_UP || ch == KEY_MAP_DOWN || ch == KEY_MAP_RIGHT || ch == KEY_MAP_LEFT ||
-                ch == KEY_MAP_PAGE_UP || ch == KEY_MAP_PAGE_DOWN || ch == KEY_MAP_HOME || ch == KEY_MAP_END ||
-                ch == KEY_MAP_DELETE
+                ch == KEY_MAP_UP
+                || ch == KEY_MAP_DOWN
+                || ch == KEY_MAP_RIGHT
+                || ch == KEY_MAP_LEFT
+                || ch == KEY_MAP_PAGE_UP
+                || ch == KEY_MAP_PAGE_DOWN
+                || ch == KEY_MAP_HOME
+                || ch == KEY_MAP_END
+                || ch == KEY_MAP_DELETE
             )
         ) {
-            // zwróć klawsz speclany/niealfanumeryczny
+            // zwróć klawisz specjalny/niealfanumeryczny
             switch (ch) {
                 case KEY_MAP_UP:        return _KEY_UP;
                 case KEY_MAP_DOWN:      return _KEY_DOWN;
@@ -210,11 +216,11 @@ void Input::getText2Buffer(wchar_t *pBuffer, int maxLength) const
     std::wstring strName;
     std::getline(std::wcin, strName);
 
-    int lenght = std::min((int)strName.length(), maxLength - 1);
-    for (int i = 0; i < lenght; i++) {
+    int length = std::min((int)strName.length(), maxLength - 1);
+    for (int i = 0; i < length; i++) {
         pBuffer[i] = strName[i];
     }
-    pBuffer[lenght + 1] = 0;
+    pBuffer[length + 1] = 0;
 
     pBuffer[0] = toupper(pBuffer[0]);
 }
@@ -236,5 +242,6 @@ int Input::kbhit() const
 
     int bytesWaiting;
     ioctl(STDIN, FIONREAD, &bytesWaiting);
+
     return bytesWaiting;
 }

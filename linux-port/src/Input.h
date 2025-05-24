@@ -35,7 +35,7 @@
 #define _KEY_BACKSPACE  8
 #define _KEY_TAB        9
 #define _KEY_ENTER      10
-// dla klawiszy nieaflanumerycznych ustawiam kody dla małych liter, jako ze uzywam toupper,
+// dla klawiszy nie alfanumerycznych ustawiam kody dla małych liter, jako ze uzywam toupper,
 // wiec male litery nie sa uzywane
 #define _KEY_UP         97
 #define _KEY_DOWN       98
@@ -55,7 +55,7 @@ public:
     void getNumbersExchange(int &number1, int &number2) const;
     int getNumber() const;
     float getFloat() const;
-    wchar_t getKeyBoardPressed() const;
+    wchar_t getKeyboardPressed() const;
     void getText2Buffer(wchar_t *pBuffer, int maxLength) const;
     int kbhit() const;
 };
