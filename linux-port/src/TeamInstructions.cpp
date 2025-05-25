@@ -35,9 +35,9 @@ void TeamInstructions::draw(
     vector< pair<wstring, int> > data[MAX_TEAM_INSTRUCTIONS] = {
         {
             {pLang->get(L"Attitude"), attitude},
-            {pLang->get(L"Normal"), INSTR_ATTIT_NORMAL},
-            {pLang->get(L"Defence"), INSTR_ATTIT_DEFENSIVE},
-            {pLang->get(L"Attack"), INSTR_ATTIT_ATTACK}
+            {pLang->get(L"Normal"), INSTR_ATTITUDE_NORMAL},
+            {pLang->get(L"Defence"), INSTR_ATTITUDE_DEFENSE},
+            {pLang->get(L"Attack"), INSTR_ATTITUDE_ATTACK}
         },
         {
             {pLang->get(L"Passing the ball"), passes},

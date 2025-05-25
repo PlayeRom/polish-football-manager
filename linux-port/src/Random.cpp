@@ -3,7 +3,7 @@
 
 /**
  * Random number from 1 do given number (included)
- * @param int toClosed
+ * @param int included
  * @return int
  */
 int Random::get(int included) const

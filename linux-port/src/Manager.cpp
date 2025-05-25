@@ -1016,12 +1016,12 @@ void Manager::menuItemTactics()
                         wcout << endl << endl << pLang->get(L"TEAM INSTRUCTIONS") << endl;
 
                         pTeamInstr->draw(
-                            clubRef.inst[0],
-                            clubRef.inst[1],
-                            clubRef.inst[2],
-                            clubRef.inst[3],
-                            clubRef.inst[4],
-                            clubRef.inst[5],
+                            clubRef.instrPasses,
+                            clubRef.instrTreatment,
+                            clubRef.instrPressing,
+                            clubRef.instrOffsides,
+                            clubRef.instrContra,
+                            clubRef.instrAttitude,
                             belka
                         );
 
@@ -1047,67 +1047,55 @@ void Manager::menuItemTactics()
                             }
                             case _KEY_RIGHT: { // C 67
                                 if (belka == 1) {
-                                    if (++clubRef.inst[5] == 4) {
-                                        clubRef.inst[5] = 1;
+                                    if (++clubRef.instrAttitude == INSTR_ATTITUDE_MAX + 1) {
+                                        clubRef.instrAttitude = INSTR_ATTITUDE_MIN;
                                     }
                                 }
                                 else if (belka == 2) {
-                                    if (++clubRef.inst[0] == 5) {
-                                        clubRef.inst[0] = 1;
+                                    if (++clubRef.instrPasses == INSTR_PASSES_MAX + 1) {
+                                        clubRef.instrPasses = INSTR_PASSES_MIN;
                                     }
                                 }
                                 else if (belka == 3) {
-                                    if (++clubRef.inst[1] == 4) {
-                                        clubRef.inst[1] = 1;
+                                    if (++clubRef.instrTreatment == INSTR_TREATMENT_MAX + 1) {
+                                        clubRef.instrTreatment = INSTR_TREATMENT_MIN;
                                     }
                                 }
                                 else if (belka == 4) {
-                                    if (++clubRef.inst[2] == 2) {
-                                        clubRef.inst[2] = 0;
-                                    }
+                                    clubRef.instrPressing = 1 - clubRef.instrPressing; // zamień 0 <-> 1
                                 }
                                 else if (belka == 5) {
-                                    if (++clubRef.inst[3] == 2) {
-                                        clubRef.inst[3] = 0;
-                                    }
+                                    clubRef.instrOffsides = 1 - clubRef.instrOffsides; // zamień 0 <-> 1
                                 }
                                 else if (belka == 6) {
-                                    if (++clubRef.inst[4] == 2) {
-                                        clubRef.inst[4] = 0;
-                                    }
+                                    clubRef.instrContra = 1 - clubRef.instrContra; // zamień 0 <-> 1
                                 }
                                 break;
                             }
                             case _KEY_LEFT: { // D 68
                                 if (belka == 1) {
-                                    if (--clubRef.inst[5] == 0) {
-                                        clubRef.inst[5] = 3;
+                                    if (--clubRef.instrAttitude == INSTR_ATTITUDE_MIN - 1) {
+                                        clubRef.instrAttitude = INSTR_ATTITUDE_MAX;
                                     }
                                 }
                                 else if (belka == 2) {
-                                    if (--clubRef.inst[0] == 0) {
-                                        clubRef.inst[0] = 4;
+                                    if (--clubRef.instrPasses == INSTR_PASSES_MIN - 1) {
+                                        clubRef.instrPasses = INSTR_PASSES_MAX;
                                     }
                                 }
                                 else if (belka == 3) {
-                                    if (--clubRef.inst[1] == 0) {
-                                        clubRef.inst[1] = 3;
+                                    if (--clubRef.instrTreatment == INSTR_TREATMENT_MIN - 1) {
+                                        clubRef.instrTreatment = INSTR_TREATMENT_MAX;
                                     }
                                 }
                                 else if (belka == 4) {
-                                    if (--clubRef.inst[2] == -1) {
-                                        clubRef.inst[2] = 1;
-                                    }
+                                    clubRef.instrPressing = 1 - clubRef.instrPressing; // zamień 0 <-> 1
                                 }
                                 else if (belka == 5) {
-                                    if (--clubRef.inst[3] == -1) {
-                                        clubRef.inst[3] = 1;
-                                    }
+                                    clubRef.instrOffsides = 1 - clubRef.instrOffsides; // zamień 0 <-> 1
                                 }
                                 else if (belka == 6) {
-                                    if (--clubRef.inst[4] == -1) {
-                                        clubRef.inst[4] = 1;
-                                    }
+                                    clubRef.instrContra = 1 - clubRef.instrContra; // zamień 0 <-> 1
                                 }
                                 break;
                             }
@@ -1980,12 +1968,12 @@ void Manager::menuItemRival()
                     wcout << endl << pLang->get(L"Team instructions:");
 
                     pTeamInstr->draw(
-                        clubRef.rivalInst[0],
-                        clubRef.rivalInst[1],
-                        clubRef.rivalInst[2],
-                        clubRef.rivalInst[3],
-                        clubRef.rivalInst[4],
-                        clubRef.rivalInst[5],
+                        clubRef.rivalInstrPasses,
+                        clubRef.rivalInstrTreatment,
+                        clubRef.rivalInstrPressing,
+                        clubRef.rivalInstrOffsides,
+                        clubRef.rivalInstrContra,
+                        clubRef.rivalInstrAttitude,
                         0
                     );
 
@@ -3228,33 +3216,33 @@ void Manager::setAssistantMessageAfterMatch()
         if (!clubRef.isWalkover) {
             if (clubRef.playerGoals <= clubRef.rivalGoals) {
                 // przegrana
-                if (AnaO < -20 && clubRef.inst[4] == 0) {
+                if (AnaO < -20 && clubRef.instrContra == INSTR_NO) {
                     // 20 = ASYSTENT: Byliśmy osłabieni w ataku, więc moim zdaniem gra z kontry przyniosłaby lepsze rezultaty.
                     pNews->setTmpMsgData(20);
                 }
-                if (PnaP < -10 && clubRef.inst[0] != 4) {
+                if (PnaP < -10 && clubRef.instrPasses != INSTR_PASSES_LONG) {
                     pNews->setTmpMsgData(21);
                 }
-                if (OnaA < 0 && clubRef.inst[3] == 0) {
+                if (OnaA < 0 && clubRef.instrOffsides == INSTR_NO) {
                     pNews->setTmpMsgData(22);
                 }
-                if (OnaA > 20 && clubRef.inst[3] == 1) {
+                if (OnaA > 20 && clubRef.instrOffsides == INSTR_YES) {
                     pNews->setTmpMsgData(23);
                 }
-                if (PnaP > 10 && clubRef.inst[0] != 2) {
+                if (PnaP > 10 && clubRef.instrPasses != INSTR_PASSES_SHORT) {
                     pNews->setTmpMsgData(24);
                 }
-                if (AnaO > 0 && clubRef.inst[4] == 1) {
+                if (AnaO > 0 && clubRef.instrContra == INSTR_YES) {
                     pNews->setTmpMsgData(25);
                 }
 
-                if (clubRef.inst[2] == 0) {
+                if (clubRef.instrPressing == INSTR_NO) {
                     pNews->setTmpMsgData(26);
                 }
-                if (clubRef.inst[2] == 1) {
+                if (clubRef.instrPressing == INSTR_YES) {
                     pNews->setTmpMsgData(27);
                 }
-                if (clubRef.inst[1] != 3) {
+                if (clubRef.instrTreatment != INSTR_TREATMENT_HARD) {
                     pNews->setTmpMsgData(28);
                 }
             }
@@ -3292,20 +3280,20 @@ void Manager::setRivalForPlayer()
         clubRef.rivalData[0] = pRounds->getClubIdInRoundByClubIndex(clubRef.roundNumber, clubRef.rivalData[3]);
         clubRef.rivalData[2] = getRivalSetting(clubRef.rivalData[0]);
 
-        clubRef.rivalInst[0] = pRand->get(4); // passing always random
-        clubRef.rivalInst[1] = (pRand->get(3) == 1) // rival treatment (never delicate)
+        clubRef.rivalInstrPasses = pRand->get(4); // passing always random
+        clubRef.rivalInstrTreatment = (pRand->get(3) == 1) // rival treatment (never delicate)
             ? 3 // hard 1/3 chance
             : 1; // normal 2/3 chance
 
-        clubRef.rivalInst[2] = (pRand->get(4) == 1) // pressing 3/4 chance for yes
+        clubRef.rivalInstrPressing = (pRand->get(4) == 1) // pressing 3/4 chance for yes
             ? 0 // no
             : 1; // yes
 
-        clubRef.rivalInst[3] = getRivalOffsideTrap(clubRef.rivalData[2]);
-        clubRef.rivalInst[4] = getRivalContra(clubRef.rivalData[2]);
+        clubRef.rivalInstrOffsides = getRivalOffsideTrap(clubRef.rivalData[2]);
+        clubRef.rivalInstrContra = getRivalContra(clubRef.rivalData[2]);
 
         // nastawienie rywala: normalne, obronne, atak
-        clubRef.rivalInst[5] = getRivalAttitude(clubRef.rivalData[2]);
+        clubRef.rivalInstrAttitude = getRivalAttitude(clubRef.rivalData[2]);
 
         pClub->save();
 
@@ -3400,23 +3388,23 @@ int Manager::getRivalAttitude(int rivalSetting)
     switch (rivalSetting) {
         case T4_4_2_DEF:
         case T5_3_2_DEF: {
-            return pRand->get(3) == 1 ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_DEFENSIVE; // 2/3 chance for defensive, attack never
+            return pRand->get(3) == 1 ? INSTR_ATTITUDE_NORMAL : INSTR_ATTITUDE_DEFENSE; // 2/3 chance for defensive, attack never
         }
         case T4_4_2_ATT:
         case T4_3_3:
         case T5_3_2_ATT: {
-            return pRand->get(3) == 1 ? INSTR_ATTIT_NORMAL : INSTR_ATTIT_ATTACK; // 2/3 chance for attack, defensive never
+            return pRand->get(3) == 1 ? INSTR_ATTITUDE_NORMAL : INSTR_ATTITUDE_ATTACK; // 2/3 chance for attack, defensive never
         }
         case T3_5_2:
         case T5_3_2:  {
             switch (pRand->get(1, 4)) {
-                case 1:     return INSTR_ATTIT_DEFENSIVE; // 1/4 chance for defensive
-                case 2:     return INSTR_ATTIT_ATTACK; // 1/4 chance for attack
-                default:    return INSTR_ATTIT_NORMAL; // 2/4 chance for normal attitude
+                case 1:  return INSTR_ATTITUDE_DEFENSE; // 1/4 chance for defensive
+                case 2:  return INSTR_ATTITUDE_ATTACK; // 1/4 chance for attack
+                default: return INSTR_ATTITUDE_NORMAL; // 2/4 chance for normal attitude
             }
         }
         default: {
-            return pRand->get(3) == 1 ? INSTR_ATTIT_ATTACK : INSTR_ATTIT_NORMAL; // 2/3 chance for normal, defensive never
+            return pRand->get(3) == 1 ? INSTR_ATTITUDE_ATTACK : INSTR_ATTITUDE_NORMAL; // 2/3 chance for normal, defensive never
         }
     }
 }

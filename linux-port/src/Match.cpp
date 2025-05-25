@@ -391,7 +391,7 @@ bool Match::runMatch()
                     isPossibleGoToTactics = true;
                     msg[1] = 14;
                     msg[2] = 19;
-                    int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
+                    int instrTreatment = isPlayerBall ? clubRef.rivalInstrTreatment : clubRef.instrTreatment;
                     int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
                     isPlayerBall ? statRival[FOULS]++ : statPlayer[FOULS]++;
 
@@ -600,7 +600,7 @@ bool Match::runMatch()
                     msgFootballers[5] = msgFootballers[2];
                     msgWhoBall[2] = !isPlayerBall;
                     msgWhoBall[3] = !isPlayerBall;
-                    int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
+                    int instrTreatment = isPlayerBall ? clubRef.rivalInstrTreatment : clubRef.instrTreatment;
                     what = getArbiterDecision(instrTreatment);
 
                     if (what == 3) { //jest żółta
@@ -693,7 +693,7 @@ bool Match::runMatch()
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, los - 1);
                     msgWhoBall[1] = isPlayerBall;
                     msgWhoBall[2] = isPlayerBall;
-                    int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
+                    int instrPasses = isPlayerBall ? clubRef.rivalInstrPasses : clubRef.instrPasses;
 
                     vector<SFootballer> &tmpFootballers = !isPlayerBall
                         ? pFootballers->getPlayersTeam()
@@ -810,7 +810,7 @@ bool Match::runMatch()
                     whereIsAction = ACTION_IN_PENALTY_OR_1ON1;
                 }
                 else if (what == 16) { // defence kick off
-                    int instrPasses = isPlayerBall ? clubRef.rivalInst[0] : clubRef.inst[0];
+                    int instrPasses = isPlayerBall ? clubRef.rivalInstrPasses : clubRef.instrPasses;
 
                     los = pRand->get(6);
                     switch (instrPasses) {
@@ -885,7 +885,7 @@ bool Match::runMatch()
 
                     msg[2] = pRand->get(51, 52);
 
-                    int instrTreatment = isPlayerBall ? clubRef.rivalInst[1] : clubRef.inst[1];
+                    int instrTreatment = isPlayerBall ? clubRef.rivalInstrTreatment : clubRef.instrTreatment;
                     msgWhoBall[2] = !isPlayerBall;
                     msgWhoBall[3] = !isPlayerBall;
                     isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
@@ -1037,7 +1037,7 @@ bool Match::runMatch()
                     msgFootballers[2] = getFootballerSurname(!isPlayerBall, 1);
                     msgWhoBall[1] = !isPlayerBall;
                     msgWhoBall[2] = !isPlayerBall;
-                    int instrTreatment = isPlayerBall ? clubRef.inst[1] : clubRef.rivalInst[1];
+                    int instrTreatment = isPlayerBall ? clubRef.instrTreatment : clubRef.rivalInstrTreatment;
                     int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
 
                     isPlayerBall ? statPlayer[FOULS]++ : statRival[FOULS]++;
@@ -1727,11 +1727,11 @@ bool Match::runMatch()
             //***************** ball possessions and zones *********************
 
             //***************** kondycja ***************************
-            int k = (clubRef.inst[2] == 1) ? 2 : 3;
+            int randomMax = (clubRef.instrPressing == INSTR_YES) ? 2 : 3;
 
             for (size_t index = 0; index < pFootballers->getSizePlayerTeam(); index++) {
                 SFootballer &footballer = pFootballers->getPlayerTeam(index);
-                los = pRand->get(k);
+                los = pRand->get(randomMax);
                 if (los > 1) {
                     los = 0;
                 }
@@ -1746,11 +1746,11 @@ bool Match::runMatch()
             }
             pFootballers->savePlayerTeam();
 
-            k = (clubRef.rivalInst[2] == 1) ? 2 : 3;
+            randomMax = (clubRef.rivalInstrPressing == INSTR_YES) ? 2 : 3;
 
             for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                 SFootballer &footballer = pFootballers->getRival(index);
-                los = pRand->get(k);
+                los = pRand->get(randomMax);
                 if (los > 1) {
                     los = 0;
                 }
@@ -2359,14 +2359,14 @@ int Match::whatHappened(
     int x1, x2, x3, los, what;
     if (whereIsAction == ACTION_IN_MIDDLE_FIELD) { // P/P
         if (isPlayerBall) {
-            x1 = clubRef.inst[4]; //gra z kontry twoja
+            x1 = clubRef.instrContra; //gra z kontry twoja
             x2 = clubRef.trained[1]; //podania trening
-            x3 = clubRef.rivalInst[2]; //pressing rywala
+            x3 = clubRef.rivalInstrPressing; //pressing rywala
         }
         else {
-            x1 = clubRef.rivalInst[4]; //gra z kontry rywala
+            x1 = clubRef.rivalInstrContra; //gra z kontry rywala
             x2 = 2; //podania trening rywala
-            x3 = clubRef.inst[2]; //pressing twój
+            x3 = clubRef.instrPressing; //pressing twój
         }
         los = pRand->get(27);
         if (los < 10) {
@@ -2703,12 +2703,9 @@ int Match::whatHappened(
     }
     else if (whereIsAction == ACTION_IN_PENALTY_AREA) { // penalty area A/D
         los = pRand->get(30);
-        if (isPlayerBall) {
-            x1 = clubRef.rivalInst[3]; // offsides trap by rival
-        }
-        else {
-            x1 = clubRef.inst[3];
-        }
+        x1 = isPlayerBall
+            ? clubRef.rivalInstrOffsides // offsides trap by rival
+            : clubRef.instrOffsides;
 
         if (los < 11) {
             what = los + 13;
@@ -3498,12 +3495,12 @@ void Match::playerTactics()
                     wcout << pLang->get(L"TEAM INSTRUCTIONS") << L" - " << pClub->getClubName(clubRef.clubId - 1);
 
                     pTeamInstruction->draw(
-                        clubRef.inst[0],
-                        clubRef.inst[1],
-                        clubRef.inst[2],
-                        clubRef.inst[3],
-                        clubRef.inst[4],
-                        clubRef.inst[5],
+                        clubRef.instrPasses,
+                        clubRef.instrTreatment,
+                        clubRef.instrPressing,
+                        clubRef.instrOffsides,
+                        clubRef.instrContra,
+                        clubRef.instrAttitude,
                         belka
                     );
 
@@ -3529,55 +3526,55 @@ void Match::playerTactics()
                         }
                         case _KEY_RIGHT: {
                             if (belka == 1) {
-                                clubRef.inst[5]++;
-                                if (clubRef.inst[5] == 4) clubRef.inst[5] = 1;
+                                if (++clubRef.instrAttitude == INSTR_ATTITUDE_MAX + 1) {
+                                    clubRef.instrAttitude = INSTR_ATTITUDE_MIN;
+                                }
                             }
                             else if (belka == 2) {
-                                clubRef.inst[0]++;
-                                if (clubRef.inst[0] == 5) clubRef.inst[0] = 1;
+                                if (++clubRef.instrPasses == INSTR_PASSES_MAX + 1) {
+                                    clubRef.instrPasses = INSTR_PASSES_MIN;
+                                }
                             }
                             else if (belka == 3) {
-                                clubRef.inst[1]++;
-                                if (clubRef.inst[1] == 4) clubRef.inst[1] = 1;
+                                if (++clubRef.instrTreatment == INSTR_TREATMENT_MAX + 1) {
+                                    clubRef.instrTreatment = INSTR_TREATMENT_MIN;
+                                }
                             }
                             else if (belka == 4) {
-                                clubRef.inst[2]++;
-                                if (clubRef.inst[2] == 2) clubRef.inst[2] = 0;
+                                clubRef.instrPressing = 1 - clubRef.instrPressing; // zamiana 1 <-> 0
                             }
                             else if (belka == 5) {
-                                clubRef.inst[3]++;
-                                if (clubRef.inst[3] == 2) clubRef.inst[3] = 0;
+                                clubRef.instrOffsides = 1 - clubRef.instrOffsides; // zamiana 1 <-> 0
                             }
                             else if (belka == 6) {
-                                clubRef.inst[4]++;
-                                if (clubRef.inst[4] == 2) clubRef.inst[4] = 0;
+                                clubRef.instrContra = 1 - clubRef.instrContra; // zamiana 1 <-> 0
                             }
                             break;
                         }
                         case _KEY_LEFT: {
                             if (belka == 1) {
-                                clubRef.inst[5]--;
-                                if (clubRef.inst[5] == 0) clubRef.inst[5] = 3;
+                                if (--clubRef.instrAttitude == INSTR_ATTITUDE_MIN - 1) {
+                                    clubRef.instrAttitude = INSTR_ATTITUDE_MAX;
+                                }
                             }
                             else if (belka == 2) {
-                                clubRef.inst[0]--;
-                                if (clubRef.inst[0] == 0) clubRef.inst[0] = 4;
+                                if (--clubRef.instrPasses == INSTR_PASSES_MIN - 1) {
+                                    clubRef.instrPasses = INSTR_PASSES_MAX;
+                                }
                             }
                             else if (belka == 3) {
-                                clubRef.inst[1]--;
-                                if (clubRef.inst[1] == 0) clubRef.inst[1] = 3;
+                                if (--clubRef.instrTreatment == INSTR_TREATMENT_MIN - 1) {
+                                    clubRef.instrTreatment = INSTR_TREATMENT_MAX;
+                                }
                             }
                             else if (belka == 4) {
-                                clubRef.inst[2]--;
-                                if (clubRef.inst[2] == -1) clubRef.inst[2] = 1;
+                                clubRef.instrPressing = 1 - clubRef.instrPressing; // zamiana 1 <-> 0
                             }
                             else if (belka == 5) {
-                                clubRef.inst[3]--;
-                                if (clubRef.inst[3] == -1) clubRef.inst[3] = 1;
+                                clubRef.instrOffsides = 1 - clubRef.instrOffsides; // zamiana 1 <-> 0
                             }
                             else if (belka == 6) {
-                                clubRef.inst[4]--;
-                                if (clubRef.inst[4] == -1) clubRef.inst[4] = 1;
+                                clubRef.instrContra = 1 - clubRef.instrContra; // zamiana 1 <-> 0
                             }
                             break;
                         }
@@ -3627,12 +3624,12 @@ void Match::rivalTactics()
                 wcout << pLang->get(L"TEAM INSTRUCTIONS") << L" - " << pClub->getClubName(clubRef.rivalData[0] - 1);
 
                 pTeamInstruction->draw(
-                    clubRef.rivalInst[0],
-                    clubRef.rivalInst[1],
-                    clubRef.rivalInst[2],
-                    clubRef.rivalInst[3],
-                    clubRef.rivalInst[4],
-                    clubRef.rivalInst[5],
+                    clubRef.rivalInstrPasses,
+                    clubRef.rivalInstrTreatment,
+                    clubRef.rivalInstrPressing,
+                    clubRef.rivalInstrOffsides,
+                    clubRef.rivalInstrContra,
+                    clubRef.rivalInstrAttitude,
                     0
                 );
 
@@ -3666,20 +3663,20 @@ int Match::getArbiterDecision(int instrTreatment)
                 return 1; // nie ma kartki 1/2
             }
             else if (chance == 4 || chance == 5) {
-                return 2; // słowne upomienie 1/3
+                return 2; // słowne upomnienie 1/3
             }
 
-            return 3; // żólta kartka 1/6
+            return 3; // żółta kartka 1/6
         }
         case INSTR_TREATMENT_HARD: {
             if (chance == 1) {
                 return 1; //nie ma kartki 1/6
             }
             else if (chance == 2 || chance == 3) {
-                return 2; //słowne upomienie 1/3
+                return 2; //słowne upomnienie 1/3
             }
 
-            return 3; //żólta kartka 1/2
+            return 3; //żółta kartka 1/2
         }
         case INSTR_TREATMENT_NORMAL:
         default: {
@@ -3687,10 +3684,10 @@ int Match::getArbiterDecision(int instrTreatment)
                 return 1; // nie ma kartki 1/3
             }
             else if (chance == 3 || chance == 4) {
-                return 2; // słowne upomienie 1/3
+                return 2; // słowne upomnienie 1/3
             }
 
-            return 3; // żólta kartka 1/3
+            return 3; // żółta kartka 1/3
         }
     }
 }
@@ -3985,7 +3982,7 @@ SFormationsSum Match::getPlayerFormationsSum(const SClub &clubRef)
     playerFormationsSum.sumAtt += playerFormationsSum.goalBonus / 1000;
     playerFormationsSum.sumMid += playerFormationsSum.goalBonus / 1000;
 
-    switch (clubRef.inst[1]) {
+    switch (clubRef.instrTreatment) {
         case INSTR_TREATMENT_HARD: { // obchodzenie sie twarde
             playerFormationsSum.sumDef += 5;
             playerFormationsSum.sumMid += 5;
@@ -4000,13 +3997,13 @@ SFormationsSum Match::getPlayerFormationsSum(const SClub &clubRef)
         }
     }
 
-    switch (clubRef.inst[5]) {
-        case INSTR_ATTIT_DEFENSIVE: { //nastawienie obronne
+    switch (clubRef.instrAttitude) {
+        case INSTR_ATTITUDE_DEFENSE: { //nastawienie obronne
             playerFormationsSum.sumDef += 10;
             playerFormationsSum.sumAtt -= 10;
             break;
         }
-        case INSTR_ATTIT_ATTACK: { //nastawienie atak
+        case INSTR_ATTITUDE_ATTACK: { //nastawienie atak
             playerFormationsSum.sumDef -= 10;
             playerFormationsSum.sumAtt += 10;
             break;
@@ -4060,7 +4057,7 @@ SFormationsSum Match::getRivalFormationsSum(const SClub &clubRef)
         rivalFormationsSum.sumAtt += 10;
     }
 
-    switch (clubRef.rivalInst[1]) {
+    switch (clubRef.rivalInstrTreatment) {
         case INSTR_TREATMENT_HARD: {
             rivalFormationsSum.sumDef += 5;
             rivalFormationsSum.sumMid += 5;
@@ -4075,13 +4072,13 @@ SFormationsSum Match::getRivalFormationsSum(const SClub &clubRef)
         }
     }
 
-    switch (clubRef.rivalInst[5]) {
-        case INSTR_ATTIT_DEFENSIVE: { // nastawienie obronne
+    switch (clubRef.rivalInstrAttitude) {
+        case INSTR_ATTITUDE_DEFENSE: { // nastawienie obronne
             rivalFormationsSum.sumDef += 10;
             rivalFormationsSum.sumAtt -= 10;
             break;
         }
-        case INSTR_ATTIT_ATTACK: { // nastawienie atak
+        case INSTR_ATTITUDE_ATTACK: { // nastawienie atak
             rivalFormationsSum.sumDef -= 10;
             rivalFormationsSum.sumAtt += 10;
             break;

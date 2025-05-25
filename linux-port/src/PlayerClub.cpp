@@ -104,9 +104,12 @@ void PlayerClub::initNewClub(int clubId)
     memset(club.finances, 0, 14 * sizeof(float));
     memset(club.financesLastMonth, 0, 14 * sizeof(float));
 
-    for (int i = 0; i < MAX_TEAM_INSTRUCTIONS; i++) {
-        club.inst[i] = (i == 0 || i == 1 || i == 5) ? 1 : 0;
-    }
+    club.instrPasses = INSTR_PASSES_MIXES;
+    club.instrTreatment = INSTR_TREATMENT_NORMAL;
+    club.instrPressing = INSTR_NO;
+    club.instrOffsides = INSTR_NO;
+    club.instrContra = INSTR_NO;
+    club.instrAttitude = INSTR_ATTITUDE_NORMAL;
 }
 
 void PlayerClub::save() const

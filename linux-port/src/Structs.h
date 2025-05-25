@@ -45,19 +45,25 @@
 // values ​​for instructions in tactics
 #define INSTR_PASSES_MIXES      1 // podania mieszane
 #define INSTR_PASSES_SHORT      2 // podania krotkie
-#define INSTR_PASSES_MIDDLE     3 // podania srednie
+#define INSTR_PASSES_MIDDLE     3 // podania średnie
 #define INSTR_PASSES_LONG       4 // podania długie
+#define INSTR_PASSES_MIN        INSTR_PASSES_MIXES
+#define INSTR_PASSES_MAX        INSTR_PASSES_LONG
 
 #define INSTR_TREATMENT_NORMAL  1 // traktowanie rywala: normalnie
 #define INSTR_TREATMENT_SOFT    2 // traktowanie rywala: delikatnie
 #define INSTR_TREATMENT_HARD    3 // traktowanie rywala: twardo
+#define INSTR_TREATMENT_MIN     INSTR_TREATMENT_NORMAL
+#define INSTR_TREATMENT_MAX     INSTR_TREATMENT_HARD
 
 #define INSTR_YES               1 // ogolnie tak
 #define INSTR_NO                0 // ogolnie nie
 
-#define INSTR_ATTIT_NORMAL      1 // nastawienie normalne
-#define INSTR_ATTIT_DEFENSIVE   2 // nastawienie obronne
-#define INSTR_ATTIT_ATTACK      3 // nastawienie atak
+#define INSTR_ATTITUDE_NORMAL   1 // nastawienie normalne
+#define INSTR_ATTITUDE_DEFENSE  2 // nastawienie obronne
+#define INSTR_ATTITUDE_ATTACK   3 // nastawienie atak
+#define INSTR_ATTITUDE_MIN      INSTR_ATTITUDE_NORMAL
+#define INSTR_ATTITUDE_MAX      INSTR_ATTITUDE_ATTACK
 
 #define TRAINING_SLOTS_NUMBER   28 // 7 days x 4 slots per day
 
@@ -91,16 +97,14 @@ struct SClub {
     // +/-BOPN
     int treBOPN;
 
-    int inst[MAX_TEAM_INSTRUCTIONS];
-    /**
-     * instrukcje dla zespołu podczas meczu
-     * 0 - podania: 1 - mieszane, 2 - krótkie, 3 - srednie, 4 - długie
-     * 1 - obchodzenie się z rywalem: 1 - normalne, 2 - delikatne, 3 - twarde
-     * 2 - pressing: 0 - nie, 1 - tak
-     * 3 - pułapki ofsajdowe: 0 - nie, 1 - tak
-     * 4 - gra z kontry: 0 - nie, 1 - tak
-     * 5 - nastawienie: 1 - normalne, 2 - obronne, 3 - atak
-     */
+    // Instrukcje dla zespołu podczas meczu
+    int instrPasses;    // podania: 1 - mieszane, 2 - krótkie, 3 - srednie, 4 - długie
+    int instrTreatment; // obchodzenie się z rywalem: 1 - normalne, 2 - delikatne, 3 - twarde
+    int instrPressing;  // pressing: 0 - nie, 1 - tak
+    int instrOffsides;  // pułapki ofsajdowe: 0 - nie, 1 - tak
+    int instrContra;    // gra z kontry: 0 - nie, 1 - tak
+    int instrAttitude;  // nastawienie: 1 - normalne, 2 - obronne, 3 - atak
+
 
     int teamSetting; // ustawienie zespołu
     int isAssistantMsg; // asystent=1 wiadomość od asystenta
@@ -151,7 +155,13 @@ struct SClub {
      * 3 - numer jako kolej. kol, czyli index klubu rywala w kolejce Kolejka.nr[rywal[3]]
      */
 
-    int rivalInst[MAX_TEAM_INSTRUCTIONS]; // instrukcje rywala, to samo co inst, tylko ze dla rywala
+    // instrukcje rywala, to samo co inst, tylko ze dla rywala
+    int rivalInstrPasses;
+    int rivalInstrTreatment;
+    int rivalInstrPressing;
+    int rivalInstrOffsides;
+    int rivalInstrContra;
+    int rivalInstrAttitude;
 
     int isRivalSet, controlMatchesAmount; //dla rywala
 
