@@ -18,6 +18,11 @@ int main(int argc, char** argv)
 {
     setlocale(LC_ALL, ""); // for display Polish chars
 
+    // To make the backspace key work when typing on the keyboard
+    std::locale::global(std::locale(""));
+    std::wcin.imbue(std::locale());
+    std::wcout.imbue(std::locale());
+
     try {
         ArgumentsReader argsReader(argc, argv);
         if (argsReader.isExitFlag()) {
