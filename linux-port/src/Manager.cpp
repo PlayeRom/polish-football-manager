@@ -266,18 +266,23 @@ void Manager::swapFootballers()
         return; // The same numbers, nothing to swap
     }
 
-    for (size_t i = 0; i < playersCount; i++) {
-        SFootballer &footballer = pFootballers->getPlayerTeam(i);
+    SFootballer* f1 = nullptr;
+    SFootballer* f2 = nullptr;
+
+    for (size_t i = 0; i < playersCount; ++i) {
+        SFootballer& footballer = pFootballers->getPlayerTeam(i);
         if (footballer.data[0] == no1) {
-            footballer.data[0] = no2;
-        }
-        else if (footballer.data[0] == no2) {
-            footballer.data[0] = no1;
+            f1 = &footballer;
+        } else if (footballer.data[0] == no2) {
+            f2 = &footballer;
         }
     }
 
-    pFootballers->sortPlayersTeam();
-    pFootballers->savePlayerTeam();
+    if (f1 && f2) {
+        std::swap(f1->data[0], f2->data[0]);
+        pFootballers->sortPlayersTeam();
+        pFootballers->savePlayerTeam();
+    }
 }
 
 void Manager::menuItemContinue()
