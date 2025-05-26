@@ -1487,9 +1487,9 @@ bool Match::runMatch()
                 x3 = 0;
                 for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                     SFootballer &footballer = pFootballers->getRival(index);
-                    if (footballer.data[11] == 0
-                        && clubRef.rivalData[0] == footballer.data[22]
-                        && footballer.data[0] < 12
+                    if (footballer.data[11] == 0 // kondycja 0%
+                        && clubRef.rivalData[0] == footballer.data[22] // numer klubu
+                        && footballer.data[0] < 12 // liczba porzadkowa gracza w druzynie, czyli jest w pierwszej jedenastce
                     ) {
                         x1 = footballer.data[0]; // footballer number
                         x2 = footballer.data[2]; // the formation he's playing on
@@ -1520,17 +1520,19 @@ bool Match::runMatch()
                 }
 
                 if (x1 > 0) {
+                    // Znajdz rezerwowego, który gra na tej samej formacji co kontuzjowany
                     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                         const SFootballer &footballer = pFootballers->getRival(index);
                         if (footballer.data[0] > 11 &&
-                            footballer.data[0] < 17 &&
-                            clubRef.rivalData[0] == footballer.data[22] &&
+                            footballer.data[0] < 17 && // w puli rezerwowych: 12-16
+                            clubRef.rivalData[0] == footballer.data[22] && // numer klubu
                             x2 == footballer.data[2]
                         ) {
-                            x3 = footballer.data[0];
+                            x3 = footballer.data[0]; // footballer number
                         }
                     }
 
+                    // Podmień kontuzjowanego na rezerwowego
                     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                         SFootballer &footballer = pFootballers->getRival(index);
                         if (clubRef.rivalData[0] == footballer.data[22]) {
@@ -2360,7 +2362,7 @@ int Match::whatHappened(
     if (whereIsAction == ACTION_IN_MIDDLE_FIELD) { // P/P
         if (isPlayerBall) {
             x1 = clubRef.instrContra; //gra z kontry twoja
-            x2 = clubRef.trained[1]; //podania trening
+            x2 = clubRef.trainedPasses; //podania trening
             x3 = clubRef.rivalInstrPressing; //pressing rywala
         }
         else {
@@ -2815,7 +2817,7 @@ int Match::whatHappened(
         }
         else if (whereIsAction == ACTION_IN_DIRECT_FREE_KICK) {
             if (isPlayerBall) {
-                x1 = rivalGoalkeeperSkills - (clubRef.trained[2] * 2); //umiejętności bramkarza
+                x1 = rivalGoalkeeperSkills - (clubRef.trainedSetPieces * 2); //umiejętności bramkarza
             }
             else {
                 x1 = playerGoalkeeperSkills - 2;
@@ -2860,7 +2862,7 @@ int Match::whatHappened(
     else if (whereIsAction == ACTION_IN_PENALTY_OR_1ON1) { //obrona B - karny, sma na sam
         los = pRand->get(9);
         if (isPlayerBall) {
-            x1 = rivalGoalkeeperSkills - clubRef.trained[2]; //um. bramkarza-stałe fragmenty
+            x1 = rivalGoalkeeperSkills - clubRef.trainedSetPieces; //um. bramkarza-stałe fragmenty
         }
         else {
             x1 = playerGoalkeeperSkills - 2;
@@ -3436,7 +3438,7 @@ void Match::playerTactics()
                     || footballer2 > 16
                     || howManyPlayerChanges >= 3
                 ) {
-                    footballer1 = 1; // uniemozliwia zmiane
+                    footballer1 = 1; // uniemożliwia zmianę
                     footballer2 = 1;
                 }
 
@@ -4011,9 +4013,9 @@ SFormationsSum Match::getPlayerFormationsSum(const SClub &clubRef)
     }
 
     // add points from tactic training
-    playerFormationsSum.sumDef += clubRef.trained[3];
-    playerFormationsSum.sumMid += clubRef.trained[3];
-    playerFormationsSum.sumAtt += clubRef.trained[3];
+    playerFormationsSum.sumDef += clubRef.trainedTactic;
+    playerFormationsSum.sumMid += clubRef.trainedTactic;
+    playerFormationsSum.sumAtt += clubRef.trainedTactic;
 
     // tactic
     switch (clubRef.teamSetting) {
@@ -4038,7 +4040,7 @@ SFormationsSum Match::getPlayerFormationsSum(const SClub &clubRef)
             break;
         }
     }
-    playerFormationsSum.sumAtt += clubRef.trained[2] * 2; // stale fragmenty, ale tylko dla gracza
+    playerFormationsSum.sumAtt += clubRef.trainedSetPieces * 2; // stale fragmenty, ale tylko dla gracza
 
     return playerFormationsSum;
 }

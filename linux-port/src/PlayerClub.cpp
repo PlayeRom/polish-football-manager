@@ -100,7 +100,12 @@ void PlayerClub::initNewClub(int clubId)
         club.training[i] = defaultTrainingPlan[i];
     }
 
-    memset(club.trained, 0, 5 * sizeof(float));
+    club.trainedCondition = 0;
+    club.trainedPasses = 0;
+    club.trainedSetPieces = 0;
+    club.trainedTactic = 0;
+    club.trainedNotUse = 0;
+
     memset(club.finances, 0, 14 * sizeof(float));
     memset(club.financesLastMonth, 0, 14 * sizeof(float));
 

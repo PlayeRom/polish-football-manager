@@ -111,13 +111,13 @@ struct SClub {
     int lastMatchRivalId;
     int playerGoals, rivalGoals; // gole z ostatniego meczu playerGoals - gole gracza, rivalGoals - gole przeciwnika
     int isRiot;
-    float trained[5];
-    /** punkty wytrenowania zespołowego
-     * 0 - kondycja
-     * 1 - podania
-     * 2 - stałe fragmenty
-     * 3 - taktyka
-     */
+
+    // Punkty wytrenowania zespołowego
+    float trainedCondition; // kondycja
+    float trainedPasses;    // podania
+    float trainedSetPieces; // stałe fragmenty gry
+    float trainedTactic;    // taktyka
+    float trainedNotUse;    // zapasowe, nieużywane
 
     float finances[14];
     /**

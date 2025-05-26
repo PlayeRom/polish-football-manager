@@ -488,21 +488,21 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             if (clubRef.training[i] == 4) tactics++; //taktyka
             if (clubRef.training[i] == 5) years++;
         }
-        clubRef.trained[0] += condition * 0.2;
+        clubRef.trainedCondition += condition * 0.2;
         if (condition == 0) {
-            clubRef.trained[0] -= 0.1;
+            clubRef.trainedCondition -= 0.1;
         }
-        clubRef.trained[1] += passes * 0.2;
+        clubRef.trainedPasses += passes * 0.2;
         if (passes == 0) {
-            clubRef.trained[1] -= 0.1;
+            clubRef.trainedPasses -= 0.1;
         }
-        clubRef.trained[2] += setPieces * 0.2;
+        clubRef.trainedSetPieces += setPieces * 0.2;
         if (setPieces == 0) {
-            clubRef.trained[2] -= 0.1;
+            clubRef.trainedSetPieces -= 0.1;
         }
-        clubRef.trained[3] += tactics * 0.2;
+        clubRef.trainedTactic += tactics * 0.2;
         if (tactics == 0) {
-            clubRef.trained[3] -= 0.1;
+            clubRef.trainedTactic -= 0.1;
         }
 
         int playerTeamSize = pFootballers->getSizePlayerTeam();
@@ -667,8 +667,8 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
                 int x = footballer.data[11];
                 footballer.data[11] += 2;
 
-                if (clubRef.trained[0] >= 0) {
-                    footballer.data[11] += clubRef.trained[0];
+                if (clubRef.trainedCondition >= 0) {
+                    footballer.data[11] += clubRef.trainedCondition;
                 }
 
                 if (footballer.data[11] > 100) {
@@ -798,7 +798,12 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
             clubRef.isBlockTransferFunds = 0;
             clubRef.season++;
 
-            memset(clubRef.trained, 0, 5 * sizeof(float));
+            clubRef.trainedCondition = 0;
+            clubRef.trainedPasses = 0;
+            clubRef.trainedSetPieces = 0;
+            clubRef.trainedTactic = 0;
+            clubRef.trainedNotUse = 0;
+
             memset(clubRef.goalsLeague, 0, 480 * sizeof(int));
             memset(clubRef.goalsControls, 0, 10 * sizeof(int));
 
@@ -821,7 +826,11 @@ void Manager::menuItemContinueProcessing(SClub &clubRef)
         }
 
         if ((clubRef.month == 2 && clubRef.day == 1) || (clubRef.month == 6 && clubRef.day == 23)) {
-            memset(clubRef.trained, 0, 5 * sizeof(float));
+            clubRef.trainedCondition = 0;
+            clubRef.trainedPasses = 0;
+            clubRef.trainedSetPieces = 0;
+            clubRef.trainedTactic = 0;
+            clubRef.trainedNotUse = 0;
 
             for (size_t i = 0; i < pFootballers->getSizePlayerTeam(); i++) {
                 SFootballer &footballer = pFootballers->getPlayerTeam(i);
@@ -1609,13 +1618,13 @@ void Manager::menuItemTraining()
             wcout << endl;
             wprintf(pLang->get(L" G, D, M, A: .........%3d%% %5d").c_str(), ilex[4] * 3 * 100 / 21, clubRef.treBOPN);
             wcout << endl;
-            wprintf(pLang->get(L" Condition: ..........%3d%% %5.1f").c_str(), ilex[0] * 100 / 21, clubRef.trained[0]);
+            wprintf(pLang->get(L" Condition: ..........%3d%% %5.1f").c_str(), ilex[0] * 100 / 21, clubRef.trainedCondition);
             wcout << endl;
-            wprintf(pLang->get(L" Passing: ............%3d%% %5.1f").c_str(), ilex[1] * 100 / 21, clubRef.trained[1]);
+            wprintf(pLang->get(L" Passing: ............%3d%% %5.1f").c_str(), ilex[1] * 100 / 21, clubRef.trainedPasses);
             wcout << endl;
-            wprintf(pLang->get(L" Free kicks: .........%3d%% %5.1f").c_str(), ilex[2] * 100 / 21, clubRef.trained[2]);
+            wprintf(pLang->get(L" Free kicks: .........%3d%% %5.1f").c_str(), ilex[2] * 100 / 21, clubRef.trainedSetPieces);
             wcout << endl;
-            wprintf(pLang->get(L" Tactics: ............%3d%% %5.1f").c_str(), ilex[3] * 100 / 21, clubRef.trained[3]);
+            wprintf(pLang->get(L" Tactics: ............%3d%% %5.1f").c_str(), ilex[3] * 100 / 21, clubRef.trainedTactic);
             wcout << endl;
             wprintf(pLang->get(L" Day off: ............%3d%%").c_str(), ilex[8] * 3 * 100 / 21);
 
