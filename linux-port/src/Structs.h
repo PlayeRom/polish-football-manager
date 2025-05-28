@@ -105,12 +105,11 @@ struct SClub {
     int instrContra;    // gra z kontry: 0 - nie, 1 - tak
     int instrAttitude;  // nastawienie: 1 - normalne, 2 - obronne, 3 - atak
 
-
     int teamSetting; // ustawienie zespołu
     int isAssistantMsg; // asystent=1 wiadomość od asystenta
     int lastMatchRivalId;
     int playerGoals, rivalGoals; // gole z ostatniego meczu playerGoals - gole gracza, rivalGoals - gole przeciwnika
-    int isRiot;
+    int isRiot; // są zamieszki
 
     // Punkty wytrenowania zespołowego
     float trainedCondition; // kondycja
@@ -146,14 +145,11 @@ struct SClub {
     float totalExpensesTransfers; // łączna suma wydatków na kupno zawodników
     float totalRevenuesTransfers; // łączna suma zysków za sprzedaż zawodników
 
-    int rivalData[4];
-    /**
-     * rivalData[4]
-     * 0 - numer klubu
-     * 1 - 0 - gram w domu, 1 - gram na wyjeździe
-     * 2 - taktyka / ustawienie rywala
-     * 3 - numer jako kolej. kol, czyli index klubu rywala w kolejce Kolejka.nr[rywal[3]]
-     */
+    // Dane rywala
+    int rivalClubId;      // numer klubu rywala
+    int rivalIsAwayGame;  // 0 - rywal gra w domu, 1 - rywal gra na wyjeździe
+    int rivalTeamSetting; // taktyka / ustawienie rywala
+    int rivalRoundIndex;  // index klubu rywala w kolejce SRound.clubNumbers[index]
 
     // instrukcje rywala, to samo co inst, tylko ze dla rywala
     int rivalInstrPasses;
@@ -203,9 +199,9 @@ struct SRound {
     // dom - wyjazd
     // dom - wyjazd, itd.
     // czyli jak mamy sekwencję id1, id2, id3, id4, id4...
-    // to id1 gra z id2, id3 gra z id4, ird
+    // to id1 gra z id2, id3 gra z id4 itd.
 
-    // TODO: kol1 wydaje się niepotrzebne, mamy nr jako numery klubow i potem mozemy siegnac do tablicy clubsNames
+    // TODO: kol1 wydaje się niepotrzebne, mamy nr jako numery klubów (clubNumbers) i potem możemy sięgnąć do tablicy clubsNames
     wchar_t kol1[MAX_CLUBS][19]; //16 drużyn po 19 znaków
 };
 
@@ -230,14 +226,14 @@ struct SNews {
     SNews() : num(0), message(L"") {}
 };
 
-// pozycja na ktore gra gracz, dla Footballer.data[2]
+// pozycja na której gra gracz, dla Footballer.data[2]
 #define PLAYERS_POS_B 1 // goalkeeper
 #define PLAYERS_POS_O 2 // defender
 #define PLAYERS_POS_P 3 // midfielder
 #define PLAYERS_POS_N 4 // striker
 // co zawodnik trenuje
 #define PLAYERS_TRAINING_NONE 0 // nie trenuje
-#define PLAYERS_TRAINING_B    1 // bycia bramkarzem
+#define PLAYERS_TRAINING_B    1 // bycie bramkarzem
 #define PLAYERS_TRAINING_O    2 // obronę
 #define PLAYERS_TRAINING_P    3 // pomoc
 #define PLAYERS_TRAINING_N    4 // atak
@@ -282,14 +278,11 @@ struct SFootballer {
      * 21 - gole zdobyte w meczu, co mesz sie zeruje, po meczu dodawane do [16]
      * 22 - numer kluby do ktorego nalezy zawodnik, gdy 0 to nie nalezy do zadnego
      */
-    float finances[4]; // 16 bajtów
-    /**
-     * Tabela SFootballer.waga
-     * 0 - wartosc/cena $ zawodnika
-     * 1 - miesięczna pensja zawodnika
-     * 2 - premia za gola dla zawodnika
-     * 3 - cena sprzedazy zawodnika
-     */
+
+    float financeValue;         // wartosc/cena $ zawodnika
+    float financeMonthlySalary; // miesięczna pensja zawodnika
+    float financeGoalBonus;     // premia za gola dla zawodnika
+    float financeSalePrice;     // cena sprzedazy zawodnika
 };
 
 /**

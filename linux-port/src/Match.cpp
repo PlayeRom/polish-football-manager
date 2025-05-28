@@ -188,7 +188,7 @@ bool Match::runMatch()
             prepareFootballersSurnames(clubRef);
         }
 
-        const bool isHome = clubRef.rivalData[1] == 0;
+        const bool isHome = clubRef.rivalIsAwayGame == 0;
 
         pInput->clrscr();
         pColors->textColor(WHITE);
@@ -196,11 +196,11 @@ bool Match::runMatch()
             pColors->textBackground(BLUE);
             wprintf(L" %19ls %d ", pClub->getClubName(clubRef.clubId - 1).c_str(), goalsInfoPlayer.size());
             pColors->textBackground(RED);
-            wprintf(L" %d %-19ls ", goalsInfoRival.size(), pClub->getClubName(clubRef.rivalData[0] - 1).c_str());
+            wprintf(L" %d %-19ls ", goalsInfoRival.size(), pClub->getClubName(clubRef.rivalClubId - 1).c_str());
         }
         else { //wyjazd
             pColors->textBackground(RED);
-            wprintf(L" %19ls %d ", pClub->getClubName(clubRef.rivalData[0] - 1).c_str(), goalsInfoRival.size());
+            wprintf(L" %19ls %d ", pClub->getClubName(clubRef.rivalClubId - 1).c_str(), goalsInfoRival.size());
             pColors->textBackground(BLUE);
             wprintf(L" %d %-19ls ", goalsInfoPlayer.size(), pClub->getClubName(clubRef.clubId - 1).c_str());
         }
@@ -278,7 +278,7 @@ bool Match::runMatch()
             wprintf(
                 pLang->get(L"A Tactics-%ls  P Tactics-%ls  C Speed-%ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
-                pClub->getClubName(clubRef.rivalData[0] - 1).c_str(),
+                pClub->getClubName(clubRef.rivalClubId - 1).c_str(),
                 speed[speedSelected].c_str()
             );
             wcout << endl;
@@ -309,7 +309,7 @@ bool Match::runMatch()
                     msg[0] = 8;
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
-                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalTeamSetting;
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
 
                     random = pRand->get(3);
@@ -351,7 +351,7 @@ bool Match::runMatch()
                     isPlayerBall = !isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
                     msgFootballers[2] = getFootballerSurname(isPlayerBall, 6);
-                    msgFootballers[3] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
+                    msgFootballers[3] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalClubId) - 1);
 
                     whereIsAction = ACTION_IN_MIDDLE_FIELD;
                 }
@@ -392,7 +392,7 @@ bool Match::runMatch()
                     msg[1] = 14;
                     msg[2] = 19;
                     int instrTreatment = isPlayerBall ? clubRef.rivalInstrTreatment : clubRef.instrTreatment;
-                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    int teamSetting = isPlayerBall ? clubRef.rivalTeamSetting : clubRef.teamSetting;
                     isPlayerBall ? statRival[FOULS]++ : statPlayer[FOULS]++;
 
                     what = getArbiterDecision(instrTreatment);
@@ -409,7 +409,7 @@ bool Match::runMatch()
                         vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                         bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -466,7 +466,7 @@ bool Match::runMatch()
                     msgWhoBall[4] = isPlayerBall;
                     msgWhoBall[5] = isPlayerBall;
 
-                    teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalTeamSetting;
                     msgFootballers[8] = getFootballerSurname(isPlayerBall, 6);
                     msgFootballers[10] = getFootballerSurname(isPlayerBall, 6);
 
@@ -514,7 +514,7 @@ bool Match::runMatch()
 
                     isPlayerBall ? statPlayer[SHOOTS]++ : statRival[SHOOTS]++;
 
-                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalTeamSetting;
                     random = getFootballerIdWhoShootDistance(teamSetting);
 
                     msgFootballers[1] = getFootballerSurname(isPlayerBall, random - 1);
@@ -538,7 +538,7 @@ bool Match::runMatch()
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
                     msgFootballers[3] = isPlayerBall ? msgRivalSurnames[3] : msgPlayerSurnames[3];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -565,7 +565,7 @@ bool Match::runMatch()
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
                     msgFootballers[3] = isPlayerBall ? msgRivalSurnames[3] : msgPlayerSurnames[3];
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -588,7 +588,7 @@ bool Match::runMatch()
                     msgFootballers[2] = msgFootballers[0];
                     isPossibleGoToTactics = true;
 
-                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    int teamSetting = isPlayerBall ? clubRef.rivalTeamSetting : clubRef.teamSetting;
                     isPlayerBall ? statRival[FOULS]++ : statPlayer[FOULS]++;
 
                     random = getDefFootballerId(teamSetting);
@@ -607,7 +607,7 @@ bool Match::runMatch()
                         vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                         bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -698,7 +698,7 @@ bool Match::runMatch()
                     vector<SFootballer> &tmpFootballers = !isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
@@ -784,7 +784,7 @@ bool Match::runMatch()
                     msg[2] = 43;
                     msgWhoBall[2] = isPlayerBall;
 
-                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalTeamSetting;
                     switch (teamSetting) {
                         case T4_5_1: {
                             random = 11;
@@ -868,7 +868,7 @@ bool Match::runMatch()
                     msg[1] = 50;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     msgWhoBall[1] = !isPlayerBall;
-                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    int teamSetting = isPlayerBall ? clubRef.rivalTeamSetting : clubRef.teamSetting;
                     if (isPlayerBall) {
                         statRival[FOULS]++;
                         statPlayer[PENALTIES]++;
@@ -896,7 +896,7 @@ bool Match::runMatch()
                         vector<SFootballer> &tmpFootballers = !isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = !isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                         bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -956,7 +956,7 @@ bool Match::runMatch()
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     msgWhoBall[1] = !isPlayerBall;
                     msgWhoBall[3] = !isPlayerBall;
-                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    int teamSetting = isPlayerBall ? clubRef.rivalTeamSetting : clubRef.teamSetting;
 
                     random = getDefFootballerId(teamSetting);
 
@@ -980,7 +980,7 @@ bool Match::runMatch()
                     isPossibleGoToTactics = true;
                     msgFootballers[0] = getFootballerSurname(isPlayerBall, 10);
                     msgWhoBall[1] = !isPlayerBall;
-                    int teamSetting = isPlayerBall ? clubRef.rivalData[2] : clubRef.teamSetting;
+                    int teamSetting = isPlayerBall ? clubRef.rivalTeamSetting : clubRef.teamSetting;
                     isPlayerBall ? statPlayer[CORNERS]++ : statRival[CORNERS]++;
 
                     random = getDefFootballerId(teamSetting);
@@ -998,7 +998,7 @@ bool Match::runMatch()
                     msgWhoBall[0] = isPlayerBall;
                     msgWhoBall[1] = isPlayerBall;
                     msg[1] = (pRand->get(2) == 1) ? 43 : 57;
-                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalTeamSetting;
                     if (teamSetting == T3_4_3 || teamSetting == T4_3_3) {
                         random = pRand->get(9, 11);
                     }
@@ -1038,7 +1038,7 @@ bool Match::runMatch()
                     msgWhoBall[1] = !isPlayerBall;
                     msgWhoBall[2] = !isPlayerBall;
                     int instrTreatment = isPlayerBall ? clubRef.instrTreatment : clubRef.rivalInstrTreatment;
-                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalData[2];
+                    int teamSetting = isPlayerBall ? clubRef.teamSetting : clubRef.rivalTeamSetting;
 
                     isPlayerBall ? statPlayer[FOULS]++ : statRival[FOULS]++;
 
@@ -1068,7 +1068,7 @@ bool Match::runMatch()
                         vector<SFootballer> &tmpFootballers = isPlayerBall
                             ? pFootballers->getPlayersTeam()
                             : pFootballers->getRivals();
-                        int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                        int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                         bool is2ndYellow = false;
                         for (size_t index = 0; index < tmpFootballers.size(); index++) {
@@ -1150,7 +1150,7 @@ bool Match::runMatch()
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
@@ -1187,7 +1187,7 @@ bool Match::runMatch()
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
@@ -1268,7 +1268,7 @@ bool Match::runMatch()
                     vector<SFootballer> &tmpFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    int clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                     for (size_t index = 0; index < tmpFootballers.size(); index++) {
                         SFootballer &footballer = tmpFootballers[index];
@@ -1286,7 +1286,7 @@ bool Match::runMatch()
                             }
 
                             if (isPlayerBall) {
-                                clubRef.finances[7] += footballer.finances[2]; // premia za gola
+                                clubRef.finances[7] += footballer.financeGoalBonus; // premia za gola
                             }
                         }
                         if (footballer.data[0] == footballerIdForm && clubId == footballer.data[22]) {
@@ -1316,9 +1316,9 @@ bool Match::runMatch()
                     }
 
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
-                    msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
+                    msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalClubId) - 1);
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, footballerMemory);
-                    msgFootballers[6] = pClub->getClubName((isPlayerBall ? clubRef.rivalData[0] : clubRef.clubId) - 1);
+                    msgFootballers[6] = pClub->getClubName((isPlayerBall ? clubRef.rivalClubId : clubRef.clubId) - 1);
                     isPlayerBall = !isPlayerBall;
                     msgWhoBall[3] = isPlayerBall;
                     msgWhoBall[0] = isPlayerBall;
@@ -1330,7 +1330,7 @@ bool Match::runMatch()
                     vector<SFootballer> &losersFootballers = isPlayerBall
                         ? pFootballers->getPlayersTeam()
                         : pFootballers->getRivals();
-                    clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalData[0];
+                    clubId = isPlayerBall ? clubRef.clubId : clubRef.rivalClubId;
 
                     for (size_t index = 0; index < losersFootballers.size(); index++) {
                         SFootballer &footballer = losersFootballers[index];
@@ -1373,7 +1373,7 @@ bool Match::runMatch()
 
                     isPlayerBall ? statPlayer[SHOOTS]-- : statRival[SHOOTS]--;
                     msgFootballers[0] = getFootballerSurname(!isPlayerBall, 0);
-                    msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalData[0]) - 1);
+                    msgFootballers[2] = pClub->getClubName((isPlayerBall ? clubRef.clubId : clubRef.rivalClubId) - 1);
                     msgFootballers[4] = getFootballerSurname(isPlayerBall, footballerMemory);
                     msgFootballers[8] = msgFootballers[0];
                     isPlayerBall = !isPlayerBall;
@@ -1410,7 +1410,7 @@ bool Match::runMatch()
                     isPlayerBall = true;
                 }
                 else { // opponent start the match
-                    msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
+                    msgFootballers[0] = pClub->getClubName(clubRef.rivalClubId - 1);
                     isPlayerBall = false;
                 }
                 whereIsAction = ACTION_IN_MIDDLE_FIELD;
@@ -1418,7 +1418,7 @@ bool Match::runMatch()
             }
             else if (matchMinute == 45 && matchStatus == START_2ND_HALF) { // The beginning of the 2nd half
                 if (whoStartedMatch == 1) { // started played so 2nd half starts rival
-                    msgFootballers[0] = pClub->getClubName(clubRef.rivalData[0] - 1);
+                    msgFootballers[0] = pClub->getClubName(clubRef.rivalClubId - 1);
                     isPlayerBall = false;
                 }
                 else { // started rival so 2nd half starts player
@@ -1448,7 +1448,7 @@ bool Match::runMatch()
                 vector<SFootballer> &tmpFootballers = isPlayerInjury
                     ? pFootballers->getPlayersTeam()
                     : pFootballers->getRivals();
-                int clubId = isPlayerInjury ? clubRef.clubId : clubRef.rivalData[0];
+                int clubId = isPlayerInjury ? clubRef.clubId : clubRef.rivalClubId;
 
                 for (size_t index = 0; index < tmpFootballers.size(); index++) {
                     SFootballer &footballer = tmpFootballers[index];
@@ -1488,7 +1488,7 @@ bool Match::runMatch()
                 for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                     SFootballer &footballer = pFootballers->getRival(index);
                     if (footballer.data[11] == 0 // kondycja 0%
-                        && clubRef.rivalData[0] == footballer.data[22] // numer klubu
+                        && clubRef.rivalClubId == footballer.data[22] // numer klubu
                         && footballer.data[0] < 12 // liczba porzadkowa gracza w druzynie, czyli jest w pierwszej jedenastce
                     ) {
                         x1 = footballer.data[0]; // footballer number
@@ -1525,7 +1525,7 @@ bool Match::runMatch()
                         const SFootballer &footballer = pFootballers->getRival(index);
                         if (footballer.data[0] > 11 &&
                             footballer.data[0] < 17 && // w puli rezerwowych: 12-16
-                            clubRef.rivalData[0] == footballer.data[22] && // numer klubu
+                            clubRef.rivalClubId == footballer.data[22] && // numer klubu
                             x2 == footballer.data[2]
                         ) {
                             x3 = footballer.data[0]; // footballer number
@@ -1535,7 +1535,7 @@ bool Match::runMatch()
                     // Podmień kontuzjowanego na rezerwowego
                     for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
                         SFootballer &footballer = pFootballers->getRival(index);
-                        if (clubRef.rivalData[0] == footballer.data[22]) {
+                        if (clubRef.rivalClubId == footballer.data[22]) {
                             if (footballer.data[0] == x1) {
                                 footballer.data[0] = x3;
                             }
@@ -1559,7 +1559,7 @@ bool Match::runMatch()
                 }
                 else { // rival exchange
                     msgWhoBall[k] = false;
-                    msgFootballers[k * 2] = pClub->getClubName(clubRef.rivalData[0] - 1);
+                    msgFootballers[k * 2] = pClub->getClubName(clubRef.rivalClubId - 1);
                     msg[k + 1] = 7;
                     msgWhoBall[k + 1] = false;
                     msgFootballers[(k + 1) * 2] = msgRivalSurnames[x3 - 1];
@@ -1574,7 +1574,7 @@ bool Match::runMatch()
                 msg[k + 1] = 87;
                 msg[k + 2] = 88;
                 msg[k + 3] = 89;
-                if (clubRef.rivalData[1] == 0) { // player play in home
+                if (clubRef.rivalIsAwayGame == 0) { // player play in home
                     msgWhoBall[k] = true;
                     msgWhoBall[k + 1] = true;
                     msgWhoBall[k + 2] = true;
@@ -1757,7 +1757,7 @@ bool Match::runMatch()
                     random = 0;
                 }
 
-                if (clubRef.rivalData[0] == footballer.data[22] && footballer.data[0] < 12) {
+                if (clubRef.rivalClubId == footballer.data[22] && footballer.data[0] < 12) {
                     footballer.data[11] -= random;
                 }
 
@@ -1794,7 +1794,7 @@ bool Match::runMatch()
             wprintf(
                 pLang->get(L"A Tactics-%ls  P Tactics-%ls  C Speed-%ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
-                pClub->getClubName(clubRef.rivalData[0] - 1).c_str(),
+                pClub->getClubName(clubRef.rivalClubId - 1).c_str(),
                 speed[speedSelected].c_str()
             );
             wcout << endl;
@@ -1807,7 +1807,7 @@ bool Match::runMatch()
             wprintf(
                 pLang->get(L"A Tactics - %ls    P Tactics - %ls").c_str(),
                 pClub->getClubName(clubRef.clubId - 1).c_str(),
-                pClub->getClubName(clubRef.rivalData[0] - 1).c_str()
+                pClub->getClubName(clubRef.rivalClubId - 1).c_str()
             );
             wcout << endl;
         }
@@ -1902,7 +1902,7 @@ bool Match::runMatch()
 
     pColors->textColor(LIGHTGRAY);
     wcout << endl << pLang->get(L"Please wait...");
-    if (clubRef.rivalData[1] == 0) { // player home
+    if (clubRef.rivalIsAwayGame == 0) { // player home
         float tickets = pRand->get(30, 59) * 5000.0;
         clubRef.finances[0] += tickets; //bilety
 
@@ -2191,7 +2191,7 @@ void Match::prepareFootballersSurnames(const SClub &clubRef)
 
         for (size_t index = 0; index < pFootballers->getSizeRivals(); index++) {
             const SFootballer &footballer = pFootballers->getRival(index);
-            if (footballer.data[0] == counter && footballer.data[22] == clubRef.rivalData[0]) {
+            if (footballer.data[0] == counter && footballer.data[22] == clubRef.rivalClubId) {
                 msgRivalSurnames[counter - 1] = footballer.surname;
                 break;
             }
@@ -3591,20 +3591,20 @@ void Match::rivalTactics()
     do {
         pInput->clrscr();
         pColors->textColor(WHITE);
-        wcout << L" " << pClub->getClubName(clubRef.rivalData[0] - 1);
+        wcout << L" " << pClub->getClubName(clubRef.rivalClubId - 1);
 
-        pTactic->drawTeamSetting(clubRef.rivalData[2], false);
+        pTactic->drawTeamSetting(clubRef.rivalTeamSetting, false);
 
-        drawTeam(clubRef.rivalData[2], 11, clubRef.rivalData[0]);
+        drawTeam(clubRef.rivalTeamSetting, 11, clubRef.rivalClubId);
 
         menuTeamSetting = pInput->getKeyboardPressed();
         switch (menuTeamSetting) {
             case 'R': {
                 pInput->clrscr();
                 pColors->textColor(WHITE);
-                wcout << pLang->get(L"SUBSTITUTE'S BENCH") << L" - " << pClub->getClubName(clubRef.rivalData[0] - 1);
+                wcout << pLang->get(L"SUBSTITUTE'S BENCH") << L" - " << pClub->getClubName(clubRef.rivalClubId - 1);
 
-                drawTeam(clubRef.rivalData[2], 16, clubRef.rivalData[0]);
+                drawTeam(clubRef.rivalTeamSetting, 16, clubRef.rivalClubId);
 
                 pColors->textColor(LIGHTGRAY);
                 wcout << endl << endl << pLang->get(L"Press any key...");
@@ -3614,7 +3614,7 @@ void Match::rivalTactics()
             case 'I': {
                 pInput->clrscr();
                 pColors->textColor(WHITE);
-                wcout << pLang->get(L"TEAM INSTRUCTIONS") << L" - " << pClub->getClubName(clubRef.rivalData[0] - 1);
+                wcout << pLang->get(L"TEAM INSTRUCTIONS") << L" - " << pClub->getClubName(clubRef.rivalClubId - 1);
 
                 pTeamInstruction->draw(
                     clubRef.rivalInstrPasses,
@@ -3878,15 +3878,15 @@ SFormationsSum Match::getFormationsSum(const SClub &clubRef, bool isPlayerTeam)
     SFormationsSum formationSum;
 
     vector<SFootballer> &tmpFootballers = isPlayerTeam ? pFootballers->getPlayersTeam() : pFootballers->getRivals();
-    int clubId      = isPlayerTeam ? clubRef.clubId : clubRef.rivalData[0];
-    int clubTactic  = isPlayerTeam ? clubRef.teamSetting : clubRef.rivalData[2];
+    int clubId      = isPlayerTeam ? clubRef.clubId : clubRef.rivalClubId;
+    int clubTactic  = isPlayerTeam ? clubRef.teamSetting : clubRef.rivalTeamSetting;
 
     for (size_t index = 0; index < tmpFootballers.size(); index++) {
         SFootballer &footballer = tmpFootballers[index];
 
         if (clubId == footballer.data[22] && footballer.data[12] < 2) {
             if (footballer.data[0] < 12) {
-                formationSum.goalBonus += footballer.finances[2];
+                formationSum.goalBonus += footballer.financeGoalBonus;
             }
 
             if (footballer.data[0] == 1) {
@@ -4043,7 +4043,7 @@ SFormationsSum Match::getRivalFormationsSum(const SClub &clubRef)
     rivalFormationsSum.sumAtt += rivalFormationsSum.goalBonus / 1000;
     rivalFormationsSum.sumMid += rivalFormationsSum.goalBonus / 1000;
 
-    if (clubRef.rivalData[1] == 1) { // rywal gra u siebie
+    if (clubRef.rivalIsAwayGame == 1) { // rywal gra u siebie
         rivalFormationsSum.sumGol += 5;
         rivalFormationsSum.sumDef += 10;
         rivalFormationsSum.sumMid += 10;
@@ -4078,7 +4078,7 @@ SFormationsSum Match::getRivalFormationsSum(const SClub &clubRef)
         }
     }
 
-    switch (clubRef.rivalData[2]) {
+    switch (clubRef.rivalTeamSetting) {
         case T4_4_2_DEF:
         case T3_5_2_DEF:
         case T5_3_2_DEF: { // ustawienie obronne

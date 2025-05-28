@@ -176,7 +176,7 @@ void Footballers::changeTransferList()
 {
     for (size_t i = 0; i < transfers.size(); i++) {
         SFootballer &footballer = transfers[i];
-        // losuj kluczowe umiejetności zawodnika od 1 do 15
+        // losuj kluczowe umiejętności zawodnika od 1 do 15
         switch (footballer.data[2]) {
             case PLAYERS_POS_B: footballer.data[3] = pRand->get(15); break;
             case PLAYERS_POS_O: footballer.data[4] = pRand->get(15); break;
@@ -187,15 +187,15 @@ void Footballers::changeTransferList()
         footballer.data[9] = pRand->get(5, 10); // losuj formę zawodnika (5 - 10)
 
         //cena zawodnika, ustal wartość zawodnika w zaleznosci od jego umiejetnosci * 5
-        footballer.finances[0] = 0;
+        footballer.financeValue = 0;
         switch (footballer.data[2]) {
-            case PLAYERS_POS_B: footballer.finances[0] = footballer.data[3] * 5; break;
-            case PLAYERS_POS_O: footballer.finances[0] = footballer.data[4] * 5; break;
-            case PLAYERS_POS_P: footballer.finances[0] = footballer.data[5] * 5; break;
-            case PLAYERS_POS_N: footballer.finances[0] = footballer.data[6] * 5; break;
+            case PLAYERS_POS_B: footballer.financeValue = footballer.data[3] * 5; break;
+            case PLAYERS_POS_O: footballer.financeValue = footballer.data[4] * 5; break;
+            case PLAYERS_POS_P: footballer.financeValue = footballer.data[5] * 5; break;
+            case PLAYERS_POS_N: footballer.financeValue = footballer.data[6] * 5; break;
         }
 
-        // wez kluczowa umiejetnosc zawodnika
+        // weź kluczową umiejętność zawodnika
         int mainSkill = footballer.data[footballer.data[2] + 2];
         float salary = 6000.0;
 
@@ -207,9 +207,9 @@ void Footballers::changeTransferList()
         else if (mainSkill >= 5) salary = 7000.0;
 
         // podbij cenę zawodnika o kolejne parametry
-        footballer.finances[0] += footballer.data[3] + footballer.data[4] + footballer.data[5] + footballer.data[6];
-        footballer.finances[0] *= salary; // x salary
-        footballer.finances[0] += footballer.data[9] * 10000.0; // x forma
+        footballer.financeValue += footballer.data[3] + footballer.data[4] + footballer.data[5] + footballer.data[6];
+        footballer.financeValue *= salary; // x salary
+        footballer.financeValue += footballer.data[9] * 10000.0; // x forma
     }
 
     saveTransfers();
@@ -245,12 +245,14 @@ bool Footballers::isNotAllowedTeamPlayer()
 {
     for (size_t i = 0; i < playerTeam.size(); i++) {
         SFootballer &footballer = playerTeam[i];
-        if (footballer.data[0] < 12 && // zawodnik wystawiony w pierwszej 11-ce
-            (footballer.data[13] == 2 || // ma 2 zolte kartki
-             footballer.data[14] == 1 || // ma czerwona kartke
-             footballer.data[15] > 7) // ma wiecej niz 7 dni do wyleczenia kontuzji
+        if (footballer.data[0] < 12 // zawodnik wystawiony w pierwszej 11-ce
+            && (
+                footballer.data[13] == 2 || // ma 2 żółte kartki
+                footballer.data[14] == 1 || // ma czerwona kartke
+                footballer.data[15] > 7 // ma wiecej niz 7 dni do wyleczenia kontuzji
+            ) 
         ) {
-            // jest niedozowolony gracz
+            // jest niedozwolony gracz
             return true;
         }
     }
